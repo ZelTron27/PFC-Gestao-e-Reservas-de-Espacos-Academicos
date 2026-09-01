@@ -1,4 +1,4 @@
-package br.com.classholder.classholder.modules.user.domain;
+package br.com.classholder.classholder.user;
 
 public enum UserRole {
     ADMIN,
