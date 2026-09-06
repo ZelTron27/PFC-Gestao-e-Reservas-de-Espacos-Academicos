@@ -43,4 +43,14 @@ public class Room {
     @Min(value = 1, message = "A capacidade da sala não pode ser menor que 1")
     @Column(nullable = false)
     private Integer roomCapacity;
+
+    //Descrição geral das salas / espaços. (texto livre com detalhes adicionais)
+    @NotBlank (message = "A descrição da sala de aula é obrigatória")
+    @Column(nullable = false, length = 500)
+    private String description;
+
+    // Booleano para saber se a sala está ativa ou não.
+    @NotNull (message = "É necessário definir se a sala está ativa ou não")
+    @Column(nullable = false)
+    private Boolean active;
 }
