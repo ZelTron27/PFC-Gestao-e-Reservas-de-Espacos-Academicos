@@ -1,0 +1,3 @@
+ALTER TABLE salas
+    ADD COLUMN description VARCHAR(500) NOT NULL,
+    ADD COLUMN active BOOLEAN NOT NULL;
