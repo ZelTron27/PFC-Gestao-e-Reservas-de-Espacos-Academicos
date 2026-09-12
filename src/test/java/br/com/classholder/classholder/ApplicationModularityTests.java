@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.docs.Documenter;
 
+// Apenas um teste para verificar se os modulos estão certos.
 
 class ApplicationModularityTests {
 

@@ -12,6 +12,8 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import br.com.classholder.classholder.reservation.ReservationStatus;
+
 @Entity
 @Table(name = "reservas")
 @Getter
@@ -30,6 +32,10 @@ public class Reservation {
     @Column(name = "room_id", nullable = false)
     private Long roomId;
 
+    @NotNull(message = "Professor é obrigatório")
+    @Column(name = "professor_id", nullable = false)
+    private Long professorId;
+
     @NotNull(message = "Data é obrigatória")
     @Column(nullable = false)
     private LocalDate date;
@@ -45,4 +51,10 @@ public class Reservation {
     @NotBlank(message = "Finalidade é obrigatória")
     @Column(nullable = false, length = 500)
     private String purpose;
+
+    @NotNull(message = "Status é obrigatório")
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ReservationStatus status = ReservationStatus.CONFIRMADA;
 }
