@@ -1,12 +1,14 @@
 package br.com.classholder.classholder.user.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import br.com.classholder.classholder.user.UserRole;
 import br.com.classholder.classholder.user.domain.User;
-import br.com.classholder.classholder.user.dto.CreateUserRequest;
+import br.com.classholder.classholder.user.dto.UserRequest;
 import br.com.classholder.classholder.user.dto.UserResponse;
 import br.com.classholder.classholder.user.repository.UserRepository;
 
@@ -23,7 +25,11 @@ public class UserService {
         this.totpService = totpService;
     }
 
-    public UserResponse createUser(CreateUserRequest request) {
+    public UserResponse createUser(UserRole creatorRole, UserRequest request) {
+        if (creatorRole != UserRole.ADMIN && request.role() == UserRole.ADMIN) {
+            throw new IllegalArgumentException("Coordenação não pode criar usuários administradores");
+        }
+
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("E-mail já cadastrado");
         }
@@ -39,8 +45,21 @@ public class UserService {
         return new UserResponse(saved.getId(), saved.getName(), saved.getEmail(), saved.getRole());
     }
 
+    public List<UserResponse> listUsers() {
+        return userRepository.findAll().stream()
+                .map(user -> new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole()))
+                .toList();
+    }
+
     public UserResponse getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
+        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole());
+    }
+
+    public UserResponse getUserById(Long id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole());
@@ -66,26 +85,46 @@ public class UserService {
                 .orElse(true);
     }
 
+    public boolean mustChangePassword(String email) {
+        return userRepository.findByEmail(email)
+                .map(User::isMustChangePassword)
+                .orElse(false);
+    }
+
+    public boolean changePassword(String email, String currentPassword, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            return false;
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
+        return true;
+    }
+
     public String getOrCreateTwoFactorSecret(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         if (user.getTwoFactorSecret() == null) {
-            String segredoEmTexto = totpService.gerarSegredo();
-            user.setTwoFactorSecret(totpService.criptografar(segredoEmTexto));
+            String plainSecret = totpService.generateSecret();
+            user.setTwoFactorSecret(totpService.encrypt(plainSecret));
             userRepository.save(user);
-            return segredoEmTexto;
+            return plainSecret;
         }
 
-        return totpService.descriptografar(user.getTwoFactorSecret());
+        return totpService.decrypt(user.getTwoFactorSecret());
     }
 
-    public boolean confirmarConfiguracaoDoisFatores(String email, int codigo) {
+    public boolean confirmTwoFactorSetup(String email, int code) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         if (user.getTwoFactorSecret() == null
-                || !totpService.verificarCodigo(totpService.descriptografar(user.getTwoFactorSecret()), codigo)) {
+                || !totpService.verifyCode(totpService.decrypt(user.getTwoFactorSecret()), code)) {
             return false;
         }
 
@@ -94,10 +133,10 @@ public class UserService {
         return true;
     }
 
-    public boolean verificarCodigoDoisFatores(String email, int codigo) {
+    public boolean verifyTwoFactorCode(String email, int code) {
         return userRepository.findByEmail(email)
                 .map(user -> user.getTwoFactorSecret() != null
-                        && totpService.verificarCodigo(totpService.descriptografar(user.getTwoFactorSecret()), codigo))
+                        && totpService.verifyCode(totpService.decrypt(user.getTwoFactorSecret()), code))
                 .orElse(false);
     }
 

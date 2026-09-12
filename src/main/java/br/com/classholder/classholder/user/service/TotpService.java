@@ -37,23 +37,23 @@ public class TotpService {
 
     private final GoogleAuthenticator googleAuthenticator = new GoogleAuthenticator();
     private final SecureRandom secureRandom = new SecureRandom();
-    private final SecretKeySpec chaveDeCriptografia;
+    private final SecretKeySpec encryptionKey;
 
-    public TotpService(@Value("${app.security.totp-secret-key}") String chaveDeCriptografiaBase64) {
-        byte[] chaveDecodificada = Base64.getDecoder().decode(chaveDeCriptografiaBase64);
-        this.chaveDeCriptografia = new SecretKeySpec(chaveDecodificada, "AES");
+    public TotpService(@Value("${app.security.totp-secret-key}") String encryptionKeyBase64) {
+        byte[] decodedKey = Base64.getDecoder().decode(encryptionKeyBase64);
+        this.encryptionKey = new SecretKeySpec(decodedKey, "AES");
     }
 
-    public String gerarSegredo() {
+    public String generateSecret() {
         return googleAuthenticator.createCredentials().getKey();
     }
 
-    public boolean verificarCodigo(String segredo, int codigo) {
-        return googleAuthenticator.authorize(segredo, codigo);
+    public boolean verifyCode(String secret, int code) {
+        return googleAuthenticator.authorize(secret, code);
     }
 
-    public String gerarQrCodeBase64(String contaUsuario, String segredo) {
-        String otpAuthUrl = construirOtpAuthUrl(contaUsuario, segredo);
+    public String generateQrCodeBase64(String account, String secret) {
+        String otpAuthUrl = buildOtpAuthUrl(account, secret);
 
         try {
             BitMatrix matrix = new QRCodeWriter().encode(otpAuthUrl, BarcodeFormat.QR_CODE, QR_SIZE, QR_SIZE);
@@ -68,10 +68,10 @@ public class TotpService {
         }
     }
 
-    private String construirOtpAuthUrl(String contaUsuario, String segredo) {
-        String label = encode(ISSUER + ":" + contaUsuario);
+    private String buildOtpAuthUrl(String account, String secret) {
+        String label = encode(ISSUER + ":" + account);
         return "otpauth://totp/" + label
-                + "?secret=" + segredo
+                + "?secret=" + secret
                 + "&issuer=" + encode(ISSUER)
                 + "&algorithm=SHA1&digits=6&period=30";
     }
@@ -80,36 +80,36 @@ public class TotpService {
         return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
-    public String criptografar(String segredoEmTexto) {
+    public String encrypt(String plainSecret) {
         try {
             byte[] iv = new byte[GCM_IV_LENGTH_BYTES];
             secureRandom.nextBytes(iv);
 
             Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.ENCRYPT_MODE, chaveDeCriptografia, new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
-            byte[] textoCifrado = cipher.doFinal(segredoEmTexto.getBytes(StandardCharsets.UTF_8));
+            cipher.init(Cipher.ENCRYPT_MODE, encryptionKey, new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+            byte[] cipherText = cipher.doFinal(plainSecret.getBytes(StandardCharsets.UTF_8));
 
-            byte[] resultado = new byte[iv.length + textoCifrado.length];
-            System.arraycopy(iv, 0, resultado, 0, iv.length);
-            System.arraycopy(textoCifrado, 0, resultado, iv.length, textoCifrado.length);
+            byte[] result = new byte[iv.length + cipherText.length];
+            System.arraycopy(iv, 0, result, 0, iv.length);
+            System.arraycopy(cipherText, 0, result, iv.length, cipherText.length);
 
-            return Base64.getEncoder().encodeToString(resultado);
+            return Base64.getEncoder().encodeToString(result);
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException("Erro ao criptografar o segredo de autenticação em dois fatores", e);
         }
     }
 
-    public String descriptografar(String segredoCriptografado) {
+    public String decrypt(String encryptedSecret) {
         try {
-            byte[] dados = Base64.getDecoder().decode(segredoCriptografado);
-            byte[] iv = Arrays.copyOfRange(dados, 0, GCM_IV_LENGTH_BYTES);
-            byte[] textoCifrado = Arrays.copyOfRange(dados, GCM_IV_LENGTH_BYTES, dados.length);
+            byte[] data = Base64.getDecoder().decode(encryptedSecret);
+            byte[] iv = Arrays.copyOfRange(data, 0, GCM_IV_LENGTH_BYTES);
+            byte[] cipherText = Arrays.copyOfRange(data, GCM_IV_LENGTH_BYTES, data.length);
 
             Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.DECRYPT_MODE, chaveDeCriptografia, new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
-            byte[] textoPlano = cipher.doFinal(textoCifrado);
+            cipher.init(Cipher.DECRYPT_MODE, encryptionKey, new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+            byte[] plainText = cipher.doFinal(cipherText);
 
-            return new String(textoPlano, StandardCharsets.UTF_8);
+            return new String(plainText, StandardCharsets.UTF_8);
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException("Erro ao descriptografar o segredo de autenticação em dois fatores", e);
         }

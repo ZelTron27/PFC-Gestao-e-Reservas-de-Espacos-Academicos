@@ -19,7 +19,7 @@ public class LgpdController {
     }
 
     @GetMapping
-    public String exibirTermo(Authentication authentication) {
+    public String showTerm(Authentication authentication) {
         if (userService.hasAcceptedLgpdTerm(authentication.getName())) {
             return "redirect:/";
         }
@@ -27,7 +27,7 @@ public class LgpdController {
     }
 
     @PostMapping("/aceitar")
-    public String aceitarTermo(Authentication authentication) {
+    public String acceptTerm(Authentication authentication) {
         userService.acceptLgpdTerm(authentication.getName());
         return "redirect:/";
     }

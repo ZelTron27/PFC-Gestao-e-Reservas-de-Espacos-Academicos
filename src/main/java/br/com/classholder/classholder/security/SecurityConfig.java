@@ -13,11 +13,13 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Não existe cadastro público no sistema: quem cria conta é sempre alguém que já
-        // está logado (o admin cria a coordenação, a coordenação cria os próprios usuários).
-        // Por isso toda rota exige login, sem exceção
         http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/salas", "/salas/**").hasAnyRole("ADMIN", "COORDENACAO")
+                        .requestMatchers("/equipamentos", "/equipamentos/**").hasAnyRole("ADMIN", "COORDENACAO")
+                        .requestMatchers("/usuarios", "/usuarios/**").hasAnyRole("ADMIN", "COORDENACAO")
+                        .requestMatchers("/reservas/todas", "/reservas/*/cancelar").hasAnyRole("ADMIN", "COORDENACAO")
+                        .requestMatchers("/reservas", "/reservas/**").hasAnyRole("ADMIN", "PROFESSOR")
                         .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults())
                 .logout(Customizer.withDefaults());

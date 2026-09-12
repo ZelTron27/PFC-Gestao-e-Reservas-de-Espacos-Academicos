@@ -61,4 +61,8 @@ public class User {
     @Column(name = "two_factor_secret", length = 255)
     private String twoFactorSecret;
 
+    @Builder.Default
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword = true;
+
 }

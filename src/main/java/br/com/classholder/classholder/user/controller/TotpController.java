@@ -27,7 +27,7 @@ public class TotpController {
     }
 
     @GetMapping("/configurar")
-    public String exibirConfiguracao(Authentication authentication, Model model) {
+    public String showSetupForm(Authentication authentication, Model model) {
         String email = authentication.getName();
 
         if (!userService.hasAcceptedLgpdTerm(email)) {
@@ -37,28 +37,28 @@ public class TotpController {
             return "redirect:/";
         }
 
-        adicionarQrCodeAoModelo(email, model);
+        addQrCodeToModel(email, model);
         return "totp/configurar";
     }
 
     @PostMapping("/configurar")
-    public String confirmarConfiguracao(Authentication authentication, @RequestParam String codigo,
+    public String confirmSetup(Authentication authentication, @RequestParam("codigo") String code,
             Model model, HttpSession session) {
         String email = authentication.getName();
-        Integer codigoNumerico = parseCodigo(codigo);
+        Integer numericCode = parseCode(code);
 
-        if (codigoNumerico == null || !userService.confirmarConfiguracaoDoisFatores(email, codigoNumerico)) {
-            adicionarQrCodeAoModelo(email, model);
+        if (numericCode == null || !userService.confirmTwoFactorSetup(email, numericCode)) {
+            addQrCodeToModel(email, model);
             model.addAttribute("erro", "Código inválido. Tente novamente.");
             return "totp/configurar";
         }
 
-        session.setAttribute(SecuritySessionAttributes.TOTP_VERIFICADO, Boolean.TRUE);
+        session.setAttribute(SecuritySessionAttributes.TOTP_VERIFIED, Boolean.TRUE);
         return "redirect:/";
     }
 
     @GetMapping("/verificar")
-    public String exibirVerificacao(Authentication authentication) {
+    public String showVerificationForm(Authentication authentication) {
         String email = authentication.getName();
 
         if (!userService.hasAcceptedLgpdTerm(email)) {
@@ -72,29 +72,29 @@ public class TotpController {
     }
 
     @PostMapping("/verificar")
-    public String confirmarVerificacao(Authentication authentication, @RequestParam String codigo,
+    public String confirmVerification(Authentication authentication, @RequestParam("codigo") String code,
             Model model, HttpSession session) {
         String email = authentication.getName();
-        Integer codigoNumerico = parseCodigo(codigo);
+        Integer numericCode = parseCode(code);
 
-        if (codigoNumerico == null || !userService.verificarCodigoDoisFatores(email, codigoNumerico)) {
+        if (numericCode == null || !userService.verifyTwoFactorCode(email, numericCode)) {
             model.addAttribute("erro", "Código inválido. Tente novamente.");
             return "totp/verificar";
         }
 
-        session.setAttribute(SecuritySessionAttributes.TOTP_VERIFICADO, Boolean.TRUE);
+        session.setAttribute(SecuritySessionAttributes.TOTP_VERIFIED, Boolean.TRUE);
         return "redirect:/";
     }
 
-    private void adicionarQrCodeAoModelo(String email, Model model) {
-        String segredo = userService.getOrCreateTwoFactorSecret(email);
-        model.addAttribute("qrCodeBase64", totpService.gerarQrCodeBase64(email, segredo));
-        model.addAttribute("segredo", segredo);
+    private void addQrCodeToModel(String email, Model model) {
+        String secret = userService.getOrCreateTwoFactorSecret(email);
+        model.addAttribute("qrCodeBase64", totpService.generateQrCodeBase64(email, secret));
+        model.addAttribute("segredo", secret);
     }
 
-    private Integer parseCodigo(String codigo) {
+    private Integer parseCode(String code) {
         try {
-            return Integer.valueOf(codigo.trim());
+            return Integer.valueOf(code.trim());
         } catch (NumberFormatException e) {
             return null;
         }
