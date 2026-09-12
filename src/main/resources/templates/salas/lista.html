@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Salas - Class Holder</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 2rem 2.5rem;
+        }
+        .topo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        a.voltar {
+            color: #1d6f42;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        a.botao {
+            background-color: #1d6f42;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.95rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid #e4e7eb;
+            font-size: 0.9rem;
+        }
+        .tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            margin-right: 0.25rem;
+        }
+        .tag.especial { background: #fdeaea; color: #b71c1c; }
+        .tag.aluno { background: #e3f2ec; color: #1d6f42; }
+        .tag.inativa { background: #eceff1; color: #52606d; }
+        .vazio { color: #52606d; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p><a class="voltar" th:href="@{/}">&larr; Voltar</a></p>
+        <div class="topo">
+            <h1>Salas cadastradas</h1>
+            <div>
+                <a class="voltar" th:href="@{/equipamentos}" style="margin-right: 1rem;">Gerenciar equipamentos</a>
+                <a class="botao" th:href="@{/salas/nova}">Nova sala</a>
+            </div>
+        </div>
+
+        <p class="vazio" th:if="${#lists.isEmpty(salas)}">Nenhuma sala cadastrada ainda.</p>
+
+        <table th:unless="${#lists.isEmpty(salas)}">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Tipo</th>
+                    <th>Localização</th>
+                    <th>Capacidade</th>
+                    <th>Situação</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="sala : ${salas}">
+                    <td th:text="${sala.roomName()}">Nome</td>
+                    <td th:text="${sala.roomType()}">Tipo</td>
+                    <td th:text="${sala.localization()}">Localização</td>
+                    <td th:text="${sala.roomCapacity()}">0</td>
+                    <td>
+                        <span class="tag especial" th:if="${sala.salaEspecial()}">Especial</span>
+                        <span class="tag aluno" th:if="${sala.permiteSolicitacaoAluno()}">Aluno pode solicitar</span>
+                        <span class="tag inativa" th:unless="${sala.active()}">Inativa</span>
+                    </td>
+                    <td><a th:href="@{/salas/{id}/editar(id=${sala.id()})}">Editar</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

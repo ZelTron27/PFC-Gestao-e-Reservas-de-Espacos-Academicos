@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Termo de Consentimento - LGPD | Class Holder</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 2rem 2.5rem;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .subtitulo {
+            color: #52606d;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+        }
+        h2 {
+            font-size: 1.05rem;
+            margin-top: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+        p, li {
+            line-height: 1.6;
+        }
+        .termo-scroll {
+            max-height: 420px;
+            overflow-y: auto;
+            border: 1px solid #e4e7eb;
+            border-radius: 6px;
+            padding: 0 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        form {
+            border-top: 1px solid #e4e7eb;
+            padding-top: 1.25rem;
+        }
+        .aceite {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            margin-bottom: 1.25rem;
+        }
+        .aceite input {
+            margin-top: 0.2rem;
+        }
+        button {
+            background-color: #1d6f42;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.7rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #9aa5b1;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Termo de Consentimento para Tratamento de Dados Pessoais</h1>
+        <p class="subtitulo">Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018)</p>
+
+        <div class="termo-scroll">
+            <h2>1. Identificação do controlador</h2>
+            <p>
+                O Class Holder é operado por <strong>[NOME DA INSTITUIÇÃO]</strong>,
+                responsável pelo tratamento dos dados pessoais utilizados no sistema.
+                Dúvidas sobre a utilização dos dados podem ser encaminhadas ao encarregado
+                pelo tratamento de dados pelo e-mail <strong>[E-MAIL DO ENCARREGADO]</strong>.
+            </p>
+
+            <h2>2. Dados coletados</h2>
+            <p>Para o funcionamento do sistema de reservas de salas e espaços acadêmicos, coletamos:</p>
+            <ul>
+                <li>Nome completo;</li>
+                <li>E-mail institucional;</li>
+                <li>Senha de acesso (armazenada de forma criptografada, nunca em texto puro);</li>
+                <li>Perfil de acesso (aluno, professor, coordenação ou administrador);</li>
+                <li>Chave de autenticação em dois fatores (TOTP), usada exclusivamente para validar os
+                    códigos gerados pelo seu aplicativo autenticador;</li>
+                <li>Registros de reservas realizadas (sala, data, horário e status da solicitação).</li>
+            </ul>
+
+            <h2>3. Finalidade do tratamento</h2>
+            <ul>
+                <li>Autenticar o usuário e proteger a conta por meio de autenticação em dois fatores;</li>
+                <li>Viabilizar a solicitação, aprovação e gestão de reservas de salas e espaços;</li>
+                <li>Prevenir conflitos de horário e manter rastreabilidade das solicitações;</li>
+                <li>Cumprir obrigações legais e de auditoria da instituição.</li>
+            </ul>
+
+            <h2>4. Base legal</h2>
+            <p>
+                O tratamento se fundamenta na execução de contrato/procedimento preliminar
+                (art. 7º, V, da LGPD) e no cumprimento de obrigação legal ou regulatória
+                (art. 7º, II, da LGPD), quando aplicável.
+            </p>
+
+            <h2>5. Compartilhamento</h2>
+            <p>
+                Seus dados não são compartilhados com terceiros para fins comerciais. O acesso
+                interno é restrito aos responsáveis da instituição.
+            </p>
+
+            <h2>6. Retenção e exclusão</h2>
+            <p>
+                Os dados são mantidos enquanto durar seu vínculo com a instituição e pelo prazo
+                adicional exigido por obrigações legais, após isso poderão ser eliminados ou
+                anonimizados.
+            </p>
+
+            <h2>7. Seus direitos</h2>
+            <p>Nos termos da LGPD, você pode, a qualquer momento, solicitar:</p>
+            <ul>
+                <li>Confirmação da existência de tratamento e acesso aos seus dados;</li>
+                <li>Correção de dados incompletos, inexatos ou desatualizados;</li>
+                <li>Anonimização, bloqueio ou eliminação de dados desnecessários ou excessivos;</li>
+                <li>Revogação do consentimento e informações sobre as consequências dessa revogação;</li>
+                <li>Apresentação de reclamação à Autoridade Nacional de Proteção de Dados (ANPD).</li>
+            </ul>
+        </div>
+
+        <form th:action="@{/lgpd/aceitar}" method="post">
+            <div class="aceite">
+                <input type="checkbox" id="aceite" required onchange="document.getElementById('btnAceitar').disabled = !this.checked">
+                <label for="aceite">
+                    Li e estou de acordo com o Termo de Consentimento para Tratamento de Dados Pessoais.
+                </label>
+            </div>
+            <button type="submit" id="btnAceitar" disabled>Aceitar e continuar</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Novo usuário - Class Holder</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 560px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 2rem 2.5rem;
+        }
+        a.voltar {
+            color: #1d6f42;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.3rem;
+        }
+        input[type="text"], input[type="email"], input[type="password"], select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.55rem;
+            border: 1px solid #cbd2d9;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: #fff;
+        }
+        .erro-campo {
+            color: #b71c1c;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+        .alerta-erro {
+            background: #fde8e8;
+            color: #b91c1c;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+        button {
+            margin-top: 1.75rem;
+            background-color: #1d6f42;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.7rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p><a class="voltar" th:href="@{/usuarios}">&larr; Voltar para usuários</a></p>
+        <h1>Novo usuário</h1>
+
+        <form th:action="@{/usuarios}" th:object="${usuario}" method="post">
+
+            <label for="name">Nome</label>
+            <input type="text" id="name" th:field="*{name}">
+            <p class="erro-campo" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+
+            <label for="email">E-mail</label>
+            <input type="email" id="email" th:field="*{email}">
+            <p class="erro-campo" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></p>
+
+            <label for="password">Senha</label>
+            <input type="password" id="password" th:field="*{password}">
+            <p class="erro-campo" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></p>
+
+            <label for="role">Perfil</label>
+            <select id="role" th:field="*{role}">
+                <option value="">Selecione...</option>
+                <option th:each="perfil : ${perfisDisponiveis}" th:value="${perfil}" th:text="${perfil}"></option>
+            </select>
+            <p class="erro-campo" th:if="${#fields.hasErrors('role')}" th:errors="*{role}"></p>
+
+            <p class="alerta-erro" th:if="${erro}" th:text="${erro}"></p>
+
+            <button type="submit">Cadastrar</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Início Class Holder</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            margin: 0;
+        }
+        header {
+            background: #1d6f42;
+            color: #fff;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 {
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        header form {
+            margin: 0;
+        }
+        header button {
+            background: transparent;
+            border: 1px solid #fff;
+            color: #fff;
+            border-radius: 6px;
+            padding: 0.4rem 0.9rem;
+            cursor: pointer;
+        }
+        .container {
+            max-width: 720px;
+            margin: 2.5rem auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 2rem 2.5rem;
+        }
+        .badge {
+            display: inline-block;
+            background: #e3f2ec;
+            color: #1d6f42;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            margin-top: 0.5rem;
+        }
+        .atalhos {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .atalhos a {
+            background-color: #1d6f42;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Class Holder</h1>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit">Sair</button>
+        </form>
+    </header>
+
+    <div class="container">
+        <h2>Bem-vindo(a), <span th:text="${usuario.name()}">Usuário</span>!</h2>
+        <p th:text="${usuario.email()}">email@exemplo.com</p>
+        <span class="badge" th:text="${usuario.role()}">PERFIL</span>
+
+        <div class="atalhos">
+            <a th:href="@{/salas}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">Gerenciar salas</a>
+            <a th:href="@{/equipamentos}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">Gerenciar equipamentos</a>
+            <a th:href="@{/usuarios}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">Gerenciar usuários</a>
+            <a th:href="@{/reservas}" sec:authorize="hasAnyRole('ADMIN','PROFESSOR')">Minhas reservas</a>
+            <a th:href="@{/reservas/todas}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">Gerenciar reservas</a>
+        </div>
+    </div>
+</body>
+</html>

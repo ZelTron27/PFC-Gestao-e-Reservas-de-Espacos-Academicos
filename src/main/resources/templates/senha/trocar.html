@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Trocar senha | Class Holder</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 420px;
+            margin: 4rem auto 0;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 2rem 2.5rem;
+        }
+        h1 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+        p {
+            color: #52606d;
+            line-height: 1.5;
+        }
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.3rem;
+        }
+        input[type="password"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.6rem;
+            border: 1px solid #cbd2d9;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        .erro {
+            color: #b71c1c;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        button {
+            width: 100%;
+            margin-top: 1.75rem;
+            background-color: #1d6f42;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.7rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Troque sua senha</h1>
+        <p>Sua conta foi criada com uma senha provisória. Escolha uma nova senha para continuar.</p>
+
+        <form th:action="@{/senha/trocar}" method="post">
+            <label for="senhaAtual">Senha provisória</label>
+            <input type="password" id="senhaAtual" name="senhaAtual" required>
+
+            <label for="novaSenha">Nova senha</label>
+            <input type="password" id="novaSenha" name="novaSenha" required>
+
+            <label for="confirmarSenha">Confirmar nova senha</label>
+            <input type="password" id="confirmarSenha" name="confirmarSenha" required>
+
+            <p class="erro" th:if="${erro}" th:text="${erro}"></p>
+
+            <button type="submit">Salvar nova senha</button>
+        </form>
+    </div>
+</body>
+</html>
