@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Usuários - Class Holder</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 2rem 2.5rem;
+        }
+        .topo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        a.voltar {
+            color: #1d6f42;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        a.botao {
+            background-color: #1d6f42;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.95rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid #e4e7eb;
+            font-size: 0.9rem;
+        }
+        .tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            background: #e3f2ec;
+            color: #1d6f42;
+        }
+        .vazio { color: #52606d; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p><a class="voltar" th:href="@{/}">&larr; Voltar</a></p>
+        <div class="topo">
+            <h1>Usuários cadastrados</h1>
+            <a class="botao" th:href="@{/usuarios/novo}">Novo usuário</a>
+        </div>
+
+        <p class="vazio" th:if="${#lists.isEmpty(usuarios)}">Nenhum usuário cadastrado ainda.</p>
+
+        <table th:unless="${#lists.isEmpty(usuarios)}">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Perfil</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="usuario : ${usuarios}">
+                    <td th:text="${usuario.name()}">Nome</td>
+                    <td th:text="${usuario.email()}">email@exemplo.com</td>
+                    <td><span class="tag" th:text="${usuario.role()}">PERFIL</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

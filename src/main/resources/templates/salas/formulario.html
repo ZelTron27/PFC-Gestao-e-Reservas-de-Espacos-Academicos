@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${modoEdicao} ? 'Editar sala - Class Holder' : 'Nova sala - Class Holder'">Sala - Class Holder</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 2rem 2.5rem;
+        }
+        a.voltar {
+            color: #1d6f42;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.3rem;
+        }
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.55rem;
+            border: 1px solid #cbd2d9;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 4rem;
+        }
+        .checkbox-linha {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .checkbox-linha label {
+            margin: 0;
+            font-weight: 500;
+        }
+        select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.55rem;
+            border: 1px solid #cbd2d9;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: #fff;
+        }
+        .equipamentos-escolhidos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.6rem;
+        }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: #e3f2ec;
+            color: #1d6f42;
+            padding: 0.3rem 0.5rem 0.3rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+        }
+        .chip button {
+            all: unset;
+            cursor: pointer;
+            line-height: 1;
+            font-size: 1rem;
+            padding: 0 0.15rem;
+        }
+        .label-linha {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-top: 1rem;
+        }
+        .label-linha label {
+            margin: 0;
+        }
+        .label-linha a {
+            font-size: 0.8rem;
+            color: #1d6f42;
+            text-decoration: none;
+        }
+        .checkbox-linha.desabilitada label {
+            color: #9aa5b1;
+        }
+        .erro-campo {
+            color: #b71c1c;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+        .erro-geral {
+            background: #fdeaea;
+            border: 1px solid #f5c6cb;
+            color: #b71c1c;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .horario-linha {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.6rem;
+        }
+        .horario-linha input[type="time"] {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #cbd2d9;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        .horario-linha button {
+            all: unset;
+            cursor: pointer;
+            color: #b71c1c;
+            font-size: 1.1rem;
+            padding: 0 0.4rem;
+        }
+        button {
+            margin-top: 1.75rem;
+            background-color: #1d6f42;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.7rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p><a class="voltar" th:href="@{/salas}">&larr; Voltar para salas</a></p>
+        <h1 th:text="${modoEdicao} ? 'Editar sala' : 'Nova sala'">Sala</h1>
+
+        <p class="erro-geral" th:if="${erro}" th:text="${erro}">Erro</p>
+
+        <form th:action="${modoEdicao} ? @{/salas/{id}(id=${salaId})} : @{/salas}" th:object="${sala}" method="post">
+
+            <label for="roomName">Nome / identificação</label>
+            <input type="text" id="roomName" th:field="*{roomName}">
+            <p class="erro-campo" th:if="${#fields.hasErrors('roomName')}" th:errors="*{roomName}"></p>
+
+            <label for="roomType">Tipo</label>
+            <input type="text" id="roomType" th:field="*{roomType}" placeholder="Ex: Laboratório de química, Sala comum">
+            <p class="erro-campo" th:if="${#fields.hasErrors('roomType')}" th:errors="*{roomType}"></p>
+
+            <label for="localization">Localização</label>
+            <input type="text" id="localization" th:field="*{localization}" placeholder="Ex: Prédio 1, 2º andar">
+            <p class="erro-campo" th:if="${#fields.hasErrors('localization')}" th:errors="*{localization}"></p>
+
+            <label for="roomCapacity">Capacidade máxima</label>
+            <input type="number" id="roomCapacity" min="1" th:field="*{roomCapacity}">
+            <p class="erro-campo" th:if="${#fields.hasErrors('roomCapacity')}" th:errors="*{roomCapacity}"></p>
+
+            <label for="description">Descrição</label>
+            <textarea id="description" th:field="*{description}"></textarea>
+            <p class="erro-campo" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+
+            <div class="label-linha">
+                <label for="equipamentoAdicionar">Equipamentos disponíveis</label>
+                <a th:href="@{/equipamentos/novo}">+ cadastrar novo equipamento</a>
+            </div>
+
+            <!-- Select real que vai no submit (Set<Long> equipmentIds). Fica escondido:
+                 quem a pessoa usa é o combo "equipamentoAdicionar" logo abaixo, que só
+                 marca/desmarca as opções daqui via JS. Um <select multiple> comum exige
+                 Ctrl+clique pra escolher mais de um item, o que não é nada óbvio. -->
+            <select id="equipmentIds" th:field="*{equipmentIds}" multiple style="display: none;">
+                <option th:each="equipamento : ${equipamentos}" th:value="${equipamento.id()}"
+                        th:text="${equipamento.name()}">
+                    Equipamento
+                </option>
+            </select>
+
+            <select id="equipamentoAdicionar">
+                <option value="">+ adicionar equipamento</option>
+            </select>
+            <div class="equipamentos-escolhidos" id="equipamentosEscolhidos"></div>
+
+            <div class="label-linha">
+                <label>Horários de funcionamento</label>
+                <a href="javascript:void(0)" id="adicionarHorario">+ adicionar intervalo</a>
+            </div>
+            <div id="horariosContainer"></div>
+            <input type="hidden" id="operatingHoursJson" th:field="*{operatingHoursJson}">
+
+            <div class="checkbox-linha">
+                <input type="checkbox" id="salaEspecial" th:field="*{salaEspecial}">
+                <label for="salaEspecial">Sala especial (exige aprovação da coordenação para reservar)</label>
+            </div>
+
+            <div class="checkbox-linha" id="linhaPermiteAluno">
+                <input type="checkbox" id="permiteSolicitacaoAluno" th:field="*{permiteSolicitacaoAluno}">
+                <label for="permiteSolicitacaoAluno">Permite solicitação por aluno</label>
+            </div>
+            <p class="erro-campo" th:if="${#fields.hasErrors('permiteSolicitacaoAluno')}" th:errors="*{permiteSolicitacaoAluno}"></p>
+
+            <div class="checkbox-linha" th:if="${modoEdicao}">
+                <input type="checkbox" id="active" th:field="*{active}">
+                <label for="active">Sala ativa</label>
+            </div>
+
+            <button type="submit">Salvar</button>
+        </form>
+    </div>
+
+    <script th:inline="javascript">
+        // Combo box de equipamentos: o <select multiple> real fica escondido e é ele que
+        // vai no submit; a pessoa interage com o combo "adicionar", que só marca a opção
+        // correspondente no select escondido e mostra um "chip" removível pra cada item
+        // já escolhido. Assim dá pra escolher vários com clique simples, sem precisar
+        // saber que <select multiple> exige Ctrl+clique.
+        const selectEquipamentos = document.getElementById('equipmentIds');
+        const comboAdicionar = document.getElementById('equipamentoAdicionar');
+        const chipsContainer = document.getElementById('equipamentosEscolhidos');
+
+        function renderizarEquipamentos() {
+            comboAdicionar.innerHTML = '<option value="">+ adicionar equipamento</option>';
+            chipsContainer.innerHTML = '';
+
+            Array.from(selectEquipamentos.options).forEach(function (opcao) {
+                if (opcao.selected) {
+                    const chip = document.createElement('span');
+                    chip.className = 'chip';
+                    chip.append(document.createTextNode(opcao.text));
+
+                    const remover = document.createElement('button');
+                    remover.type = 'button';
+                    remover.textContent = '×';
+                    remover.setAttribute('aria-label', 'Remover ' + opcao.text);
+                    remover.addEventListener('click', function () {
+                        opcao.selected = false;
+                        renderizarEquipamentos();
+                    });
+
+                    chip.appendChild(remover);
+                    chipsContainer.appendChild(chip);
+                } else {
+                    const opcaoCombo = document.createElement('option');
+                    opcaoCombo.value = opcao.value;
+                    opcaoCombo.text = opcao.text;
+                    comboAdicionar.appendChild(opcaoCombo);
+                }
+            });
+        }
+
+        comboAdicionar.addEventListener('change', function () {
+            if (!comboAdicionar.value) {
+                return;
+            }
+            const opcao = Array.from(selectEquipamentos.options)
+                .find(function (o) { return o.value === comboAdicionar.value; });
+            if (opcao) {
+                opcao.selected = true;
+            }
+            renderizarEquipamentos();
+        });
+
+        renderizarEquipamentos();
+
+        // Sala especial e "permite solicitação por aluno" são mutuamente exclusivas
+        // (regra de negócio validada de novo no back-end, isso aqui é só pra já deixar
+        // claro na tela e evitar o usuário marcar as duas e levar erro ao salvar).
+        const salaEspecial = document.getElementById('salaEspecial');
+        const permiteAluno = document.getElementById('permiteSolicitacaoAluno');
+
+        function sincronizarPermiteAluno() {
+            if (salaEspecial.checked) {
+                permiteAluno.checked = false;
+                permiteAluno.disabled = true;
+            } else {
+                permiteAluno.disabled = false;
+            }
+        }
+
+        salaEspecial.addEventListener('change', sincronizarPermiteAluno);
+        sincronizarPermiteAluno();
+
+        const horariosContainer = document.getElementById('horariosContainer');
+        const operatingHoursInput = document.getElementById('operatingHoursJson');
+
+        function adicionarLinhaHorario(intervalo) {
+            const linha = document.createElement('div');
+            linha.className = 'horario-linha';
+
+            const inicio = document.createElement('input');
+            inicio.type = 'time';
+            inicio.className = 'horario-inicio';
+            inicio.value = intervalo.start || '';
+            inicio.addEventListener('input', sincronizarHorarios);
+
+            const ate = document.createElement('span');
+            ate.textContent = 'até';
+
+            const fim = document.createElement('input');
+            fim.type = 'time';
+            fim.className = 'horario-fim';
+            fim.value = intervalo.end || '';
+            fim.addEventListener('input', sincronizarHorarios);
+
+            const remover = document.createElement('button');
+            remover.type = 'button';
+            remover.textContent = '×';
+            remover.setAttribute('aria-label', 'Remover intervalo');
+            remover.addEventListener('click', function () {
+                linha.remove();
+                sincronizarHorarios();
+            });
+
+            linha.appendChild(inicio);
+            linha.appendChild(ate);
+            linha.appendChild(fim);
+            linha.appendChild(remover);
+            horariosContainer.appendChild(linha);
+        }
+
+        function sincronizarHorarios() {
+            const intervalos = Array.from(horariosContainer.querySelectorAll('.horario-linha')).map(function (linha) {
+                return {
+                    start: linha.querySelector('.horario-inicio').value,
+                    end: linha.querySelector('.horario-fim').value
+                };
+            });
+            operatingHoursInput.value = JSON.stringify(intervalos);
+        }
+
+        document.getElementById('adicionarHorario').addEventListener('click', function () {
+            adicionarLinhaHorario({ start: '', end: '' });
+            sincronizarHorarios();
+        });
+
+        try {
+            JSON.parse(operatingHoursInput.value || '[]').forEach(adicionarLinhaHorario);
+        } catch (e) {
+            // valor inválido, começa vazio
+        }
+    </script>
+</body>
+</html>

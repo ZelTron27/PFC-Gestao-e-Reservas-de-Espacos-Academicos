@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nova reserva - Class Holder</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 520px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 2rem 2.5rem;
+        }
+        a.voltar {
+            color: #1d6f42;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.3rem;
+        }
+        select, input[type="date"], input[type="time"], textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.55rem;
+            border: 1px solid #cbd2d9;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 4rem;
+        }
+        .etapa2 {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e4e7eb;
+        }
+        .sala-escolhida {
+            font-size: 0.9rem;
+            color: #52606d;
+        }
+        .sala-escolhida a {
+            color: #1d6f42;
+            text-decoration: none;
+        }
+        .vazio {
+            color: #52606d;
+            font-size: 0.9rem;
+        }
+        .erro-campo {
+            color: #b71c1c;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+        .erro-geral {
+            background: #fdeaea;
+            border: 1px solid #f5c6cb;
+            color: #b71c1c;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        button {
+            margin-top: 1.75rem;
+            background-color: #1d6f42;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.7rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p><a class="voltar" th:href="@{/reservas}">&larr; Voltar para minhas reservas</a></p>
+        <h1>Reservar sala comum</h1>
+
+        <p class="erro-geral" th:if="${erro}" th:text="${erro}">Erro</p>
+
+        <form th:action="@{/reservas/nova}" method="get">
+            <label for="roomId">Sala</label>
+            <select id="roomId" name="roomId">
+                <option value="">Selecione uma sala</option>
+                <option th:each="sala : ${salas}" th:value="${sala.id()}"
+                        th:selected="${form.roomId} != null and ${sala.id()} == ${form.roomId}"
+                        th:text="${sala.roomName()} + ' — ' + ${sala.localization()} + ' (cap. ' + ${sala.roomCapacity()} + ')'">
+                    Sala
+                </option>
+            </select>
+
+            <label for="date">Data</label>
+            <input type="date" id="date" name="date" th:value="${form.date}">
+
+            <button type="submit">Ver horários disponíveis</button>
+        </form>
+
+        <div class="etapa2" th:if="${horarios != null}">
+            <p class="sala-escolhida">
+                Sala: <strong th:text="${salaEscolhida.roomName()}">Sala</strong> —
+                Data: <strong th:text="${#temporals.format(form.date, 'dd/MM/yyyy')}">Data</strong>
+            </p>
+
+            <p class="vazio" th:if="${#lists.isEmpty(horarios)}">
+                Nenhum horário disponível para essa sala nessa data.
+            </p>
+
+            <form th:unless="${#lists.isEmpty(horarios)}" th:action="@{/reservas}" th:object="${form}" method="post">
+                <input type="hidden" th:field="*{roomId}">
+                <input type="hidden" th:field="*{date}">
+
+                <label for="startTime">Horário de início</label>
+                <select id="startTime" th:field="*{startTime}">
+                    <option value="">Selecione...</option>
+                    <option th:each="horario : ${horarios}" th:value="${horario}"
+                            th:text="${#temporals.format(horario, 'HH:mm')}">
+                        00:00
+                    </option>
+                </select>
+                <p class="erro-campo" th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}"></p>
+
+                <label for="durationBlocks">Duração</label>
+                <select id="durationBlocks" th:field="*{durationBlocks}">
+                    <option value="1">30 min</option>
+                    <option value="2">1h</option>
+                    <option value="3">1h30</option>
+                    <option value="4">2h</option>
+                    <option value="5">2h30</option>
+                    <option value="6">3h</option>
+                </select>
+                <p class="erro-campo" th:if="${#fields.hasErrors('durationBlocks')}" th:errors="*{durationBlocks}"></p>
+
+                <label for="purpose">Finalidade</label>
+                <textarea id="purpose" th:field="*{purpose}" placeholder="Ex: Aula de reposição, reunião de departamento"></textarea>
+                <p class="erro-campo" th:if="${#fields.hasErrors('purpose')}" th:errors="*{purpose}"></p>
+
+                <button type="submit">Reservar</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
