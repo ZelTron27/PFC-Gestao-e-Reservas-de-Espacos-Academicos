@@ -31,9 +31,4 @@ public class Equipment {
     @NotBlank(message = "Nome do equipamento é obrigatório")
     @Column(nullable = false, unique = true, length = 150)
     private String name;
-
-    // Modelo ou especificação do equipamento (Ex: Epson PowerLite X, Dell OptiPlex) em casos de equipamentos genéricos, apenas específicar genérico basta.
-    @NotBlank(message = "O modelo do equipamento é obrigatório")
-    @Column(length = 150)
-    private String model;
 }
