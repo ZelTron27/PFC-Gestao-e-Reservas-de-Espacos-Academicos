@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import br.com.classholder.classholder.audit.aop.AuditContext;
+import br.com.classholder.classholder.audit.aop.Auditable;
 import br.com.classholder.classholder.room.domain.Room;
 import br.com.classholder.classholder.room.dto.RoomRequest;
 import br.com.classholder.classholder.room.dto.RoomResponse;
@@ -18,6 +20,7 @@ public class RoomService {
         this.roomRepository = roomRepository;
     }
 
+    @Auditable(acao = "SALA_CRIADA", entidadeTipo = "SALA")
     public RoomResponse createRoom(RoomRequest request) {
         Room room = Room.builder()
                 .roomName(request.roomName())
@@ -32,9 +35,13 @@ public class RoomService {
                 .operatingHours(request.operatingHours())
                 .build();
 
-        return toResponse(roomRepository.save(room));
+        Room saved = roomRepository.save(room);
+        AuditContext.setEntidadeId(saved.getId());
+        AuditContext.setNome(saved.getRoomName());
+        return toResponse(saved);
     }
 
+    @Auditable(acao = "SALA_ATUALIZADA", entidadeTipo = "SALA")
     public RoomResponse updateRoom(Long id, RoomRequest request) {
         Room room = findRoomEntity(id);
 
@@ -49,7 +56,10 @@ public class RoomService {
         room.setEquipmentIds(request.equipmentIds());
         room.setOperatingHours(request.operatingHours());
 
-        return toResponse(roomRepository.save(room));
+        Room saved = roomRepository.save(room);
+        AuditContext.setEntidadeId(saved.getId());
+        AuditContext.setNome(saved.getRoomName());
+        return toResponse(saved);
     }
 
     public List<RoomResponse> listRooms() {
