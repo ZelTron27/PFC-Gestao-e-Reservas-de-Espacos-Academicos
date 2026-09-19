@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import br.com.classholder.classholder.audit.aop.AuditContext;
+import br.com.classholder.classholder.audit.aop.Auditable;
 import br.com.classholder.classholder.equipment.domain.Equipment;
 import br.com.classholder.classholder.equipment.dto.EquipmentRequest;
 import br.com.classholder.classholder.equipment.dto.EquipmentResponse;
@@ -18,6 +20,7 @@ public class EquipmentService {
         this.equipmentRepository = equipmentRepository;
     }
 
+    @Auditable(acao = "EQUIPAMENTO_CRIADO", entidadeTipo = "EQUIPAMENTO")
     public EquipmentResponse createEquipment(EquipmentRequest request) {
         if (equipmentRepository.existsByName(request.name())) {
             throw new IllegalArgumentException("Já existe um equipamento com esse nome");
@@ -28,6 +31,8 @@ public class EquipmentService {
                 .build();
 
         Equipment saved = equipmentRepository.save(equipment);
+        AuditContext.setEntidadeId(saved.getId());
+        AuditContext.setNome(saved.getName());
         return new EquipmentResponse(saved.getId(), saved.getName());
     }
 
