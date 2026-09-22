@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import br.com.classholder.classholder.audit.aop.AuditContext;
+import br.com.classholder.classholder.audit.aop.Auditable;
 import br.com.classholder.classholder.user.UserRole;
 import br.com.classholder.classholder.user.domain.User;
 import br.com.classholder.classholder.user.dto.UserRequest;
@@ -25,6 +27,7 @@ public class UserService {
         this.totpService = totpService;
     }
 
+    @Auditable(acao = "USUARIO_CRIADO", entidadeTipo = "USUARIO")
     public UserResponse createUser(UserRole creatorRole, UserRequest request) {
         if (creatorRole != UserRole.ADMIN && request.role() == UserRole.ADMIN) {
             throw new IllegalArgumentException("Coordenação não pode criar usuários administradores");
@@ -42,6 +45,8 @@ public class UserService {
                 .build();
 
         User saved = userRepository.save(user);
+        AuditContext.setEntidadeId(saved.getId());
+        AuditContext.setNome(saved.getName() + " (" + saved.getEmail() + ")");
         return new UserResponse(saved.getId(), saved.getName(), saved.getEmail(), saved.getRole());
     }
 
