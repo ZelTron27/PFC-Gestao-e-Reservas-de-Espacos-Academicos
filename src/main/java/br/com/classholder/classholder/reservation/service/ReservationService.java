@@ -8,6 +8,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import br.com.classholder.classholder.audit.aop.AuditContext;
+import br.com.classholder.classholder.audit.aop.Auditable;
 import br.com.classholder.classholder.reservation.ReservationStatus;
 import br.com.classholder.classholder.reservation.domain.Reservation;
 import br.com.classholder.classholder.reservation.dto.ReservationRequest;
@@ -34,6 +36,7 @@ public class ReservationService {
         this.userService = userService;
     }
 
+    @Auditable(acao = "RESERVA_CRIADA", entidadeTipo = "RESERVA")
     public ReservationResponse reserveCommonRoom(Long professorId, ReservationRequest request) {
         if (!request.startTime().isBefore(request.endTime())) {
             throw new IllegalArgumentException("O horário de início deve ser anterior ao horário de término");
@@ -73,7 +76,10 @@ public class ReservationService {
                 .build();
 
         String professorName = userService.getUserById(professorId).name();
-        return toResponse(reservationRepository.save(reservation), room.roomName(), professorName);
+        Reservation saved = reservationRepository.save(reservation);
+        AuditContext.setEntidadeId(saved.getId());
+        AuditContext.setNome(room.roomName() + " - " + request.date() + " " + request.startTime());
+        return toResponse(saved, room.roomName(), professorName);
     }
 
     public List<LocalTime> listAvailableStartTimes(Long roomId, LocalDate date) {
@@ -137,6 +143,7 @@ public class ReservationService {
                 .toList();
     }
 
+    @Auditable(acao = "RESERVA_CANCELADA", entidadeTipo = "RESERVA")
     public void cancelReservation(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new IllegalArgumentException("Reserva não encontrada"));
@@ -144,6 +151,10 @@ public class ReservationService {
         if (reservation.getStatus() == ReservationStatus.CANCELADA) {
             throw new IllegalStateException("Essa reserva já está cancelada");
         }
+
+        String roomName = roomService.findRoomById(reservation.getRoomId()).roomName();
+        AuditContext.setEntidadeId(reservation.getId());
+        AuditContext.setNome(roomName + " - " + reservation.getDate() + " " + reservation.getStartTime());
 
         reservation.setStatus(ReservationStatus.CANCELADA);
         reservationRepository.save(reservation);
