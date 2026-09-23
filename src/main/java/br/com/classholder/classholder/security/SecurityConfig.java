@@ -7,12 +7,15 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
+import br.com.classholder.classholder.audit.listener.AuditLogoutHandler;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuditLogoutHandler auditLogoutHandler)
+            throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/salas", "/salas/**").hasAnyRole("ADMIN", "COORDENACAO")
@@ -22,7 +25,7 @@ public class SecurityConfig {
                         .requestMatchers("/reservas", "/reservas/**").hasAnyRole("ADMIN", "PROFESSOR")
                         .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults())
-                .logout(Customizer.withDefaults());
+                .logout(logout -> logout.addLogoutHandler(auditLogoutHandler));
 
         return http.build();
     }
