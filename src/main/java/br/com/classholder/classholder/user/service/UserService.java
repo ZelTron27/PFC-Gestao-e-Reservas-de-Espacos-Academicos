@@ -1,13 +1,18 @@
 package br.com.classholder.classholder.user.service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import br.com.classholder.classholder.audit.aop.AuditContext;
 import br.com.classholder.classholder.audit.aop.Auditable;
+import br.com.classholder.classholder.audit.domain.AuditLog;
+import br.com.classholder.classholder.audit.repository.AuditLogRepository;
 import br.com.classholder.classholder.user.UserRole;
 import br.com.classholder.classholder.user.domain.User;
 import br.com.classholder.classholder.user.dto.UserRequest;
@@ -17,14 +22,19 @@ import br.com.classholder.classholder.user.repository.UserRepository;
 @Service
 public class UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TotpService totpService;
+    private final AuditLogRepository auditLogRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, TotpService totpService) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, TotpService totpService,
+            AuditLogRepository auditLogRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.totpService = totpService;
+        this.auditLogRepository = auditLogRepository;
     }
 
     @Auditable(acao = "USUARIO_CRIADO", entidadeTipo = "USUARIO")
@@ -76,12 +86,15 @@ public class UserService {
                 .orElse(false);
     }
 
+    @Auditable(acao = "LGPD_ACEITO", entidadeTipo = "USUARIO")
     public void acceptLgpdTerm(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         user.setLgpdAcceptedAt(LocalDateTime.now());
         userRepository.save(user);
+        AuditContext.setEntidadeId(user.getId());
+        AuditContext.setNome(user.getName() + " (" + user.getEmail() + ")");
     }
 
     public boolean isFirstLogin(String email) {
@@ -101,12 +114,15 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            saveAuditLog("SENHA_ALTERACAO_FALHA", "USUARIO", user.getId(), email,
+                    user.getName() + " (" + user.getEmail() + ")");
             return false;
         }
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setMustChangePassword(false);
         userRepository.save(user);
+        saveAuditLog("SENHA_ALTERADA", "USUARIO", user.getId(), email, user.getName() + " (" + user.getEmail() + ")");
         return true;
     }
 
@@ -130,19 +146,56 @@ public class UserService {
 
         if (user.getTwoFactorSecret() == null
                 || !totpService.verifyCode(totpService.decrypt(user.getTwoFactorSecret()), code)) {
+            saveAuditLog("2FA_CONFIGURACAO_FALHA", "USUARIO", user.getId(), email,
+                    user.getName() + " (" + user.getEmail() + ")");
             return false;
         }
 
         user.setFirstLogin(false);
         userRepository.save(user);
+        saveAuditLog("2FA_CONFIGURADO", "USUARIO", user.getId(), email, user.getName() + " (" + user.getEmail() + ")");
         return true;
     }
 
     public boolean verifyTwoFactorCode(String email, int code) {
-        return userRepository.findByEmail(email)
-                .map(user -> user.getTwoFactorSecret() != null
-                        && totpService.verifyCode(totpService.decrypt(user.getTwoFactorSecret()), code))
-                .orElse(false);
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user == null) {
+            saveAuditLog("ACESSO_2FA_FALHA", "USUARIO", null, email, null);
+            return false;
+        }
+
+        boolean valido = user.getTwoFactorSecret() != null
+                && totpService.verifyCode(totpService.decrypt(user.getTwoFactorSecret()), code);
+
+        if (!valido) {
+            saveAuditLog("ACESSO_2FA_FALHA", "USUARIO", user.getId(), email,
+                    user.getName() + " (" + user.getEmail() + ")");
+            return false;
+        }
+
+        saveAuditLog("ACESSO_2FA_SUCESSO", "USUARIO", user.getId(), email,
+                user.getName() + " (" + user.getEmail() + ")");
+        return true;
+    }
+
+    private void saveAuditLog(String acao, String entidadeTipo, Long entidadeId, String usuarioEmail,
+            String entidadeNome) {
+        AuditLog auditLog = AuditLog.builder()
+                .usuarioEmail(usuarioEmail)
+                .acao(acao)
+                .entidadeTipo(entidadeTipo)
+                .entidadeId(entidadeId)
+                .entidadeNome(entidadeNome)
+                .timestamp(Instant.now())
+                .build();
+
+        try {
+            auditLogRepository.save(auditLog);
+        } catch (RuntimeException e) {
+            log.error("Falha ao gravar log de auditoria: acao={}, entidadeTipo={}, entidadeId={}",
+                    acao, entidadeTipo, entidadeId, e);
+        }
     }
 
 }
