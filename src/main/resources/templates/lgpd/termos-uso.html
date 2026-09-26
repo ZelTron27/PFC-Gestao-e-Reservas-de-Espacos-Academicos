@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Termos de Uso | Class Holder</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 3rem 1rem;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+        .documento {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #e4e7eb;
+            padding: 3rem 3.5rem;
+        }
+        h1 {
+            font-size: 1.7rem;
+            font-weight: normal;
+            text-align: center;
+            margin: 0 0 0.4rem;
+        }
+        .atualizacao {
+            text-align: center;
+            color: #52606d;
+            font-style: italic;
+            margin: 0 0 2.5rem;
+        }
+        h2 {
+            font-size: 1.1rem;
+            margin: 2.4rem 0 0.9rem;
+            scroll-margin-top: 1rem;
+        }
+        p, li {
+            line-height: 1.75;
+            text-align: justify;
+        }
+        .sumario {
+            border-top: 1px solid #e4e7eb;
+            border-bottom: 1px solid #e4e7eb;
+            padding: 1rem 0 1.25rem;
+            margin: 2rem 0;
+        }
+        .sumario strong {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .sumario ol {
+            margin: 0;
+            padding-left: 1.6rem;
+        }
+        .sumario li {
+            margin-bottom: 0.15rem;
+            text-align: left;
+        }
+        .itens {
+            list-style: none;
+            padding-left: 1.5rem;
+            margin: 0.5rem 0 1rem;
+        }
+        .itens li {
+            margin-bottom: 0.35rem;
+        }
+        .definicoes {
+            list-style: none;
+            padding-left: 1.5rem;
+        }
+        .definicoes li {
+            margin-bottom: 0.5rem;
+        }
+        a {
+            color: #1d6f42;
+        }
+        @media (max-width: 640px) {
+            .documento { padding: 1.75rem 1.25rem; }
+            p, li { text-align: left; }
+        }
+    </style>
+</head>
+<body>
+<main class="documento">
+    <h1>Termos de Uso</h1>
+    <p class="atualizacao">Versão 1.0, atualizada em setembro de 2026</p>
+
+    <p>
+        Os presentes Termos de Uso (“Termos de Uso”) têm como objetivo estabelecer as regras e condições para
+        acesso e utilização do sistema de gestão e reserva de espaços acadêmicos disponibilizado pela CLASS HOLDER,
+        instituição de ensino fictícia criada para fins acadêmicos (“Class Holder”), aos seus respectivos usuários
+        (“Usuário(s)”), por meio da aplicação web Class Holder (“Sistema”).
+    </p>
+    <p>
+        O Usuário declara e compreende que o Sistema se destina à organização do uso das salas e demais espaços
+        físicos da instituição, permitindo o cadastro desses espaços e o registro de reservas.
+    </p>
+    <p>
+        O tratamento dos dados pessoais dos Usuários é regido pela
+        <a th:href="@{/lgpd/privacidade}">Política de Privacidade</a> da Class Holder, documento próprio que não é
+        substituído por estes Termos de Uso.
+    </p>
+
+    <nav class="sumario">
+        <strong>SUMÁRIO</strong>
+        <ol>
+            <li><a href="#secao-1">Aceite dos Termos de Uso</a></li>
+            <li><a href="#secao-2">Definições</a></li>
+            <li><a href="#secao-3">Escopo do Sistema</a></li>
+            <li><a href="#secao-4">Cadastro e Acesso</a></li>
+            <li><a href="#secao-5">Perfis de Acesso</a></li>
+            <li><a href="#secao-6">Regras de Reserva</a></li>
+            <li><a href="#secao-7">Responsabilidades dos Usuários e Atividades Proibidas</a></li>
+            <li><a href="#secao-8">Responsabilidades da Class Holder</a></li>
+            <li><a href="#secao-9">Suporte e Contato</a></li>
+            <li><a href="#secao-10">Encerramento da Conta</a></li>
+            <li><a href="#secao-11">Disposições Gerais</a></li>
+            <li><a href="#secao-12">Legislação Aplicável</a></li>
+        </ol>
+    </nav>
+
+    <h2 id="secao-1">1. Aceite dos Termos de Uso</h2>
+    <p>
+        1.1. No primeiro acesso ao Sistema, o Usuário deverá ler estes Termos de Uso e a Política de Privacidade
+        e realizar o aceite por meio da seleção das opções “Declaro que li a Política de Privacidade” e “Li e
+        aceito os Termos de Uso”. O uso do Sistema somente é liberado após esta etapa.
+    </p>
+    <p>
+        1.2. O aceite destes Termos de Uso se refere às regras de utilização do Sistema. O tratamento de dados
+        pessoais não depende desse aceite e segue as hipóteses legais descritas na Política de Privacidade.
+    </p>
+
+    <h2 id="secao-2">2. Definições</h2>
+    <p>
+        2.1. As palavras listadas abaixo são utilizadas em várias partes destes Termos de Uso, no singular ou no
+        plural, sempre com o significado aqui definido.
+    </p>
+    <ul class="definicoes">
+        <li>Sistema: aplicação web por meio da qual os Usuários cadastram, consultam e reservam salas e demais
+            espaços da instituição;</li>
+        <li>Usuário: pessoa física maior de 18 (dezoito) anos, com vínculo com a instituição, que possua conta de
+            acesso ao Sistema;</li>
+        <li>Perfil de Acesso: conjunto de permissões atribuído a cada Usuário, podendo ser Administração,
+            Coordenação, Professor ou Aluno;</li>
+        <li>Sala: espaço físico da instituição cadastrado no Sistema, com seus equipamentos e horários de
+            funcionamento;</li>
+        <li>Reserva: registro que vincula uma Sala a uma data, a um horário e a um professor responsável;</li>
+        <li>Autenticação em Dois Fatores: mecanismo de segurança que exige, além da senha, um código temporário
+            gerado por aplicativo autenticador instalado no dispositivo do Usuário.</li>
+    </ul>
+
+    <h2 id="secao-3">3. Escopo do Sistema</h2>
+    <p>3.1. Por meio do Sistema, a Class Holder disponibiliza aos Usuários:</p>
+    <ul class="itens">
+        <li>(i) o cadastro de Usuários pela Administração e pela Coordenação;</li>
+        <li>(ii) o cadastro e a configuração de Salas, incluindo equipamentos e horários de funcionamento;</li>
+        <li>(iii) o registro de Reservas de Salas comuns pelos professores;</li>
+        <li>(iv) a consulta e o cancelamento de Reservas, conforme o Perfil de Acesso.</li>
+    </ul>
+    <p>
+        3.2. O Sistema registra e organiza as Reservas, mas não controla o acesso físico às Salas. As regras de uso
+        de cada espaço continuam sob responsabilidade da instituição.
+    </p>
+
+    <h2 id="secao-4">4. Cadastro e Acesso</h2>
+    <p>
+        4.1. O Sistema não permite autocadastro. As contas são criadas pela Administração ou pela Coordenação, de
+        acordo com o Perfil de Acesso de cada Usuário, a partir de dados fornecidos pela instituição.
+    </p>
+    <p>
+        4.2. No momento do cadastro, são informados apenas o nome, o e-mail institucional e o Perfil de Acesso do
+        Usuário.
+    </p>
+    <p>
+        4.3. No primeiro acesso, além do aceite previsto na cláusula 1.1, o Usuário deverá:
+    </p>
+    <ul class="itens">
+        <li>(i) substituir a senha inicial por uma senha pessoal;</li>
+        <li>(ii) configurar a Autenticação em Dois Fatores em um aplicativo autenticador de sua escolha.</li>
+    </ul>
+    <p>
+        4.4. A conta é pessoal e intransferível. O Usuário se compromete a manter sua senha em sigilo e a não
+        permitir que terceiros utilizem seu aplicativo autenticador.
+    </p>
+    <p>
+        4.5. O Usuário se compromete a notificar imediatamente a Class Holder, pelo e-mail
+        <a href="mailto:ClassHolder@gmail.com">ClassHolder@gmail.com</a>, sobre qualquer uso não autorizado de
+        sua conta ou tentativa de acesso por terceiros.
+    </p>
+
+    <h2 id="secao-5">5. Perfis de Acesso</h2>
+    <p>
+        5.1. Cada Usuário tem acesso apenas às funções correspondentes ao seu Perfil de Acesso, sendo que o
+        controle dessas permissões é realizado pelo próprio Sistema.
+    </p>
+    <p>5.2. Os Perfis de Acesso possuem as seguintes responsabilidades:</p>
+    <ul class="itens">
+        <li>(i) Administração: responsável pela administração geral do Sistema, incluindo o cadastro de Usuários de todos os perfis;</li>
+        <li>(ii) Coordenação: responsável pela operação cotidiana, incluindo o cadastro de professores e alunos e a gestão das Salas e das Reservas;</li>
+        <li>(iii) Professor: responsável pelas Reservas que registra;</li>
+        <li>(iv) Aluno: Usuário com acesso restrito às funções destinadas ao seu perfil.</li>
+    </ul>
+
+    <h2 id="secao-6">6. Regras de Reserva</h2>
+    <p>
+        6.1. Salas comuns podem ser reservadas diretamente pelo professor, sem necessidade de aprovação.
+    </p>
+    <p>
+        6.2. Salas classificadas como especiais e Salas desativadas não podem ser reservadas diretamente.
+    </p>
+    <p>
+        6.3. Toda Reserva deve respeitar o horário de funcionamento da Sala e não pode ser registrada para data ou
+        horário já transcorridos.
+    </p>
+    <p>
+        6.4. O Sistema impede o registro de duas Reservas para a mesma Sala no mesmo dia e horário.
+    </p>
+    <p>
+        6.5. Reservas não podem ser editadas. Para alterar uma Reserva, é necessário cancelá-la e registrar uma
+        nova.
+    </p>
+    <p>
+        6.6. O cancelamento de Reservas é realizado pela Coordenação ou pela Administração.
+    </p>
+    <p>
+        6.7. O campo de finalidade da Reserva deve conter apenas a descrição do uso previsto para o espaço. O
+        Usuário não deve inserir nesse campo dados pessoais de terceiros, informações de saúde ou qualquer outro
+        dado que não seja necessário para a Reserva.
+    </p>
+
+    <h2 id="secao-7">7. Responsabilidades dos Usuários e Atividades Proibidas</h2>
+    <p>7.1. É de responsabilidade do Usuário:</p>
+    <ul class="itens">
+        <li>(i) manter suas credenciais de acesso em sigilo;</li>
+        <li>(ii) utilizar o Sistema exclusivamente para a gestão dos espaços da instituição;</li>
+        <li>(iii) observar estes Termos de Uso e a legislação aplicável.</li>
+    </ul>
+    <p>7.2. O Usuário não poderá:</p>
+    <ul class="itens">
+        <li>(i) utilizar a conta de outra pessoa ou permitir que terceiros utilizem a sua;</li>
+        <li>(ii) registrar Reservas com finalidade falsa ou sem intenção de utilizar o espaço;</li>
+        <li>(iii) tentar acessar dados ou funções não liberados ao seu Perfil de Acesso;</li>
+        <li>(iv) tentar contornar, desativar ou comprometer os mecanismos de segurança do Sistema;</li>
+        <li>(v) utilizar dispositivo, software ou qualquer recurso que interfira no funcionamento do Sistema;</li>
+        <li>(vi) utilizar o Sistema para finalidade alheia à gestão de espaços da instituição.</li>
+    </ul>
+
+    <h2 id="secao-8">8. Responsabilidades da Class Holder</h2>
+    <p>
+        8.1. A Class Holder se compromete a adotar as medidas de segurança descritas na Política de Privacidade e
+        a responder pelas falhas que lhe forem atribuíveis.
+    </p>
+    <p>
+        8.2. A Class Holder se empenhará em manter o Sistema disponível. Todavia, não há garantia de que o
+        acesso ocorra sem falhas ou de forma ininterrupta, podendo haver indisponibilidade temporária para
+        manutenção ou em razão de problemas técnicos.
+    </p>
+    <p>
+        8.3. Nenhuma disposição destes Termos de Uso afasta ou limita direitos assegurados ao Usuário pela
+        legislação aplicável, em especial pela Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais).
+    </p>
+
+    <h2 id="secao-9">9. Suporte e Contato</h2>
+    <p>
+        9.1. Dúvidas, problemas técnicos e comentários relacionados a estes Termos de Uso ou ao Sistema poderão ser
+        enviados pelo e-mail <a href="mailto:ClassHolder@gmail.com">ClassHolder@gmail.com</a>.
+    </p>
+
+    <h2 id="secao-10">10. Encerramento da Conta</h2>
+    <p>
+        10.1. A conta do Usuário será encerrada quando terminar seu vínculo com a instituição ou quando houver
+        violação destes Termos de Uso.
+    </p>
+    <p>
+        10.2. O destino dos dados pessoais após o encerramento da conta segue o disposto na Política de
+        Privacidade.
+    </p>
+
+    <h2 id="secao-11">11. Disposições Gerais</h2>
+    <p>
+        11.1. Estes Termos de Uso poderão ser atualizados sempre que houver alteração nas funcionalidades do
+        Sistema. Cada nova versão será publicada neste mesmo endereço, com a indicação de seu número e da data de
+        sua atualização.
+    </p>
+    <p>
+        11.2. Esta página permanece acessível a qualquer momento, inclusive sem necessidade de login.
+    </p>
+    <p>
+        11.3. Caso qualquer disposição destes Termos de Uso seja considerada inválida, as demais
+        disposições permanecerão válidas.
+    </p>
+
+    <h2 id="secao-12">12. Legislação Aplicável</h2>
+    <p>
+        12.1. Estes Termos de Uso são regidos pelas leis vigentes na República Federativa do Brasil.
+    </p>
+</main>
+</body>
+</html>

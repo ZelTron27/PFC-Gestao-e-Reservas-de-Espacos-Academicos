@@ -23,6 +23,7 @@ public class SecurityConfig {
                         .requestMatchers("/usuarios", "/usuarios/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/reservas/todas", "/reservas/*/cancelar").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/reservas", "/reservas/**").hasAnyRole("ADMIN", "PROFESSOR")
+                        .requestMatchers("/lgpd/privacidade", "/lgpd/termos").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults())
                 .logout(logout -> logout.addLogoutHandler(auditLogoutHandler));

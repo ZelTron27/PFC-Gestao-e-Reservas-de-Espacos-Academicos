@@ -32,4 +32,14 @@ public class LgpdController {
         return "redirect:/";
     }
 
+    @GetMapping("/privacidade")
+    public String showPrivacyPolicy() {
+        return "lgpd/politica-privacidade";
+    }
+
+    @GetMapping("/termos")
+    public String showTermsOfUse() {
+        return "lgpd/termos-uso";
+    }
+
 }

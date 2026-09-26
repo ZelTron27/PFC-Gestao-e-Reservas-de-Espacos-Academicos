@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Política de Privacidade | Class Holder</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 3rem 1rem;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+        .documento {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #e4e7eb;
+            padding: 3rem 3.5rem;
+        }
+        h1 {
+            font-size: 1.7rem;
+            font-weight: normal;
+            text-align: center;
+            margin: 0 0 0.4rem;
+        }
+        .atualizacao {
+            text-align: center;
+            color: #52606d;
+            font-style: italic;
+            margin: 0 0 2.5rem;
+        }
+        h2 {
+            font-size: 1.1rem;
+            margin: 2.4rem 0 0.9rem;
+            scroll-margin-top: 1rem;
+        }
+        p, li {
+            line-height: 1.75;
+            text-align: justify;
+        }
+        .sumario {
+            border-top: 1px solid #e4e7eb;
+            border-bottom: 1px solid #e4e7eb;
+            padding: 1rem 0 1.25rem;
+            margin: 2rem 0;
+        }
+        .sumario strong {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .sumario ol {
+            margin: 0;
+            padding-left: 1.6rem;
+        }
+        .sumario li {
+            margin-bottom: 0.15rem;
+            text-align: left;
+        }
+        .itens {
+            list-style: none;
+            padding-left: 1.5rem;
+            margin: 0.5rem 0 1rem;
+        }
+        .itens li {
+            margin-bottom: 0.35rem;
+        }
+        a {
+            color: #1d6f42;
+        }
+        @media (max-width: 640px) {
+            .documento { padding: 1.75rem 1.25rem; }
+            p, li { text-align: left; }
+        }
+    </style>
+</head>
+<body>
+<main class="documento">
+    <h1>Política de Privacidade</h1>
+    <p class="atualizacao">Versão 1.0, atualizada em setembro de 2026</p>
+
+    <p>
+        A presente Política de Privacidade (“Política de Privacidade”) tem como objetivo informar como a
+        CLASS HOLDER, instituição de ensino fictícia criada para fins acadêmicos (“Class Holder”), trata os dados
+        pessoais dos usuários (“Usuário(s)”) do sistema de gestão e reserva de espaços acadêmicos Class Holder
+        (“Sistema”), em conformidade com a Lei nº 13.709/2018, Lei Geral de Proteção de Dados Pessoais (“LGPD”).
+    </p>
+    <p>
+        As regras de utilização do Sistema estão descritas nos <a th:href="@{/lgpd/termos}">Termos de Uso</a>,
+        documento próprio que não substitui esta Política de Privacidade.
+    </p>
+
+    <nav class="sumario">
+        <strong>SUMÁRIO</strong>
+        <ol>
+            <li><a href="#secao-1">Controlador e Canal de Atendimento</a></li>
+            <li><a href="#secao-2">Dados Pessoais Tratados</a></li>
+            <li><a href="#secao-3">Finalidades e Hipóteses Legais</a></li>
+            <li><a href="#secao-4">Compartilhamento de Dados</a></li>
+            <li><a href="#secao-5">Transferência Internacional de Dados</a></li>
+            <li><a href="#secao-6">Retenção e Exclusão dos Dados</a></li>
+            <li><a href="#secao-7">Direitos dos Titulares</a></li>
+            <li><a href="#secao-8">Segurança das Informações</a></li>
+            <li><a href="#secao-9">Incidentes de Segurança</a></li>
+            <li><a href="#secao-10">Cookies</a></li>
+            <li><a href="#secao-11">Disposições Gerais</a></li>
+        </ol>
+    </nav>
+
+    <h2 id="secao-1">1. Controlador e Canal de Atendimento</h2>
+    <p>
+        1.1. A Class Holder é a controladora dos dados pessoais tratados no Sistema. Em uma implantação real, esse
+        papel seria exercido pela instituição de ensino que utiliza o Sistema para gerir seus espaços.
+    </p>
+    <p>
+        1.2. Solicitações, dúvidas e comunicações relacionadas à privacidade e à proteção de dados pessoais devem
+        ser enviadas pelo e-mail <a href="mailto:ClassHolder@gmail.com">ClassHolder@gmail.com</a>.
+    </p>
+
+    <h2 id="secao-2">2. Dados Pessoais Tratados</h2>
+    <p>
+        2.1. Para fins desta Política de Privacidade, considera-se dado pessoal qualquer informação que identifique
+        o Usuário ou permita sua identificação.
+    </p>
+    <p>2.2. O Sistema trata exclusivamente os seguintes dados pessoais:</p>
+    <ul class="itens">
+        <li>(i) dados cadastrais: nome, e-mail institucional e perfil de acesso, informados pela instituição no
+            momento da criação da conta;</li>
+        <li>(ii) dados de autenticação: senha, armazenada somente na forma de hash com salt, e chave de
+            autenticação em dois fatores, armazenada cifrada;</li>
+        <li>(iii) dados de reservas: sala, data, horário, finalidade informada, situação da reserva e professor
+            responsável;</li>
+        <li>(iv) registros de auditoria: e-mail do Usuário que realizou a ação, tipo de ação, item afetado, data e
+            hora, incluindo o endereço IP nos eventos de login, falha de login e logout, e o nome e o e-mail do
+            Usuário afetado quando a ação envolver outro Usuário, como no cadastro de uma conta;</li>
+        <li>(v) registro de ciência e aceite: data e hora em que o Usuário declarou ciência desta Política de
+            Privacidade e aceitou os Termos de Uso;</li>
+        <li>(vi) registros técnicos de acesso: endereço IP e informações da requisição, gerados pela
+            infraestrutura de hospedagem.</li>
+    </ul>
+    <p>
+        2.3. O Sistema não coleta CPF, endereço, data de nascimento, fotografia nem dados pessoais sensíveis.
+    </p>
+
+    <h2 id="secao-3">3. Finalidades e Hipóteses Legais</h2>
+    <p>
+        3.1. Cada tratamento realizado pelo Sistema possui finalidade específica e está amparado em uma das
+        hipóteses legais previstas no artigo 7º da LGPD, conforme descrito a seguir:
+    </p>
+    <ul class="itens">
+        <li>(i) execução de contrato (art. 7º, V): criar a conta do Usuário, autenticá-lo, proteger seu acesso
+            com autenticação em dois fatores, liberar as funções correspondentes ao seu perfil e registrar
+            reservas, impedindo conflitos de horário e identificando o responsável por cada uma. O contrato, nesse
+            caso, é o que estabelece o vínculo do Usuário com a instituição;</li>
+        <li>(ii) legítimo interesse (art. 7º, IX): manter registros de auditoria e registros técnicos de acesso,
+            com a finalidade de garantir a rastreabilidade das ações realizadas no Sistema, apurar usos indevidos e
+            investigar falhas ou ataques;</li>
+        <li>(iii) exercício regular de direitos (art. 7º, VI): manter o registro de ciência desta Política de
+            Privacidade e de aceite dos Termos de Uso, como comprovação dessas manifestações.</li>
+    </ul>
+    <p>
+        3.2. O uso do legítimo interesse se limita à segurança e à rastreabilidade do próprio Sistema. Esses
+        registros são acessíveis somente à administração, não são utilizados para avaliar o desempenho dos
+        Usuários e são mantidos pelos prazos previstos na seção 6.
+    </p>
+    <p>
+        3.3. O Usuário pode se opor ao tratamento baseado no legítimo interesse pelo canal indicado na cláusula
+        1.2, e a solicitação será analisada considerando a necessidade de manter a segurança do Sistema.
+    </p>
+
+    <h2 id="secao-4">4. Compartilhamento de Dados</h2>
+    <p>
+        4.1. A Class Holder não vende dados pessoais nem os utiliza para fins de publicidade.
+    </p>
+    <p>
+        4.2. Para o funcionamento do Sistema, os dados são tratados pelos fornecedores abaixo, que atuam como
+        operadores e os utilizam exclusivamente para a prestação do serviço contratado:
+    </p>
+    <ul class="itens">
+        <li>(i) Supabase: fornecedor do banco de dados PostgreSQL gerenciado, onde são armazenados os dados
+            cadastrais, de autenticação, de reservas, de auditoria e de ciência e aceite;</li>
+        <li>(ii) Render: fornecedor da hospedagem da aplicação, por onde trafegam os dados durante o uso do
+            Sistema e onde são gerados os registros técnicos de acesso.</li>
+    </ul>
+    <p>
+        4.3. O código de configuração da autenticação em dois fatores é gerado pelo próprio Sistema, sem envio a
+        serviços externos. O aplicativo autenticador instalado no dispositivo do Usuário é escolhido e utilizado
+        por ele, fora do controle da Class Holder.
+    </p>
+    <p>
+        4.4. Além dos fornecedores indicados na cláusula 4.2, os dados pessoais somente serão fornecidos a
+        terceiros mediante ordem judicial ou requisição de autoridade competente, nos termos da lei.
+    </p>
+
+    <h2 id="secao-5">5. Transferência Internacional de Dados</h2>
+    <p>
+        5.1. Os servidores do banco de dados e da hospedagem estão localizados na região de Ohio, nos Estados
+        Unidos. Por essa razão, a utilização do Sistema envolve transferência internacional de dados pessoais.
+    </p>
+    <p>
+        5.2. Para os dados cadastrais, de autenticação e de reservas, a transferência é necessária para a execução
+        do contrato relativo ao vínculo do Usuário com a instituição, nos termos do artigo 33, IX, combinado com o
+        artigo 7º, V, da LGPD.
+    </p>
+    <p>
+        5.3. Para os registros de auditoria e de acesso, a transferência se apoia nas garantias contratuais de
+        proteção de dados oferecidas pelos fornecedores, nos termos do artigo 33, II, da LGPD.
+    </p>
+    <p>
+        5.4. Os dados são transmitidos por conexão protegida por HTTPS, e o acesso a eles observa as mesmas
+        medidas de segurança descritas na seção 8, independentemente do país em que estejam armazenados.
+    </p>
+
+    <h2 id="secao-6">6. Retenção e Exclusão dos Dados</h2>
+    <p>
+        6.1. Os dados pessoais são mantidos apenas pelos prazos e critérios indicados abaixo e, ao final de cada
+        prazo, são excluídos:
+    </p>
+    <ul class="itens">
+        <li>(i) dados cadastrais e de autenticação: mantidos enquanto houver vínculo ativo do Usuário com a
+            instituição e excluídos após o encerramento desse vínculo ou mediante solicitação do titular;</li>
+        <li>(ii) dados de reservas: mantidos enquanto existir a conta do professor responsável e excluídos junto
+            com ela;</li>
+        <li>(iii) registro de ciência e aceite: mantido enquanto existir a conta do Usuário e excluído junto com
+            ela;</li>
+        <li>(iv) registros de auditoria: mantidos por até 12 (doze) meses a partir da data do registro e excluídos
+            após esse prazo;</li>
+        <li>(v) registros técnicos de acesso: mantidos conforme o prazo de retenção de logs do fornecedor de
+            hospedagem e excluídos por ele.</li>
+    </ul>
+
+    <h2 id="secao-7">7. Direitos dos Titulares</h2>
+    <p>
+        7.1. Nos termos do artigo 18 da LGPD, a Class Holder assegura ao Usuário, na qualidade de titular dos
+        dados pessoais, os seguintes direitos:
+    </p>
+    <ul class="itens">
+        <li>(i) confirmação da existência de tratamento de seus dados;</li>
+        <li>(ii) acesso aos dados pessoais tratados pelo Sistema;</li>
+        <li>(iii) correção de dados incompletos, inexatos ou desatualizados;</li>
+        <li>(iv) anonimização, bloqueio ou eliminação de dados desnecessários, excessivos ou tratados em
+            desconformidade com a LGPD;</li>
+        <li>(v) eliminação de seus dados, observados os critérios previstos na seção 6;</li>
+        <li>(vi) informação sobre os fornecedores com os quais seus dados são compartilhados;</li>
+        <li>(vii) oposição ao tratamento realizado com base no legítimo interesse;</li>
+        <li>(viii) portabilidade de seus dados a outro fornecedor, quando aplicável.</li>
+    </ul>
+    <p>
+        7.2. Para exercer esses direitos, o Usuário deve enviar sua solicitação para
+        <a href="mailto:ClassHolder@gmail.com">ClassHolder@gmail.com</a> a partir do e-mail cadastrado no
+        Sistema, o que permite confirmar sua identidade.
+    </p>
+    <p>
+        7.3. A resposta será enviada em até 15 (quinze) dias, inclusive nas solicitações de acesso completo aos
+        dados. Cada solicitação e seu respectivo atendimento são registrados pela Class Holder.
+    </p>
+    <p>
+        7.4. O Usuário também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD).
+    </p>
+
+    <h2 id="secao-8">8. Segurança das Informações</h2>
+    <p>
+        8.1. A Class Holder adota medidas técnicas e administrativas para proteger os dados pessoais contra
+        acessos não autorizados, perdas e alterações indevidas, entre elas:
+    </p>
+    <ul class="itens">
+        <li>(i) armazenamento de senhas somente na forma de hash com salt;</li>
+        <li>(ii) autenticação em dois fatores obrigatória e cifragem da respectiva chave;</li>
+        <li>(iii) troca obrigatória da senha inicial no primeiro acesso;</li>
+        <li>(iv) controle de acesso por perfil, verificado no servidor;</li>
+        <li>(v) comunicação protegida por HTTPS;</li>
+        <li>(vi) manutenção das credenciais de infraestrutura fora do código fonte;</li>
+        <li>(vii) registro de auditoria das ações administrativas.</li>
+    </ul>
+
+    <h2 id="secao-9">9. Incidentes de Segurança</h2>
+    <p>
+        9.1. Na ocorrência de incidente de segurança envolvendo dados pessoais, a Class Holder adotará as medidas
+        necessárias para conter o problema, identificar os dados e os titulares afetados e avaliar se há risco ou
+        dano relevante.
+    </p>
+    <p>
+        9.2. Havendo risco ou dano relevante, a ANPD e os titulares afetados serão comunicados, com a descrição do
+        ocorrido, dos dados envolvidos e das medidas adotadas.
+    </p>
+
+    <h2 id="secao-10">10. Cookies</h2>
+    <p>
+        10.1. O Sistema utiliza somente um cookie de sessão, estritamente necessário para manter o Usuário
+        autenticado durante o uso. Esse cookie é descartado ao sair do Sistema ou ao término da sessão.
+    </p>
+    <p>
+        10.2. Não são utilizados cookies de análise, publicidade ou rastreamento.
+    </p>
+
+    <h2 id="secao-11">11. Disposições Gerais</h2>
+    <p>
+        11.1. O Sistema se destina exclusivamente a pessoas maiores de 18 (dezoito) anos com vínculo com a
+        instituição, conforme os Termos de Uso.
+    </p>
+    <p>
+        11.2. Esta Política de Privacidade poderá ser atualizada sempre que o Sistema passar a tratar dados pessoais
+        de forma diferente. Cada nova versão será publicada neste mesmo endereço, com a indicação de seu número e da
+        data de sua atualização.
+    </p>
+    <p>
+        11.3. Esta página permanece acessível a qualquer momento, inclusive sem necessidade de login.
+    </p>
+    <p>
+        11.4. Dúvidas sobre esta Política de Privacidade ou sobre as práticas nela descritas podem ser enviadas
+        pelo e-mail <a href="mailto:ClassHolder@gmail.com">ClassHolder@gmail.com</a>.
+    </p>
+</main>
+</body>
+</html>
