@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Redefinir senha | Class Holder</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 420px;
+            margin: 4rem auto 0;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 2rem 2.5rem;
+        }
+        h1 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+        p {
+            color: #52606d;
+            line-height: 1.5;
+        }
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.3rem;
+        }
+        input[type="password"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.6rem;
+            border: 1px solid #cbd2d9;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        .dica {
+            color: #7b8794;
+            font-size: 0.8rem;
+            margin-top: 0.3rem;
+        }
+        .erro {
+            color: #b71c1c;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        .sucesso {
+            color: #1d6f42;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        button {
+            width: 100%;
+            margin-top: 1.75rem;
+            background-color: #1d6f42;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.7rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        a {
+            color: #1d6f42;
+        }
+        .voltar {
+            display: block;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div th:if="${sucesso}">
+            <h1>Senha redefinida</h1>
+            <p class="sucesso">Sua senha foi redefinida com sucesso. Você já pode entrar com a nova senha.</p>
+            <a class="voltar" th:href="@{/login}">Ir para o login</a>
+        </div>
+
+        <div th:if="${tokenInvalido}">
+            <h1>Link inválido ou expirado</h1>
+            <p>Este link de redefinição de senha não é mais válido. Solicite um novo link para continuar.</p>
+            <a class="voltar" th:href="@{/senha/esqueci}">Solicitar novo link</a>
+        </div>
+
+        <div th:unless="${sucesso} or ${tokenInvalido}">
+            <h1>Redefinir senha</h1>
+            <p>Escolha uma nova senha para sua conta.</p>
+
+            <form th:action="@{/senha/redefinir}" method="post">
+                <input type="hidden" name="token" th:value="${token}">
+
+                <label for="novaSenha">Nova senha</label>
+                <input type="password" id="novaSenha" name="novaSenha" required>
+                <p class="dica">Mínimo 14 caracteres, com maiúscula, minúscula, número e símbolo.</p>
+
+                <label for="confirmarSenha">Confirmar nova senha</label>
+                <input type="password" id="confirmarSenha" name="confirmarSenha" required>
+
+                <p class="erro" th:if="${erro}" th:text="${erro}"></p>
+
+                <button type="submit">Redefinir senha</button>
+            </form>
+
+            <a class="voltar" th:href="@{/login}">Voltar para o login</a>
+        </div>
+    </div>
+</body>
+</html>
