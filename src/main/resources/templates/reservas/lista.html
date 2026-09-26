@@ -4,39 +4,46 @@
     <meta charset="UTF-8">
     <title>Minhas reservas - Class Holder</title>
     <style>
-        body {
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-            background-color: #f4f5f7;
-            color: #1f2933;
-            margin: 0;
-            padding: 2rem 1rem;
+        :root {
+            --azul: #1E5AA8;
+            --azul-escuro: #123A6B;
+            --verde: #2FAE60;
+            --verde-claro: #E3F6EA;
+            --vermelho: #E53E3E;
+            --vermelho-claro: #FDEAEA;
         }
-        .container {
-            max-width: 800px;
+        * { box-sizing: border-box; }
+        .pagina {
+            max-width: 980px;
             margin: 0 auto;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 2rem 2.5rem;
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: #1F2937;
         }
-        .topo {
+        .topo-pagina {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
         }
-        a.voltar {
-            color: #1d6f42;
-            text-decoration: none;
-            font-size: 0.9rem;
+        .topo-pagina h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            color: var(--azul-escuro);
         }
         a.botao {
-            background-color: #1d6f42;
+            background: linear-gradient(90deg, var(--azul) 0%, var(--verde) 100%);
             color: #fff;
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 0.6rem 1.2rem;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            padding: 1rem 1.5rem;
         }
         table {
             width: 100%;
@@ -44,30 +51,37 @@
         }
         th, td {
             text-align: left;
-            padding: 0.6rem 0.5rem;
-            border-bottom: 1px solid #e4e7eb;
+            padding: 0.65rem 0.5rem;
+            border-bottom: 1px solid #E4E7EB;
             font-size: 0.9rem;
         }
-        .vazio { color: #52606d; font-size: 0.9rem; }
+        th {
+            color: #52606D;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .vazio { color: #7B8794; font-size: 0.9rem; }
         .tag {
             display: inline-block;
             font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.15rem 0.5rem;
+            font-weight: 700;
+            padding: 0.2rem 0.65rem;
             border-radius: 999px;
         }
-        .tag.confirmada { background: #e3f2ec; color: #1d6f42; }
-        .tag.cancelada { background: #fdeaea; color: #b71c1c; }
+        .tag.confirmada { background: var(--verde-claro); color: var(--verde); }
+        .tag.cancelada { background: var(--vermelho-claro); color: var(--vermelho); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <p><a class="voltar" th:href="@{/}">&larr; Voltar</a></p>
-        <div class="topo">
-            <h1>Minhas reservas</h1>
-            <a class="botao" th:href="@{/reservas/nova}">Nova reserva</a>
-        </div>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-lista}, 'reservas', ${usuario})}">
+<div id="conteudo-lista" class="pagina">
+    <div class="topo-pagina">
+        <h1>Minhas reservas</h1>
+        <a class="botao" th:href="@{/reservas/espacos}">Nova reserva</a>
+    </div>
 
+    <div class="card">
         <p class="vazio" th:if="${#lists.isEmpty(reservas)}">Você ainda não tem reservas.</p>
 
         <table th:unless="${#lists.isEmpty(reservas)}">
@@ -96,5 +110,7 @@
             </tbody>
         </table>
     </div>
+</div>
+</div>
 </body>
 </html>

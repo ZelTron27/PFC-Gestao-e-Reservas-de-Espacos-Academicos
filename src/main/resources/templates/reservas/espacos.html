@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Espaços Acadêmicos - Class Holder</title>
+    <style>
+        :root {
+            --azul: #1E5AA8;
+            --azul-escuro: #123A6B;
+            --verde: #2FAE60;
+            --verde-claro: #E3F6EA;
+            --cinza-texto: #1F2937;
+        }
+        * { box-sizing: border-box; }
+        .pagina {
+            max-width: 1080px;
+            margin: 0 auto;
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--cinza-texto);
+        }
+        .pagina h1 {
+            margin: 0 0 0.4rem;
+            font-size: 1.6rem;
+            color: var(--azul-escuro);
+        }
+        .pagina .subtitulo {
+            margin: 0 0 1.75rem;
+            color: #52606D;
+            font-size: 0.95rem;
+        }
+        .grade {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.25rem;
+        }
+        .sala-card {
+            display: block;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            padding: 1.4rem 1.6rem;
+            text-decoration: none;
+            color: inherit;
+            transition: box-shadow 0.15s ease, transform 0.15s ease;
+        }
+        a.sala-card:hover {
+            box-shadow: 0 4px 14px rgba(30, 90, 168, 0.18);
+            transform: translateY(-2px);
+        }
+        .sala-card.inativa {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+        .sala-topo {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.9rem;
+        }
+        .sala-topo h2 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: var(--azul-escuro);
+        }
+        .badge {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+        .badge.ativa { background: var(--verde-claro); color: var(--verde); }
+        .badge.inativa { background: #ECEFF1; color: #52606D; }
+        .sala-info {
+            font-size: 0.88rem;
+            color: #3E4C59;
+            margin: 0.25rem 0;
+        }
+        .vazio {
+            color: #7B8794;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-espacos}, 'espacos', ${usuario})}">
+<div id="conteudo-espacos" class="pagina">
+    <h1>Espaços Acadêmicos</h1>
+    <p class="subtitulo">Espaços físicos disponíveis para reserva na instituição.</p>
+
+    <p class="vazio" th:if="${#lists.isEmpty(salas)}">Nenhuma sala cadastrada ainda.</p>
+
+    <div class="grade">
+        <a th:each="sala : ${salas}"
+           th:href="${sala.active()} ? @{/reservas/nova(roomId=${sala.id()})} : null"
+           class="sala-card"
+           th:classappend="${sala.active()} ? '' : 'inativa'">
+            <div class="sala-topo">
+                <h2 th:text="${sala.roomName()}">Nome da sala</h2>
+                <span class="badge" th:classappend="${sala.active()} ? 'ativa' : 'inativa'"
+                      th:text="${sala.active()} ? 'Ativa' : 'Inativa'">Ativa</span>
+            </div>
+            <p class="sala-info" th:text="${sala.localization()}">Localização</p>
+            <p class="sala-info" th:text="'Capacidade máxima: ' + ${sala.roomCapacity()} + ' pessoas'">Capacidade</p>
+        </a>
+    </div>
+</div>
+</div>
+</body>
+</html>
