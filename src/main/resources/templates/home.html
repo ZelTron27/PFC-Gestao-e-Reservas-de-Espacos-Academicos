@@ -96,8 +96,10 @@
             <a th:href="@{/salas}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">Gerenciar salas</a>
             <a th:href="@{/equipamentos}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">Gerenciar equipamentos</a>
             <a th:href="@{/usuarios}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">Gerenciar usuários</a>
+            <a th:href="@{/reservas/espacos}" sec:authorize="hasAnyRole('ADMIN','PROFESSOR')">Espaços acadêmicos</a>
             <a th:href="@{/reservas}" sec:authorize="hasAnyRole('ADMIN','PROFESSOR')">Minhas reservas</a>
             <a th:href="@{/reservas/todas}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">Gerenciar reservas</a>
+            <a th:href="@{/feriados}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">Feriados</a>
         </div>
     </div>
 

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Feriados - Class Holder</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background-color: #f4f5f7;
+            color: #1f2933;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 2rem 2.5rem;
+        }
+        .topo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .topo h1 { margin: 0; }
+        a.voltar {
+            color: #1d6f42;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        button.botao {
+            background-color: #1d6f42;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        .mensagem {
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+        }
+        .mensagem.sucesso { background: #e3f2ec; color: #1d6f42; border: 1px solid #b7dfc8; }
+        .mensagem.erro { background: #fdeaea; color: #b71c1c; border: 1px solid #f5c6cb; }
+        .status {
+            border: 1px solid #e4e7eb;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.75rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.9rem 1.5rem;
+        }
+        .status .rotulo {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #7b8794;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+        .status .valor { font-size: 0.92rem; }
+        .status .detalhe { grid-column: 1 / -1; font-size: 0.85rem; color: #52606d; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid #e4e7eb;
+            font-size: 0.9rem;
+        }
+        tr.passado td { color: #9aa5b1; }
+        .tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+        }
+        .tag.ok, .tag.NACIONAL { background: #e3f2ec; color: #1d6f42; }
+        .tag.falha { background: #fdeaea; color: #b71c1c; }
+        .tag.ESTADUAL { background: #eaf1fb; color: #1e5aa8; }
+        .tag.MUNICIPAL { background: #f3e8fd; color: #6b2fa8; }
+        .tag.FACULTATIVO { background: #fff4e0; color: #8a5a00; }
+        .vazio { color: #52606d; font-size: 0.9rem; }
+        .nota { color: #52606d; font-size: 0.85rem; margin: 0 0 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p><a class="voltar" th:href="@{/}">&larr; Voltar</a></p>
+        <div class="topo">
+            <h1>Feriados</h1>
+            <form th:action="@{/feriados/sincronizar}" method="post">
+                <button type="submit" class="botao">Sincronizar agora</button>
+            </form>
+        </div>
+
+        <p class="mensagem sucesso" th:if="${sucesso}" th:text="${sucesso}">Sucesso</p>
+        <p class="mensagem erro" th:if="${erro}" th:text="${erro}">Erro</p>
+
+        <div class="status">
+            <div>
+                <div class="rotulo">Fonte</div>
+                <div class="valor">FeriadosAPI</div>
+            </div>
+            <div>
+                <div class="rotulo">Última sincronização</div>
+                <div class="valor" th:if="${ultimaSincronizacao == null}">Nunca executada</div>
+                <div class="valor" th:if="${ultimaSincronizacao != null}">
+                    <span th:text="${#temporals.format(ultimaSincronizacao.executedAt, 'dd/MM/yyyy HH:mm')}">01/01/2026 03:00</span>
+                    <span class="tag" th:classappend="${ultimaSincronizacao.success} ? 'ok' : 'falha'"
+                          th:text="${ultimaSincronizacao.success} ? 'Sucesso' : 'Falha'">Sucesso</span>
+                </div>
+            </div>
+            <div th:if="${ultimaSincronizacao != null}">
+                <div class="rotulo">Como foi disparada</div>
+                <div class="valor" th:text="${ultimaSincronizacao.trigger.label()}">Agendada</div>
+            </div>
+            <div>
+                <div class="rotulo">Dados em uso desde</div>
+                <div class="valor" th:if="${ultimaComSucesso == null}">Nenhuma sincronização bem-sucedida</div>
+                <div class="valor" th:if="${ultimaComSucesso != null}"
+                     th:text="${#temporals.format(ultimaComSucesso.executedAt, 'dd/MM/yyyy HH:mm')}">01/01/2026 03:00</div>
+            </div>
+            <div class="detalhe" th:if="${ultimaSincronizacao != null and !ultimaSincronizacao.success}"
+                 th:text="'Motivo da falha: ' + ${ultimaSincronizacao.message}">Motivo da falha</div>
+        </div>
+
+        <p class="nota">Todas as datas abaixo bloqueiam reservas, inclusive pontos facultativos.
+            A sincronização roda automaticamente todos os dias.</p>
+
+        <p class="vazio" th:if="${#lists.isEmpty(feriados)}">Nenhum feriado carregado ainda.</p>
+
+        <table th:unless="${#lists.isEmpty(feriados)}">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Dia da semana</th>
+                    <th>Nome</th>
+                    <th>Tipo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="feriado : ${feriados}" th:classappend="${feriado.date.isBefore(hoje)} ? 'passado'">
+                    <td th:text="${#temporals.format(feriado.date, 'dd/MM/yyyy')}">01/01/2026</td>
+                    <td th:text="${#temporals.dayOfWeekName(feriado.date)}">quinta-feira</td>
+                    <td th:text="${feriado.name}">Ano Novo</td>
+                    <td><span class="tag" th:classappend="${feriado.type.name()}"
+                              th:text="${feriado.type.label()}">feriado nacional</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
