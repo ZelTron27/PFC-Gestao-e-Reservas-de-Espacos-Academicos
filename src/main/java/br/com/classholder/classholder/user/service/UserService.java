@@ -3,9 +3,11 @@ package br.com.classholder.classholder.user.service;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,16 +26,30 @@ public class UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
+    public static final String PASSWORD_POLICY_MESSAGE =
+            "A senha deve ter no mínimo 14 caracteres e conter letra maiúscula, minúscula, número e símbolo.";
+
+    private static final Pattern PASSWORD_POLICY = Pattern.compile(
+            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{14,}$");
+
+    private static final int MAX_FAILED_LOGIN_ATTEMPTS = 5;
+    private static final long LOCK_DURATION_MINUTES = 15;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TotpService totpService;
+    private final PasswordResetService passwordResetService;
+    private final EmailService emailService;
     private final AuditLogRepository auditLogRepository;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, TotpService totpService,
+            PasswordResetService passwordResetService, EmailService emailService,
             AuditLogRepository auditLogRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.totpService = totpService;
+        this.passwordResetService = passwordResetService;
+        this.emailService = emailService;
         this.auditLogRepository = auditLogRepository;
     }
 
@@ -46,6 +62,8 @@ public class UserService {
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("E-mail já cadastrado");
         }
+
+        validatePasswordStrength(request.password());
 
         User user = User.builder()
                 .name(request.name())
@@ -119,11 +137,91 @@ public class UserService {
             return false;
         }
 
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("A nova senha deve ser diferente da senha atual.");
+        }
+
+        validatePasswordStrength(newPassword);
+
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setMustChangePassword(false);
         userRepository.save(user);
         saveAuditLog("SENHA_ALTERADA", "USUARIO", user.getId(), email, user.getName() + " (" + user.getEmail() + ")");
         return true;
+    }
+
+    private void validatePasswordStrength(String password) {
+        if (password == null || !PASSWORD_POLICY.matcher(password).matches()) {
+            throw new IllegalArgumentException(PASSWORD_POLICY_MESSAGE);
+        }
+    }
+
+    public void requestPasswordReset(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            String token = passwordResetService.createToken(user.getId());
+            try {
+                emailService.sendPasswordResetEmail(user.getEmail(), token, passwordResetService.getTtlMinutes());
+            } catch (MailException e) {
+                log.error("Falha ao enviar e-mail de redefinição de senha para o usuário {}", user.getId(), e);
+            }
+        });
+    }
+
+    public boolean isPasswordResetTokenValid(String token) {
+        return passwordResetService.validateToken(token).isPresent();
+    }
+
+    public boolean resetPassword(String token, String newPassword) {
+        Long userId = passwordResetService.validateToken(token).orElse(null);
+        if (userId == null) {
+            return false;
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("A nova senha deve ser diferente da senha atual.");
+        }
+
+        validatePasswordStrength(newPassword);
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
+        passwordResetService.consumeToken(token);
+        return true;
+    }
+
+    public boolean isAccountLocked(String email) {
+        return userRepository.findByEmail(email)
+                .map(user -> user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now()))
+                .orElse(false);
+    }
+
+    public void registerFailedLogin(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now())) {
+                return;
+            }
+
+            int attempts = user.getFailedLoginAttempts() + 1;
+            if (attempts >= MAX_FAILED_LOGIN_ATTEMPTS) {
+                user.setFailedLoginAttempts(0);
+                user.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
+            } else {
+                user.setFailedLoginAttempts(attempts);
+            }
+            userRepository.save(user);
+        });
+    }
+
+    public void registerSuccessfulLogin(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            user.setFailedLoginAttempts(0);
+            user.setLockedUntil(null);
+            userRepository.save(user);
+        });
     }
 
     public String getOrCreateTwoFactorSecret(String email) {

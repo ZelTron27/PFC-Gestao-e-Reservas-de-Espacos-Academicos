@@ -34,8 +34,13 @@ public class ChangePasswordController {
             return "senha/trocar";
         }
 
-        if (!userService.changePassword(authentication.getName(), currentPassword, newPassword)) {
-            model.addAttribute("erro", "Senha atual incorreta.");
+        try {
+            if (!userService.changePassword(authentication.getName(), currentPassword, newPassword)) {
+                model.addAttribute("erro", "Senha atual incorreta.");
+                return "senha/trocar";
+            }
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("erro", e.getMessage());
             return "senha/trocar";
         }
 
