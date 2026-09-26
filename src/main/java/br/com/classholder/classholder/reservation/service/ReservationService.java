@@ -1,15 +1,20 @@
 package br.com.classholder.classholder.reservation.service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import br.com.classholder.classholder.audit.aop.AuditContext;
 import br.com.classholder.classholder.audit.aop.Auditable;
+import br.com.classholder.classholder.holiday.service.HolidayService;
 import br.com.classholder.classholder.reservation.ReservationStatus;
 import br.com.classholder.classholder.reservation.domain.Reservation;
 import br.com.classholder.classholder.reservation.dto.ReservationRequest;
@@ -24,16 +29,34 @@ import br.com.classholder.classholder.user.service.UserService;
 public class ReservationService {
 
     private static final int SLOT_MINUTES = 30;
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final ReservationRepository reservationRepository;
     private final RoomService roomService;
     private final UserService userService;
+    private final HolidayService holidayService;
+    private final boolean blockSaturday;
 
     public ReservationService(ReservationRepository reservationRepository, RoomService roomService,
-            UserService userService) {
+            UserService userService, HolidayService holidayService,
+            @Value("${app.reservas.bloquear-sabado}") boolean blockSaturday) {
         this.reservationRepository = reservationRepository;
         this.roomService = roomService;
         this.userService = userService;
+        this.holidayService = holidayService;
+        this.blockSaturday = blockSaturday;
+    }
+
+    public Optional<String> findUnavailableDayReason(LocalDate date) {
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+        if (dayOfWeek == DayOfWeek.SUNDAY) {
+            return Optional.of("Não há reservas aos domingos");
+        }
+        if (dayOfWeek == DayOfWeek.SATURDAY && blockSaturday) {
+            return Optional.of("Não há reservas aos sábados");
+        }
+        return holidayService.findHolidayDescription(date)
+                .map(holiday -> "Não é possível reservar em " + date.format(DATE_FORMAT) + ": " + holiday);
     }
 
     @Auditable(acao = "RESERVA_CRIADA", entidadeTipo = "RESERVA")
@@ -43,6 +66,10 @@ public class ReservationService {
         }
         if (LocalDateTime.of(request.date(), request.startTime()).isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("O horário da reserva não pode ser no passado");
+        }
+        Optional<String> unavailableDayReason = findUnavailableDayReason(request.date());
+        if (unavailableDayReason.isPresent()) {
+            throw new IllegalStateException(unavailableDayReason.get());
         }
 
         RoomResponse room = roomService.findRoomById(request.roomId());
@@ -83,6 +110,10 @@ public class ReservationService {
     }
 
     public List<LocalTime> listAvailableStartTimes(Long roomId, LocalDate date) {
+        if (findUnavailableDayReason(date).isPresent()) {
+            return List.of();
+        }
+
         RoomResponse room = roomService.findRoomById(roomId);
         List<Reservation> confirmedReservations = reservationRepository
                 .findAllByRoomIdAndDateAndStatus(roomId, date, ReservationStatus.CONFIRMADA);
