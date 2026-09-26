@@ -64,6 +64,19 @@
             padding: 0.6rem 1.2rem;
             font-size: 0.9rem;
         }
+        .rodape {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #9aa5b1;
+            margin-bottom: 1.5rem;
+        }
+        .rodape a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .rodape a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -87,5 +100,11 @@
             <a th:href="@{/reservas/todas}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">Gerenciar reservas</a>
         </div>
     </div>
+
+    <footer class="rodape">
+        <a th:href="@{/lgpd/termos}" target="_blank" rel="noopener">Termos de Uso</a>
+        ·
+        <a th:href="@{/lgpd/privacidade}" target="_blank" rel="noopener">Política de Privacidade</a>
+    </footer>
 </body>
 </html>
