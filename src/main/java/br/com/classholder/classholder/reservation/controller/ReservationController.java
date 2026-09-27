@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import br.com.classholder.classholder.equipment.service.EquipmentService;
 import br.com.classholder.classholder.reservation.dto.ReservationRequest;
 import br.com.classholder.classholder.reservation.service.ReservationService;
 import br.com.classholder.classholder.room.service.RoomService;
@@ -29,35 +30,51 @@ public class ReservationController {
     private final ReservationService reservationService;
     private final RoomService roomService;
     private final UserService userService;
+    private final EquipmentService equipmentService;
 
     public ReservationController(ReservationService reservationService, RoomService roomService,
-            UserService userService) {
+            UserService userService, EquipmentService equipmentService) {
         this.reservationService = reservationService;
         this.roomService = roomService;
         this.userService = userService;
+        this.equipmentService = equipmentService;
     }
 
     @GetMapping
     public String list(Authentication authentication, Model model) {
         Long professorId = professorId(authentication);
+        model.addAttribute("usuario", userService.getUserByEmail(authentication.getName()));
         model.addAttribute("reservas", reservationService.listReservationsByProfessor(professorId));
         return "reservas/lista";
     }
 
+    @GetMapping("/espacos")
+    public String espacos(Authentication authentication, Model model) {
+        model.addAttribute("usuario", userService.getUserByEmail(authentication.getName()));
+        model.addAttribute("salas", roomService.listRooms());
+        return "reservas/espacos";
+    }
+
     @GetMapping("/nova")
-    public String showForm(@RequestParam(required = false) Long roomId,
+    public String showForm(Authentication authentication, @RequestParam(required = false) Long roomId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             Model model) {
+        if (roomId == null) {
+            return "redirect:/reservas/espacos";
+        }
+
         ReservationFormData form = new ReservationFormData();
         form.setRoomId(roomId);
         form.setDate(date);
 
+        model.addAttribute("usuario", userService.getUserByEmail(authentication.getName()));
         model.addAttribute("form", form);
-        model.addAttribute("salas", roomService.listActiveCommonRooms());
+        model.addAttribute("equipamentos", equipmentService.listAll());
+        model.addAttribute("salaEscolhida", roomService.findRoomById(roomId));
 
-        if (roomId != null && date != null) {
-            model.addAttribute("salaEscolhida", roomService.findRoomById(roomId));
+        if (date != null) {
             model.addAttribute("horarios", reservationService.listAvailableStartTimes(roomId, date));
+            model.addAttribute("diaIndisponivel", reservationService.findUnavailableDayReason(date).orElse(null));
         }
 
         return "reservas/formulario";
@@ -67,24 +84,27 @@ public class ReservationController {
     public String reserve(Authentication authentication, @ModelAttribute("form") @Valid ReservationFormData form,
             BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
-            return showFormWithHorarios(form, model);
+            return showFormWithHorarios(authentication, form, model);
         }
 
         try {
             reservationService.reserveCommonRoom(professorId(authentication), toRequest(form));
         } catch (IllegalArgumentException | IllegalStateException e) {
             model.addAttribute("erro", e.getMessage());
-            return showFormWithHorarios(form, model);
+            return showFormWithHorarios(authentication, form, model);
         }
 
         return "redirect:/reservas";
     }
 
-    private String showFormWithHorarios(ReservationFormData form, Model model) {
-        model.addAttribute("salas", roomService.listActiveCommonRooms());
-        if (form.getRoomId() != null && form.getDate() != null) {
-            model.addAttribute("salaEscolhida", roomService.findRoomById(form.getRoomId()));
+    private String showFormWithHorarios(Authentication authentication, ReservationFormData form, Model model) {
+        model.addAttribute("usuario", userService.getUserByEmail(authentication.getName()));
+        model.addAttribute("equipamentos", equipmentService.listAll());
+        model.addAttribute("salaEscolhida", roomService.findRoomById(form.getRoomId()));
+        if (form.getDate() != null) {
             model.addAttribute("horarios", reservationService.listAvailableStartTimes(form.getRoomId(), form.getDate()));
+            model.addAttribute("diaIndisponivel",
+                    reservationService.findUnavailableDayReason(form.getDate()).orElse(null));
         }
         return "reservas/formulario";
     }

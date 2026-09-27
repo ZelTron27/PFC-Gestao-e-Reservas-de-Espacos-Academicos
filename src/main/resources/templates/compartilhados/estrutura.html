@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="estrutura(conteudo, paginaAtiva, usuario)" class="ch-estrutura">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+        .ch-estrutura {
+            display: flex;
+            min-height: 100vh;
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+            background-color: #F5F7FA;
+            color: #1F2937;
+        }
+        .ch-estrutura .sidebar {
+            width: 240px;
+            flex-shrink: 0;
+            background: #123A6B;
+            color: #fff;
+            padding: 1.5rem 1.25rem;
+        }
+        .ch-estrutura .marca {
+            margin-bottom: 2rem;
+        }
+        .ch-estrutura .marca strong {
+            display: block;
+            font-size: 1.1rem;
+        }
+        .ch-estrutura .marca span {
+            display: block;
+            font-size: 0.8rem;
+            color: #AFC4E0;
+            margin-top: 0.15rem;
+        }
+        .ch-estrutura nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .ch-estrutura nav a {
+            color: #DCE7F5;
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 600;
+            padding: 0.65rem 1rem;
+            border-radius: 999px;
+        }
+        .ch-estrutura nav a.ativo {
+            background: #1E5AA8;
+            color: #fff;
+        }
+        .ch-estrutura nav a:hover:not(.ativo) {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .ch-estrutura .area-principal {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .ch-estrutura .topo {
+            background: #fff;
+            border-bottom: 1px solid #E4E7EB;
+            padding: 0.85rem 1.75rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .ch-estrutura .usuario-info {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+        }
+        .ch-estrutura .usuario-texto {
+            text-align: right;
+            line-height: 1.25;
+        }
+        .ch-estrutura .usuario-nome {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .ch-estrutura .usuario-email {
+            display: block;
+            font-size: 0.78rem;
+            color: #7B8794;
+        }
+        .ch-estrutura .badge-papel {
+            background: #E3F6EA;
+            color: #2FAE60;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+        .ch-estrutura .botao-sair {
+            background: transparent;
+            border: 1px solid #CBD2D9;
+            color: #1F2937;
+            border-radius: 999px;
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .ch-estrutura .botao-sair:hover {
+            background: #F5F7FA;
+        }
+        .ch-estrutura main.conteudo {
+            flex: 1;
+            padding: 2rem 1.75rem 3rem;
+        }
+        @media (max-width: 720px) {
+            .ch-estrutura { flex-direction: column; }
+            .ch-estrutura .sidebar { width: auto; }
+            .ch-estrutura nav { flex-direction: row; flex-wrap: wrap; }
+        }
+    </style>
+
+    <aside class="sidebar">
+        <div class="marca">
+            <strong>Class Holder</strong>
+            <span>Gestão Acadêmica</span>
+        </div>
+        <nav>
+            <a th:href="@{/reservas/espacos}" th:classappend="${paginaAtiva == 'espacos'} ? 'ativo'">Espaços Acadêmicos</a>
+            <a th:href="@{/reservas}" th:classappend="${paginaAtiva == 'reservas'} ? 'ativo'">Minhas Reservas</a>
+        </nav>
+    </aside>
+
+    <div class="area-principal">
+        <header class="topo">
+            <div class="usuario-info">
+                <div class="usuario-texto">
+                    <span class="usuario-nome" th:text="${usuario.name()}">Nome do usuário</span>
+                    <span class="usuario-email" th:text="${usuario.email()}">email@classholder.com</span>
+                </div>
+                <span class="badge-papel" th:text="${usuario.role()}">Professor</span>
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="botao-sair">Sair</button>
+                </form>
+            </div>
+        </header>
+        <main class="conteudo">
+            <div th:replace="${conteudo}"></div>
+        </main>
+    </div>
+</div>
+</body>
+</html>
