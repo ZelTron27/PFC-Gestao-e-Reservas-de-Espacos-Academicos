@@ -78,7 +78,7 @@
 <body>
 <main class="documento">
     <h1>Política de Privacidade</h1>
-    <p class="atualizacao">Versão 2.0, atualizada em setembro de 2026</p>
+    <p class="atualizacao">Versão 1.1, atualizada em setembro de 2026</p>
 
     <p>
         A presente Política de Privacidade (“Política de Privacidade”) tem como objetivo informar como a
@@ -137,7 +137,9 @@
         <li>(v) registro de ciência e aceite: data e hora em que o Usuário declarou ciência desta Política de
             Privacidade e aceitou os Termos de Uso;</li>
         <li>(vi) registros técnicos de acesso: endereço IP e informações da requisição, gerados pela
-            infraestrutura de hospedagem.</li>
+            infraestrutura de hospedagem;</li>
+        <li>(vii) dados de recuperação de senha: token temporário de redefinição, armazenado somente na forma de
+            hash, válido por 30 (trinta) minutos e de uso único, e a data e hora de sua expiração.</li>
     </ul>
     <p>
         2.3. O Sistema não coleta CPF, endereço, data de nascimento, fotografia nem dados pessoais sensíveis.
@@ -149,7 +151,8 @@
         hipóteses legais previstas no artigo 7º da LGPD, conforme descrito a seguir:
     </p>
     <ul class="itens">
-        <li>(i) execução de contrato (art. 7º, V): criar a conta do Usuário, autenticá-lo, proteger seu acesso
+        <li>(i) execução de contrato (art. 7º, V): criar a conta do Usuário, autenticá-lo, permitir a recuperação
+            do acesso por e-mail em caso de esquecimento da senha, proteger seu acesso
             com autenticação em dois fatores, liberar as funções correspondentes ao seu perfil e registrar
             reservas, impedindo conflitos de horário e identificando o responsável por cada uma. O contrato, nesse
             caso, é o que estabelece o vínculo do Usuário com a instituição;</li>
@@ -181,7 +184,9 @@
         <li>(i) Supabase: fornecedor do banco de dados PostgreSQL gerenciado, onde são armazenados os dados
             cadastrais, de autenticação, de reservas, de auditoria e de ciência e aceite;</li>
         <li>(ii) Render: fornecedor da hospedagem da aplicação, por onde trafegam os dados durante o uso do
-            Sistema e onde são gerados os registros técnicos de acesso.</li>
+            Sistema e onde são gerados os registros técnicos de acesso;</li>
+        <li>(iii) Resend: fornecedor do serviço de envio de e-mails, que recebe o nome e o e-mail do Usuário e o
+            link de redefinição de senha, exclusivamente para entregar a mensagem de recuperação solicitada por ele.</li>
     </ul>
     <p>
         4.3. O código de configuração da autenticação em dois fatores é gerado pelo próprio Sistema, sem envio a
@@ -189,19 +194,19 @@
         por ele, fora do controle da Class Holder.
     </p>
     <p>
-        4.4. Além dos fornecedores indicados na cláusula 4.2, os dados pessoais somente serão fornecidos a
-        terceiros mediante ordem judicial ou requisição de autoridade competente, nos termos da lei.
+        4.4. Além dos fornecedores indicados na cláusula 4.2, os dados pessoais não são compartilhados com
+        terceiros, exceto mediante ordem judicial ou requisição de autoridade competente, nos termos da lei.
     </p>
 
     <h2 id="secao-5">5. Transferência Internacional de Dados</h2>
     <p>
-        5.1. Os servidores do banco de dados e da hospedagem estão localizados na região de Ohio, nos Estados
-        Unidos. Por essa razão, a utilização do Sistema envolve transferência internacional de dados pessoais.
+        5.1. Os servidores do banco de dados, da hospedagem e do serviço de envio de e-mails estão localizados nos
+        Estados Unidos. Por essa razão, a utilização do Sistema envolve transferência internacional de dados pessoais.
     </p>
     <p>
-        5.2. Para os dados cadastrais, de autenticação e de reservas, a transferência é necessária para a execução
-        do contrato relativo ao vínculo do Usuário com a instituição, nos termos do artigo 33, IX, combinado com o
-        artigo 7º, V, da LGPD.
+        5.2. Para os dados cadastrais, de autenticação, de recuperação de senha e de reservas, a transferência é
+        necessária para a execução do contrato relativo ao vínculo do Usuário com a instituição, nos termos do artigo 33,
+        IX, combinado com o artigo 7º, V, da LGPD.
     </p>
     <p>
         5.3. Para os registros de auditoria e de acesso, a transferência se apoia nas garantias contratuais de
@@ -215,7 +220,7 @@
     <h2 id="secao-6">6. Retenção e Exclusão dos Dados</h2>
     <p>
         6.1. Os dados pessoais são mantidos apenas pelos prazos e critérios indicados abaixo e, ao final de cada
-        prazo, são excluídos:
+        prazo, recebem o destino descrito em cada item:
     </p>
     <ul class="itens">
         <li>(i) dados cadastrais e de autenticação: mantidos enquanto houver vínculo ativo do Usuário com a
@@ -224,9 +229,20 @@
             com ela;</li>
         <li>(iii) registro de ciência e aceite: mantido enquanto existir a conta do Usuário e excluído junto com
             ela;</li>
-        <li>(iv) registros técnicos de acesso: mantidos conforme o prazo de retenção de logs do fornecedor de
+        <li>(iv) registros de auditoria: mantidos no Sistema por até 12 (doze) meses a partir da data do registro.
+            Após esse prazo, são retirados da base em uso e arquivados em ambiente separado, com acesso restrito à
+            Administração, pelo período necessário à apuração de incidentes e ao exercício regular de direitos;</li>
+        <li>(v) registros técnicos de acesso: mantidos conforme o prazo de retenção de logs do fornecedor de
             hospedagem e excluídos por ele.</li>
+        <li>(vi) dados de recuperação de senha: o token é invalidado após o uso ou ao fim do prazo de validade, e os
+            registros de envio mantidos pelo fornecedor de e-mails seguem o prazo de retenção desse fornecedor.</li>
     </ul>
+    <p>
+        6.2. A exclusão dos dados cadastrais, de autenticação, de reservas e do registro de ciência e aceite é
+        realizada pela Administração, a partir do encerramento do vínculo informado pela instituição ou da
+        solicitação do titular recebida pelo canal indicado na cláusula 1.2, observado o prazo previsto na
+        cláusula 7.3.
+    </p>
 
     <h2 id="secao-7">7. Direitos dos Titulares</h2>
     <p>
