@@ -30,7 +30,7 @@ public class HolidaySyncScheduler {
     }
 
     @Scheduled(cron = "${app.feriados.sync-cron}", zone = "America/Sao_Paulo")
-    public void synchronizeDaily() {
+    public void synchronizeMonthly() {
         syncService.synchronize(HolidaySyncTrigger.AGENDADA);
     }
 

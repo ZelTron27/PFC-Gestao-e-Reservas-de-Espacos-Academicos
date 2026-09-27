@@ -3,7 +3,7 @@ package br.com.classholder.classholder.holiday.domain;
 public enum HolidaySyncTrigger {
 
     INICIALIZACAO("Inicialização do sistema"),
-    AGENDADA("Agendada (diária)"),
+    AGENDADA("Agendada (mensal)"),
     MANUAL("Manual (coordenação)");
 
     private final String label;

@@ -138,7 +138,8 @@
         </div>
 
         <p class="nota">Todas as datas abaixo bloqueiam reservas, inclusive pontos facultativos.
-            A sincronização roda automaticamente todos os dias.</p>
+            A sincronização roda automaticamente uma vez por mês (dia 1, às 3h) e sempre que o sistema é iniciado.
+            Use "Sincronizar agora" para atualizar antes disso.</p>
 
         <p class="vazio" th:if="${#lists.isEmpty(feriados)}">Nenhum feriado carregado ainda.</p>
 
