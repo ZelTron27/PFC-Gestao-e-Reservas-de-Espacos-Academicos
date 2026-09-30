@@ -8,376 +8,372 @@
                    exporter="Copilot BPMN Designer"
                    exporterVersion="1.0">
 
-  <bpmn:collaboration id="Collaboration_ClassHolder" name="ClassHolder - Gestão de Reservas">
-    
-    <!-- PROCESSO 1: AUTENTICAÇÃO E PRIMEIRO ACESSO -->
-    <bpmn:process id="ProcessoAutenticacao" name="Autenticação e Onboarding" isExecutable="true">
-      <bpmn:startEvent id="InicioLogin" name="Usuário Acessa Sistema">
-        <bpmn:outgoing>flow1</bpmn:outgoing>
-      </bpmn:startEvent>
+  <!-- PROCESSO 1: AUTENTICAÇÃO E PRIMEIRO ACESSO -->
+  <bpmn:process id="ProcessoAutenticacao" name="Autenticação e Onboarding" isExecutable="true">
+    <bpmn:startEvent id="InicioLogin" name="Usuário Acessa Sistema">
+      <bpmn:outgoing>flow1</bpmn:outgoing>
+    </bpmn:startEvent>
 
-      <bpmn:task id="VerificaCredenciais" name="Verificar Credenciais">
-        <bpmn:incoming>flow1</bpmn:incoming>
-        <bpmn:outgoing>flow2</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="VerificaCredenciais" name="Verificar Credenciais">
+      <bpmn:incoming>flow1</bpmn:incoming>
+      <bpmn:outgoing>flow2</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:exclusiveGateway id="CredenciaisValidas" name="Credenciais Válidas?">
-        <bpmn:incoming>flow2</bpmn:incoming>
-        <bpmn:outgoing>flow3</bpmn:outgoing>
-        <bpmn:outgoing>flow4</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="CredenciaisValidas" name="Credenciais Válidas?">
+      <bpmn:incoming>flow2</bpmn:incoming>
+      <bpmn:outgoing>flow3</bpmn:outgoing>
+      <bpmn:outgoing>flow4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
 
-      <bpmn:task id="VerificaTOTP" name="Validar Código 2FA">
-        <bpmn:incoming>flow3</bpmn:incoming>
-        <bpmn:outgoing>flow5</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="VerificaTOTP" name="Validar Código 2FA">
+      <bpmn:incoming>flow3</bpmn:incoming>
+      <bpmn:outgoing>flow5</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:exclusiveGateway id="TOTPValido" name="TOTP Válido?">
-        <bpmn:incoming>flow5</bpmn:incoming>
-        <bpmn:outgoing>flow6</bpmn:outgoing>
-        <bpmn:outgoing>flow7</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="TOTPValido" name="TOTP Válido?">
+      <bpmn:incoming>flow5</bpmn:incoming>
+      <bpmn:outgoing>flow6</bpmn:outgoing>
+      <bpmn:outgoing>flow7</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
 
-      <bpmn:task id="VerificaPrimeiroAcesso" name="Verificar Primeiro Acesso">
-        <bpmn:incoming>flow6</bpmn:incoming>
-        <bpmn:outgoing>flow8</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="VerificaPrimeiroAcesso" name="Verificar Primeiro Acesso">
+      <bpmn:incoming>flow6</bpmn:incoming>
+      <bpmn:outgoing>flow8</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:exclusiveGateway id="EPrimeiroAcesso" name="É Primeiro Acesso?">
-        <bpmn:incoming>flow8</bpmn:incoming>
-        <bpmn:outgoing>flow9</bpmn:outgoing>
-        <bpmn:outgoing>flow10</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="EPrimeiroAcesso" name="É Primeiro Acesso?">
+      <bpmn:incoming>flow8</bpmn:incoming>
+      <bpmn:outgoing>flow9</bpmn:outgoing>
+      <bpmn:outgoing>flow10</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
 
-      <!-- Fluxo de Primeiro Acesso -->
-      <bpmn:task id="AceitaLGPD" name="Aceitar Termo LGPD">
-        <bpmn:incoming>flow9</bpmn:incoming>
-        <bpmn:outgoing>flow11</bpmn:outgoing>
-      </bpmn:task>
+    <!-- Fluxo de Primeiro Acesso -->
+    <bpmn:task id="AceitaLGPD" name="Aceitar Termo LGPD">
+      <bpmn:incoming>flow9</bpmn:incoming>
+      <bpmn:outgoing>flow11</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="TrocaSenha" name="Trocar Senha Provisória">
-        <bpmn:incoming>flow11</bpmn:incoming>
-        <bpmn:outgoing>flow12</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="TrocaSenha" name="Trocar Senha Provisória">
+      <bpmn:incoming>flow11</bpmn:incoming>
+      <bpmn:outgoing>flow12</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="ConfiguraAutenticador" name="Configurar Autenticador 2FA">
-        <bpmn:incoming>flow12</bpmn:incoming>
-        <bpmn:outgoing>flow13</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="ConfiguraAutenticador" name="Configurar Autenticador 2FA">
+      <bpmn:incoming>flow12</bpmn:incoming>
+      <bpmn:outgoing>flow13</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="LerQRCode" name="Escanear QR Code no App">
-        <bpmn:incoming>flow13</bpmn:incoming>
-        <bpmn:outgoing>flow14</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="LerQRCode" name="Escanear QR Code no App">
+      <bpmn:incoming>flow13</bpmn:incoming>
+      <bpmn:outgoing>flow14</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="ConfirmaQRCode" name="Confirmar Código Gerado">
-        <bpmn:incoming>flow14</bpmn:incoming>
-        <bpmn:outgoing>flow15</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="ConfirmaQRCode" name="Confirmar Código Gerado">
+      <bpmn:incoming>flow14</bpmn:incoming>
+      <bpmn:outgoing>flow15</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="AcessaSistema" name="Acessar Sistema">
-        <bpmn:incoming>flow10</bpmn:incoming>
-        <bpmn:incoming>flow15</bpmn:incoming>
-        <bpmn:outgoing>flow16</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="AcessaSistema" name="Acessar Sistema">
+      <bpmn:incoming>flow10</bpmn:incoming>
+      <bpmn:incoming>flow15</bpmn:incoming>
+      <bpmn:outgoing>flow16</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:endEvent id="FimAutenticacao" name="Login Realizado">
-        <bpmn:incoming>flow4</bpmn:incoming>
-        <bpmn:incoming>flow7</bpmn:incoming>
-        <bpmn:incoming>flow16</bpmn:incoming>
-      </bpmn:endEvent>
+    <bpmn:endEvent id="FimAutenticacao" name="Login Realizado">
+      <bpmn:incoming>flow4</bpmn:incoming>
+      <bpmn:incoming>flow7</bpmn:incoming>
+      <bpmn:incoming>flow16</bpmn:incoming>
+    </bpmn:endEvent>
 
-      <!-- Sequence Flows -->
-      <bpmn:sequenceFlow id="flow1" sourceRef="InicioLogin" targetRef="VerificaCredenciais"/>
-      <bpmn:sequenceFlow id="flow2" sourceRef="VerificaCredenciais" targetRef="CredenciaisValidas"/>
-      <bpmn:sequenceFlow id="flow3" sourceRef="CredenciaisValidas" targetRef="VerificaTOTP" name="Sim"/>
-      <bpmn:sequenceFlow id="flow4" sourceRef="CredenciaisValidas" targetRef="FimAutenticacao" name="Não - Erro"/>
-      <bpmn:sequenceFlow id="flow5" sourceRef="VerificaTOTP" targetRef="TOTPValido"/>
-      <bpmn:sequenceFlow id="flow6" sourceRef="TOTPValido" targetRef="VerificaPrimeiroAcesso" name="Sim"/>
-      <bpmn:sequenceFlow id="flow7" sourceRef="TOTPValido" targetRef="FimAutenticacao" name="Não - Erro"/>
-      <bpmn:sequenceFlow id="flow8" sourceRef="VerificaPrimeiroAcesso" targetRef="EPrimeiroAcesso"/>
-      <bpmn:sequenceFlow id="flow9" sourceRef="EPrimeiroAcesso" targetRef="AceitaLGPD" name="Sim"/>
-      <bpmn:sequenceFlow id="flow10" sourceRef="EPrimeiroAcesso" targetRef="AcessaSistema" name="Não"/>
-      <bpmn:sequenceFlow id="flow11" sourceRef="AceitaLGPD" targetRef="TrocaSenha"/>
-      <bpmn:sequenceFlow id="flow12" sourceRef="TrocaSenha" targetRef="ConfiguraAutenticador"/>
-      <bpmn:sequenceFlow id="flow13" sourceRef="ConfiguraAutenticador" targetRef="LerQRCode"/>
-      <bpmn:sequenceFlow id="flow14" sourceRef="LerQRCode" targetRef="ConfirmaQRCode"/>
-      <bpmn:sequenceFlow id="flow15" sourceRef="ConfirmaQRCode" targetRef="AcessaSistema"/>
-      <bpmn:sequenceFlow id="flow16" sourceRef="AcessaSistema" targetRef="FimAutenticacao"/>
-    </bpmn:process>
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="flow1" sourceRef="InicioLogin" targetRef="VerificaCredenciais"/>
+    <bpmn:sequenceFlow id="flow2" sourceRef="VerificaCredenciais" targetRef="CredenciaisValidas"/>
+    <bpmn:sequenceFlow id="flow3" sourceRef="CredenciaisValidas" targetRef="VerificaTOTP" name="Sim"/>
+    <bpmn:sequenceFlow id="flow4" sourceRef="CredenciaisValidas" targetRef="FimAutenticacao" name="Não - Erro"/>
+    <bpmn:sequenceFlow id="flow5" sourceRef="VerificaTOTP" targetRef="TOTPValido"/>
+    <bpmn:sequenceFlow id="flow6" sourceRef="TOTPValido" targetRef="VerificaPrimeiroAcesso" name="Sim"/>
+    <bpmn:sequenceFlow id="flow7" sourceRef="TOTPValido" targetRef="FimAutenticacao" name="Não - Erro"/>
+    <bpmn:sequenceFlow id="flow8" sourceRef="VerificaPrimeiroAcesso" targetRef="EPrimeiroAcesso"/>
+    <bpmn:sequenceFlow id="flow9" sourceRef="EPrimeiroAcesso" targetRef="AceitaLGPD" name="Sim"/>
+    <bpmn:sequenceFlow id="flow10" sourceRef="EPrimeiroAcesso" targetRef="AcessaSistema" name="Não"/>
+    <bpmn:sequenceFlow id="flow11" sourceRef="AceitaLGPD" targetRef="TrocaSenha"/>
+    <bpmn:sequenceFlow id="flow12" sourceRef="TrocaSenha" targetRef="ConfiguraAutenticador"/>
+    <bpmn:sequenceFlow id="flow13" sourceRef="ConfiguraAutenticador" targetRef="LerQRCode"/>
+    <bpmn:sequenceFlow id="flow14" sourceRef="LerQRCode" targetRef="ConfirmaQRCode"/>
+    <bpmn:sequenceFlow id="flow15" sourceRef="ConfirmaQRCode" targetRef="AcessaSistema"/>
+    <bpmn:sequenceFlow id="flow16" sourceRef="AcessaSistema" targetRef="FimAutenticacao"/>
+  </bpmn:process>
 
-    <!-- PROCESSO 2: GESTÃO HIERÁRQUICA DE USUÁRIOS -->
-    <bpmn:process id="ProcessoGestaoUsuarios" name="Cadastro Hierárquico de Usuários" isExecutable="true">
-      <bpmn:startEvent id="InicioGestaoUsuarios" name="Admin/Coordenação Inicia Cadastro">
-        <bpmn:outgoing>flow20</bpmn:outgoing>
-      </bpmn:startEvent>
+  <!-- PROCESSO 2: GESTÃO HIERÁRQUICA DE USUÁRIOS -->
+  <bpmn:process id="ProcessoGestaoUsuarios" name="Cadastro Hierárquico de Usuários" isExecutable="true">
+    <bpmn:startEvent id="InicioGestaoUsuarios" name="Admin/Coordenação Inicia Cadastro">
+      <bpmn:outgoing>flow20</bpmn:outgoing>
+    </bpmn:startEvent>
 
-      <bpmn:exclusiveGateway id="TipoUsuario" name="Qual o Tipo de Usuário?">
-        <bpmn:incoming>flow20</bpmn:incoming>
-        <bpmn:outgoing>flow21</bpmn:outgoing>
-        <bpmn:outgoing>flow22</bpmn:outgoing>
-        <bpmn:outgoing>flow23</bpmn:outgoing>
-        <bpmn:outgoing>flow24</bpmn:outgoing>
-        <bpmn:outgoing>flow25</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="TipoUsuario" name="Qual o Tipo de Usuário?">
+      <bpmn:incoming>flow20</bpmn:incoming>
+      <bpmn:outgoing>flow21</bpmn:outgoing>
+      <bpmn:outgoing>flow22</bpmn:outgoing>
+      <bpmn:outgoing>flow23</bpmn:outgoing>
+      <bpmn:outgoing>flow24</bpmn:outgoing>
+      <bpmn:outgoing>flow25</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
 
-      <!-- Fluxo Admin -->
-      <bpmn:task id="AdminCadastraCoordenacao" name="Admin Cadastra Coordenação">
-        <bpmn:incoming>flow21</bpmn:incoming>
-        <bpmn:outgoing>flow26</bpmn:outgoing>
-      </bpmn:task>
+    <!-- Fluxo Admin -->
+    <bpmn:task id="AdminCadastraCoordenacao" name="Admin Cadastra Coordenação">
+      <bpmn:incoming>flow21</bpmn:incoming>
+      <bpmn:outgoing>flow26</bpmn:outgoing>
+    </bpmn:task>
 
-      <!-- Fluxo Coordenação - Usuários -->
-      <bpmn:task id="CoordenacaoCadastraProfessor" name="Coordenação Cadastra Professor">
-        <bpmn:incoming>flow22</bpmn:incoming>
-        <bpmn:outgoing>flow27</bpmn:outgoing>
-      </bpmn:task>
+    <!-- Fluxo Coordenação - Usuários -->
+    <bpmn:task id="CoordenacaoCadastraProfessor" name="Coordenação Cadastra Professor">
+      <bpmn:incoming>flow22</bpmn:incoming>
+      <bpmn:outgoing>flow27</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="CoordenacaoCadastraAluno" name="Coordenação Cadastra Aluno">
-        <bpmn:incoming>flow23</bpmn:incoming>
-        <bpmn:outgoing>flow28</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="CoordenacaoCadastraAluno" name="Coordenação Cadastra Aluno">
+      <bpmn:incoming>flow23</bpmn:incoming>
+      <bpmn:outgoing>flow28</bpmn:outgoing>
+    </bpmn:task>
 
-      <!-- Fluxo Coordenação - Recursos -->
-      <bpmn:task id="CoordenacaoCadastraSala" name="Coordenação Cadastra Sala">
-        <bpmn:incoming>flow24</bpmn:incoming>
-        <bpmn:outgoing>flow29</bpmn:outgoing>
-      </bpmn:task>
+    <!-- Fluxo Coordenação - Recursos -->
+    <bpmn:task id="CoordenacaoCadastraSala" name="Coordenação Cadastra Sala">
+      <bpmn:incoming>flow24</bpmn:incoming>
+      <bpmn:outgoing>flow29</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="CoordenacaoCadastraEquipamento" name="Coordenação Cadastra Equipamento">
-        <bpmn:incoming>flow25</bpmn:incoming>
-        <bpmn:outgoing>flow30</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="CoordenacaoCadastraEquipamento" name="Coordenação Cadastra Equipamento">
+      <bpmn:incoming>flow25</bpmn:incoming>
+      <bpmn:outgoing>flow30</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="EnviaConvite" name="Enviar Convite por E-mail">
-        <bpmn:incoming>flow26</bpmn:incoming>
-        <bpmn:incoming>flow27</bpmn:incoming>
-        <bpmn:incoming>flow28</bpmn:incoming>
-        <bpmn:outgoing>flow31</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="EnviaConvite" name="Enviar Convite por E-mail">
+      <bpmn:incoming>flow26</bpmn:incoming>
+      <bpmn:incoming>flow27</bpmn:incoming>
+      <bpmn:incoming>flow28</bpmn:incoming>
+      <bpmn:outgoing>flow31</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="UsuarioCadastroIncompleto" name="Usuário em Cadastro Incompleto">
-        <bpmn:incoming>flow29</bpmn:incoming>
-        <bpmn:incoming>flow30</bpmn:incoming>
-        <bpmn:incoming>flow31</bpmn:incoming>
-        <bpmn:outgoing>flow32</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="UsuarioCadastroIncompleto" name="Usuário em Cadastro Incompleto">
+      <bpmn:incoming>flow29</bpmn:incoming>
+      <bpmn:incoming>flow30</bpmn:incoming>
+      <bpmn:incoming>flow31</bpmn:incoming>
+      <bpmn:outgoing>flow32</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:endEvent id="FimGestaoUsuarios" name="Cadastro Concluído">
-        <bpmn:incoming>flow32</bpmn:incoming>
-      </bpmn:endEvent>
+    <bpmn:endEvent id="FimGestaoUsuarios" name="Cadastro Concluído">
+      <bpmn:incoming>flow32</bpmn:incoming>
+    </bpmn:endEvent>
 
-      <!-- Sequence Flows -->
-      <bpmn:sequenceFlow id="flow20" sourceRef="InicioGestaoUsuarios" targetRef="TipoUsuario"/>
-      <bpmn:sequenceFlow id="flow21" sourceRef="TipoUsuario" targetRef="AdminCadastraCoordenacao" name="Coordenação"/>
-      <bpmn:sequenceFlow id="flow22" sourceRef="TipoUsuario" targetRef="CoordenacaoCadastraProfessor" name="Professor"/>
-      <bpmn:sequenceFlow id="flow23" sourceRef="TipoUsuario" targetRef="CoordenacaoCadastraAluno" name="Aluno"/>
-      <bpmn:sequenceFlow id="flow24" sourceRef="TipoUsuario" targetRef="CoordenacaoCadastraSala" name="Sala"/>
-      <bpmn:sequenceFlow id="flow25" sourceRef="TipoUsuario" targetRef="CoordenacaoCadastraEquipamento" name="Equipamento"/>
-      <bpmn:sequenceFlow id="flow26" sourceRef="AdminCadastraCoordenacao" targetRef="EnviaConvite"/>
-      <bpmn:sequenceFlow id="flow27" sourceRef="CoordenacaoCadastraProfessor" targetRef="EnviaConvite"/>
-      <bpmn:sequenceFlow id="flow28" sourceRef="CoordenacaoCadastraAluno" targetRef="EnviaConvite"/>
-      <bpmn:sequenceFlow id="flow29" sourceRef="CoordenacaoCadastraSala" targetRef="UsuarioCadastroIncompleto"/>
-      <bpmn:sequenceFlow id="flow30" sourceRef="CoordenacaoCadastraEquipamento" targetRef="UsuarioCadastroIncompleto"/>
-      <bpmn:sequenceFlow id="flow31" sourceRef="EnviaConvite" targetRef="UsuarioCadastroIncompleto"/>
-      <bpmn:sequenceFlow id="flow32" sourceRef="UsuarioCadastroIncompleto" targetRef="FimGestaoUsuarios"/>
-    </bpmn:process>
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="flow20" sourceRef="InicioGestaoUsuarios" targetRef="TipoUsuario"/>
+    <bpmn:sequenceFlow id="flow21" sourceRef="TipoUsuario" targetRef="AdminCadastraCoordenacao" name="Coordenação"/>
+    <bpmn:sequenceFlow id="flow22" sourceRef="TipoUsuario" targetRef="CoordenacaoCadastraProfessor" name="Professor"/>
+    <bpmn:sequenceFlow id="flow23" sourceRef="TipoUsuario" targetRef="CoordenacaoCadastraAluno" name="Aluno"/>
+    <bpmn:sequenceFlow id="flow24" sourceRef="TipoUsuario" targetRef="CoordenacaoCadastraSala" name="Sala"/>
+    <bpmn:sequenceFlow id="flow25" sourceRef="TipoUsuario" targetRef="CoordenacaoCadastraEquipamento" name="Equipamento"/>
+    <bpmn:sequenceFlow id="flow26" sourceRef="AdminCadastraCoordenacao" targetRef="EnviaConvite"/>
+    <bpmn:sequenceFlow id="flow27" sourceRef="CoordenacaoCadastraProfessor" targetRef="EnviaConvite"/>
+    <bpmn:sequenceFlow id="flow28" sourceRef="CoordenacaoCadastraAluno" targetRef="EnviaConvite"/>
+    <bpmn:sequenceFlow id="flow29" sourceRef="CoordenacaoCadastraSala" targetRef="UsuarioCadastroIncompleto"/>
+    <bpmn:sequenceFlow id="flow30" sourceRef="CoordenacaoCadastraEquipamento" targetRef="UsuarioCadastroIncompleto"/>
+    <bpmn:sequenceFlow id="flow31" sourceRef="EnviaConvite" targetRef="UsuarioCadastroIncompleto"/>
+    <bpmn:sequenceFlow id="flow32" sourceRef="UsuarioCadastroIncompleto" targetRef="FimGestaoUsuarios"/>
+  </bpmn:process>
 
-    <!-- PROCESSO 3: SOLICITAÇÃO E APROVAÇÃO DE RESERVAS -->
-    <bpmn:process id="ProcessoReserva" name="Solicitação e Aprovação de Reserva de Sala" isExecutable="true">
-      <bpmn:startEvent id="InicioSolicitacaoReserva" name="Professor/Aluno Solicita Reserva">
-        <bpmn:outgoing>flow40</bpmn:outgoing>
-      </bpmn:startEvent>
+  <!-- PROCESSO 3: SOLICITAÇÃO E APROVAÇÃO DE RESERVAS -->
+  <bpmn:process id="ProcessoReserva" name="Solicitação e Aprovação de Reserva de Sala" isExecutable="true">
+    <bpmn:startEvent id="InicioSolicitacaoReserva" name="Professor/Aluno Solicita Reserva">
+      <bpmn:outgoing>flow40</bpmn:outgoing>
+    </bpmn:startEvent>
 
-      <bpmn:task id="VerificaDisponibilidade" name="Verificar Disponibilidade da Sala">
-        <bpmn:incoming>flow40</bpmn:incoming>
-        <bpmn:outgoing>flow41</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="VerificaDisponibilidade" name="Verificar Disponibilidade da Sala">
+      <bpmn:incoming>flow40</bpmn:incoming>
+      <bpmn:outgoing>flow41</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:exclusiveGateway id="SalaDisponivel" name="Sala Disponível?">
-        <bpmn:incoming>flow41</bpmn:incoming>
-        <bpmn:outgoing>flow42</bpmn:outgoing>
-        <bpmn:outgoing>flow43</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="SalaDisponivel" name="Sala Disponível?">
+      <bpmn:incoming>flow41</bpmn:incoming>
+      <bpmn:outgoing>flow42</bpmn:outgoing>
+      <bpmn:outgoing>flow43</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
 
-      <bpmn:task id="VerificaFeriado" name="Verificar Se é Feriado/Fim de Semana">
-        <bpmn:incoming>flow42</bpmn:incoming>
-        <bpmn:outgoing>flow44</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="VerificaFeriado" name="Verificar Se é Feriado/Fim de Semana">
+      <bpmn:incoming>flow42</bpmn:incoming>
+      <bpmn:outgoing>flow44</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:exclusiveGateway id="EFeriado" name="É Feriado/Fim de Semana?">
-        <bpmn:incoming>flow44</bpmn:incoming>
-        <bpmn:outgoing>flow45</bpmn:outgoing>
-        <bpmn:outgoing>flow46</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="EFeriado" name="É Feriado/Fim de Semana?">
+      <bpmn:incoming>flow44</bpmn:incoming>
+      <bpmn:outgoing>flow45</bpmn:outgoing>
+      <bpmn:outgoing>flow46</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
 
-      <bpmn:task id="VerificaEquipamento" name="Verificar Equipamentos Necessários">
-        <bpmn:incoming>flow46</bpmn:incoming>
-        <bpmn:outgoing>flow47</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="VerificaEquipamento" name="Verificar Equipamentos Necessários">
+      <bpmn:incoming>flow46</bpmn:incoming>
+      <bpmn:outgoing>flow47</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:exclusiveGateway id="EquipamentoDisponivel" name="Equipamento Disponível?">
-        <bpmn:incoming>flow47</bpmn:incoming>
-        <bpmn:outgoing>flow48</bpmn:outgoing>
-        <bpmn:outgoing>flow49</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="EquipamentoDisponivel" name="Equipamento Disponível?">
+      <bpmn:incoming>flow47</bpmn:incoming>
+      <bpmn:outgoing>flow48</bpmn:outgoing>
+      <bpmn:outgoing>flow49</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
 
-      <bpmn:task id="CriaRequisicao" name="Criar Requisição de Aprovação">
-        <bpmn:incoming>flow48</bpmn:incoming>
-        <bpmn:outgoing>flow50</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="CriaRequisicao" name="Criar Requisição de Aprovação">
+      <bpmn:incoming>flow48</bpmn:incoming>
+      <bpmn:outgoing>flow50</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="EnviaParaAprovacao" name="Enviar para Coordenação">
-        <bpmn:incoming>flow50</bpmn:incoming>
-        <bpmn:outgoing>flow51</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="EnviaParaAprovacao" name="Enviar para Coordenação">
+      <bpmn:incoming>flow50</bpmn:incoming>
+      <bpmn:outgoing>flow51</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="CoordenadorAnalisa" name="Coordenador Analisa Requisição">
-        <bpmn:incoming>flow51</bpmn:incoming>
-        <bpmn:outgoing>flow52</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="CoordenadorAnalisa" name="Coordenador Analisa Requisição">
+      <bpmn:incoming>flow51</bpmn:incoming>
+      <bpmn:outgoing>flow52</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:exclusiveGateway id="RequisicaoAprovada" name="Requisição Aprovada?">
-        <bpmn:incoming>flow52</bpmn:incoming>
-        <bpmn:outgoing>flow53</bpmn:outgoing>
-        <bpmn:outgoing>flow54</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="RequisicaoAprovada" name="Requisição Aprovada?">
+      <bpmn:incoming>flow52</bpmn:incoming>
+      <bpmn:outgoing>flow53</bpmn:outgoing>
+      <bpmn:outgoing>flow54</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
 
-      <bpmn:task id="AprovaCom2FA" name="Confirmar Aprovação com 2FA">
-        <bpmn:incoming>flow53</bpmn:incoming>
-        <bpmn:outgoing>flow55</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="AprovaCom2FA" name="Confirmar Aprovação com 2FA">
+      <bpmn:incoming>flow53</bpmn:incoming>
+      <bpmn:outgoing>flow55</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="ReservaConfirmada" name="Registrar Reserva no Sistema">
-        <bpmn:incoming>flow55</bpmn:incoming>
-        <bpmn:outgoing>flow56</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="ReservaConfirmada" name="Registrar Reserva no Sistema">
+      <bpmn:incoming>flow55</bpmn:incoming>
+      <bpmn:outgoing>flow56</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="EnviaConfirmacao" name="Enviar Confirmação por E-mail">
-        <bpmn:incoming>flow56</bpmn:incoming>
-        <bpmn:outgoing>flow58</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="EnviaConfirmacao" name="Enviar Confirmação por E-mail">
+      <bpmn:incoming>flow56</bpmn:incoming>
+      <bpmn:outgoing>flow58</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="RejeitaRequisicao" name="Rejeitar Requisição">
-        <bpmn:incoming>flow43</bpmn:incoming>
-        <bpmn:incoming>flow45</bpmn:incoming>
-        <bpmn:incoming>flow49</bpmn:incoming>
-        <bpmn:incoming>flow54</bpmn:incoming>
-        <bpmn:outgoing>flow57</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="RejeitaRequisicao" name="Rejeitar Requisição">
+      <bpmn:incoming>flow43</bpmn:incoming>
+      <bpmn:incoming>flow45</bpmn:incoming>
+      <bpmn:incoming>flow49</bpmn:incoming>
+      <bpmn:incoming>flow54</bpmn:incoming>
+      <bpmn:outgoing>flow57</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="EnviaRejeicao" name="Notificar Solicitante sobre Rejeição">
-        <bpmn:incoming>flow57</bpmn:incoming>
-        <bpmn:outgoing>flow59</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="EnviaRejeicao" name="Notificar Solicitante sobre Rejeição">
+      <bpmn:incoming>flow57</bpmn:incoming>
+      <bpmn:outgoing>flow59</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:endEvent id="FimReserva" name="Processo Finalizado">
-        <bpmn:incoming>flow58</bpmn:incoming>
-        <bpmn:incoming>flow59</bpmn:incoming>
-      </bpmn:endEvent>
+    <bpmn:endEvent id="FimReserva" name="Processo Finalizado">
+      <bpmn:incoming>flow58</bpmn:incoming>
+      <bpmn:incoming>flow59</bpmn:incoming>
+    </bpmn:endEvent>
 
-      <!-- Sequence Flows -->
-      <bpmn:sequenceFlow id="flow40" sourceRef="InicioSolicitacaoReserva" targetRef="VerificaDisponibilidade"/>
-      <bpmn:sequenceFlow id="flow41" sourceRef="VerificaDisponibilidade" targetRef="SalaDisponivel"/>
-      <bpmn:sequenceFlow id="flow42" sourceRef="SalaDisponivel" targetRef="VerificaFeriado" name="Sim"/>
-      <bpmn:sequenceFlow id="flow43" sourceRef="SalaDisponivel" targetRef="RejeitaRequisicao" name="Não"/>
-      <bpmn:sequenceFlow id="flow44" sourceRef="VerificaFeriado" targetRef="EFeriado"/>
-      <bpmn:sequenceFlow id="flow45" sourceRef="EFeriado" targetRef="RejeitaRequisicao" name="Sim"/>
-      <bpmn:sequenceFlow id="flow46" sourceRef="EFeriado" targetRef="VerificaEquipamento" name="Não"/>
-      <bpmn:sequenceFlow id="flow47" sourceRef="VerificaEquipamento" targetRef="EquipamentoDisponivel"/>
-      <bpmn:sequenceFlow id="flow48" sourceRef="EquipamentoDisponivel" targetRef="CriaRequisicao" name="Sim"/>
-      <bpmn:sequenceFlow id="flow49" sourceRef="EquipamentoDisponivel" targetRef="RejeitaRequisicao" name="Não"/>
-      <bpmn:sequenceFlow id="flow50" sourceRef="CriaRequisicao" targetRef="EnviaParaAprovacao"/>
-      <bpmn:sequenceFlow id="flow51" sourceRef="EnviaParaAprovacao" targetRef="CoordenadorAnalisa"/>
-      <bpmn:sequenceFlow id="flow52" sourceRef="CoordenadorAnalisa" targetRef="RequisicaoAprovada"/>
-      <bpmn:sequenceFlow id="flow53" sourceRef="RequisicaoAprovada" targetRef="AprovaCom2FA" name="Sim"/>
-      <bpmn:sequenceFlow id="flow54" sourceRef="RequisicaoAprovada" targetRef="RejeitaRequisicao" name="Não"/>
-      <bpmn:sequenceFlow id="flow55" sourceRef="AprovaCom2FA" targetRef="ReservaConfirmada"/>
-      <bpmn:sequenceFlow id="flow56" sourceRef="ReservaConfirmada" targetRef="EnviaConfirmacao"/>
-      <bpmn:sequenceFlow id="flow57" sourceRef="RejeitaRequisicao" targetRef="EnviaRejeicao"/>
-      <bpmn:sequenceFlow id="flow58" sourceRef="EnviaConfirmacao" targetRef="FimReserva"/>
-      <bpmn:sequenceFlow id="flow59" sourceRef="EnviaRejeicao" targetRef="FimReserva"/>
-    </bpmn:process>
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="flow40" sourceRef="InicioSolicitacaoReserva" targetRef="VerificaDisponibilidade"/>
+    <bpmn:sequenceFlow id="flow41" sourceRef="VerificaDisponibilidade" targetRef="SalaDisponivel"/>
+    <bpmn:sequenceFlow id="flow42" sourceRef="SalaDisponivel" targetRef="VerificaFeriado" name="Sim"/>
+    <bpmn:sequenceFlow id="flow43" sourceRef="SalaDisponivel" targetRef="RejeitaRequisicao" name="Não"/>
+    <bpmn:sequenceFlow id="flow44" sourceRef="VerificaFeriado" targetRef="EFeriado"/>
+    <bpmn:sequenceFlow id="flow45" sourceRef="EFeriado" targetRef="RejeitaRequisicao" name="Sim"/>
+    <bpmn:sequenceFlow id="flow46" sourceRef="EFeriado" targetRef="VerificaEquipamento" name="Não"/>
+    <bpmn:sequenceFlow id="flow47" sourceRef="VerificaEquipamento" targetRef="EquipamentoDisponivel"/>
+    <bpmn:sequenceFlow id="flow48" sourceRef="EquipamentoDisponivel" targetRef="CriaRequisicao" name="Sim"/>
+    <bpmn:sequenceFlow id="flow49" sourceRef="EquipamentoDisponivel" targetRef="RejeitaRequisicao" name="Não"/>
+    <bpmn:sequenceFlow id="flow50" sourceRef="CriaRequisicao" targetRef="EnviaParaAprovacao"/>
+    <bpmn:sequenceFlow id="flow51" sourceRef="EnviaParaAprovacao" targetRef="CoordenadorAnalisa"/>
+    <bpmn:sequenceFlow id="flow52" sourceRef="CoordenadorAnalisa" targetRef="RequisicaoAprovada"/>
+    <bpmn:sequenceFlow id="flow53" sourceRef="RequisicaoAprovada" targetRef="AprovaCom2FA" name="Sim"/>
+    <bpmn:sequenceFlow id="flow54" sourceRef="RequisicaoAprovada" targetRef="RejeitaRequisicao" name="Não"/>
+    <bpmn:sequenceFlow id="flow55" sourceRef="AprovaCom2FA" targetRef="ReservaConfirmada"/>
+    <bpmn:sequenceFlow id="flow56" sourceRef="ReservaConfirmada" targetRef="EnviaConfirmacao"/>
+    <bpmn:sequenceFlow id="flow57" sourceRef="RejeitaRequisicao" targetRef="EnviaRejeicao"/>
+    <bpmn:sequenceFlow id="flow58" sourceRef="EnviaConfirmacao" targetRef="FimReserva"/>
+    <bpmn:sequenceFlow id="flow59" sourceRef="EnviaRejeicao" targetRef="FimReserva"/>
+  </bpmn:process>
 
-    <!-- PROCESSO 4: SINCRONIZAÇÃO DE FERIADOS -->
-    <bpmn:process id="ProcessoFeriados" name="Sincronização de Feriados" isExecutable="true">
-      <bpmn:startEvent id="InicioSincronizacao" name="Iniciar Aplicação OU 1º dia do Mês">
-        <bpmn:outgoing>flow60</bpmn:outgoing>
-      </bpmn:startEvent>
+  <!-- PROCESSO 4: SINCRONIZAÇÃO DE FERIADOS -->
+  <bpmn:process id="ProcessoFeriados" name="Sincronização de Feriados" isExecutable="true">
+    <bpmn:startEvent id="InicioSincronizacao" name="Iniciar Aplicação OU 1º dia do Mês">
+      <bpmn:outgoing>flow60</bpmn:outgoing>
+    </bpmn:startEvent>
 
-      <bpmn:task id="ConectaFeriadosAPI" name="Conectar à FeriadosAPI">
-        <bpmn:incoming>flow60</bpmn:incoming>
-        <bpmn:outgoing>flow61</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="ConectaFeriadosAPI" name="Conectar à FeriadosAPI">
+      <bpmn:incoming>flow60</bpmn:incoming>
+      <bpmn:outgoing>flow61</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:exclusiveGateway id="APIDisponivel" name="API Disponível?">
-        <bpmn:incoming>flow61</bpmn:incoming>
-        <bpmn:outgoing>flow62</bpmn:outgoing>
-        <bpmn:outgoing>flow63</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="APIDisponivel" name="API Disponível?">
+      <bpmn:incoming>flow61</bpmn:incoming>
+      <bpmn:outgoing>flow62</bpmn:outgoing>
+      <bpmn:outgoing>flow63</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
 
-      <bpmn:task id="BuscaFeriados" name="Buscar Feriados por Código IBGE">
-        <bpmn:incoming>flow62</bpmn:incoming>
-        <bpmn:outgoing>flow64</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="BuscaFeriados" name="Buscar Feriados por Código IBGE">
+      <bpmn:incoming>flow62</bpmn:incoming>
+      <bpmn:outgoing>flow64</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="SincronizaBanco" name="Sincronizar Feriados no Banco de Dados">
-        <bpmn:incoming>flow64</bpmn:incoming>
-        <bpmn:outgoing>flow65</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="SincronizaBanco" name="Sincronizar Feriados no Banco de Dados">
+      <bpmn:incoming>flow64</bpmn:incoming>
+      <bpmn:outgoing>flow65</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="UsaUltimaCache" name="Usar Última Cópia Salva em Cache">
-        <bpmn:incoming>flow63</bpmn:incoming>
-        <bpmn:outgoing>flow66</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="UsaUltimaCache" name="Usar Última Cópia Salva em Cache">
+      <bpmn:incoming>flow63</bpmn:incoming>
+      <bpmn:outgoing>flow66</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="LogAviso" name="Log: Aviso de Indisponibilidade">
-        <bpmn:incoming>flow66</bpmn:incoming>
-        <bpmn:outgoing>flow67</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="LogAviso" name="Log: Aviso de Indisponibilidade">
+      <bpmn:incoming>flow66</bpmn:incoming>
+      <bpmn:outgoing>flow67</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:endEvent id="FimSincronizacao" name="Sincronização Concluída">
-        <bpmn:incoming>flow65</bpmn:incoming>
-        <bpmn:incoming>flow67</bpmn:incoming>
-      </bpmn:endEvent>
+    <bpmn:endEvent id="FimSincronizacao" name="Sincronização Concluída">
+      <bpmn:incoming>flow65</bpmn:incoming>
+      <bpmn:incoming>flow67</bpmn:incoming>
+    </bpmn:endEvent>
 
-      <!-- Sequence Flows -->
-      <bpmn:sequenceFlow id="flow60" sourceRef="InicioSincronizacao" targetRef="ConectaFeriadosAPI"/>
-      <bpmn:sequenceFlow id="flow61" sourceRef="ConectaFeriadosAPI" targetRef="APIDisponivel"/>
-      <bpmn:sequenceFlow id="flow62" sourceRef="APIDisponivel" targetRef="BuscaFeriados" name="Sim"/>
-      <bpmn:sequenceFlow id="flow63" sourceRef="APIDisponivel" targetRef="UsaUltimaCache" name="Não"/>
-      <bpmn:sequenceFlow id="flow64" sourceRef="BuscaFeriados" targetRef="SincronizaBanco"/>
-      <bpmn:sequenceFlow id="flow65" sourceRef="SincronizaBanco" targetRef="FimSincronizacao"/>
-      <bpmn:sequenceFlow id="flow66" sourceRef="UsaUltimaCache" targetRef="LogAviso"/>
-      <bpmn:sequenceFlow id="flow67" sourceRef="LogAviso" targetRef="FimSincronizacao"/>
-    </bpmn:process>
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="flow60" sourceRef="InicioSincronizacao" targetRef="ConectaFeriadosAPI"/>
+    <bpmn:sequenceFlow id="flow61" sourceRef="ConectaFeriadosAPI" targetRef="APIDisponivel"/>
+    <bpmn:sequenceFlow id="flow62" sourceRef="APIDisponivel" targetRef="BuscaFeriados" name="Sim"/>
+    <bpmn:sequenceFlow id="flow63" sourceRef="APIDisponivel" targetRef="UsaUltimaCache" name="Não"/>
+    <bpmn:sequenceFlow id="flow64" sourceRef="BuscaFeriados" targetRef="SincronizaBanco"/>
+    <bpmn:sequenceFlow id="flow65" sourceRef="SincronizaBanco" targetRef="FimSincronizacao"/>
+    <bpmn:sequenceFlow id="flow66" sourceRef="UsaUltimaCache" targetRef="LogAviso"/>
+    <bpmn:sequenceFlow id="flow67" sourceRef="LogAviso" targetRef="FimSincronizacao"/>
+  </bpmn:process>
 
-    <!-- PROCESSO 5: AUDITORIA E LOG -->
-    <bpmn:process id="ProcessoAuditoria" name="Registro de Auditoria" isExecutable="true">
-      <bpmn:startEvent id="InicioAcaoUsuario" name="Ação do Usuário Realizada">
-        <bpmn:outgoing>flow70</bpmn:outgoing>
-      </bpmn:startEvent>
+  <!-- PROCESSO 5: AUDITORIA E LOG -->
+  <bpmn:process id="ProcessoAuditoria" name="Registro de Auditoria" isExecutable="true">
+    <bpmn:startEvent id="InicioAcaoUsuario" name="Ação do Usuário Realizada">
+      <bpmn:outgoing>flow70</bpmn:outgoing>
+    </bpmn:startEvent>
 
-      <bpmn:task id="RegistraEvento" name="Registrar Evento de Auditoria">
-        <bpmn:incoming>flow70</bpmn:incoming>
-        <bpmn:outgoing>flow71</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="RegistraEvento" name="Registrar Evento de Auditoria">
+      <bpmn:incoming>flow70</bpmn:incoming>
+      <bpmn:outgoing>flow71</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:task id="SalvaLogBanco" name="Salvar Log no Banco de Dados">
-        <bpmn:incoming>flow71</bpmn:incoming>
-        <bpmn:outgoing>flow72</bpmn:outgoing>
-      </bpmn:task>
+    <bpmn:task id="SalvaLogBanco" name="Salvar Log no Banco de Dados">
+      <bpmn:incoming>flow71</bpmn:incoming>
+      <bpmn:outgoing>flow72</bpmn:outgoing>
+    </bpmn:task>
 
-      <bpmn:endEvent id="FimAuditoria" name="Log Armazenado">
-        <bpmn:incoming>flow72</bpmn:incoming>
-      </bpmn:endEvent>
+    <bpmn:endEvent id="FimAuditoria" name="Log Armazenado">
+      <bpmn:incoming>flow72</bpmn:incoming>
+    </bpmn:endEvent>
 
-      <!-- Sequence Flows -->
-      <bpmn:sequenceFlow id="flow70" sourceRef="InicioAcaoUsuario" targetRef="RegistraEvento"/>
-      <bpmn:sequenceFlow id="flow71" sourceRef="RegistraEvento" targetRef="SalvaLogBanco"/>
-      <bpmn:sequenceFlow id="flow72" sourceRef="SalvaLogBanco" targetRef="FimAuditoria"/>
-    </bpmn:process>
-
-  </bpmn:collaboration>
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="flow70" sourceRef="InicioAcaoUsuario" targetRef="RegistraEvento"/>
+    <bpmn:sequenceFlow id="flow71" sourceRef="RegistraEvento" targetRef="SalvaLogBanco"/>
+    <bpmn:sequenceFlow id="flow72" sourceRef="SalvaLogBanco" targetRef="FimAuditoria"/>
+  </bpmn:process>
 
 </bpmn:definitions>
