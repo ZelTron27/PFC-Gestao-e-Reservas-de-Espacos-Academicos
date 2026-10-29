@@ -3,275 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <title>Reservar sala - Class Holder</title>
-    <style>
-        :root {
-            --azul: #1E5AA8;
-            --azul-escuro: #123A6B;
-            --verde: #2FAE60;
-            --verde-claro: #E3F6EA;
-            --cinza-texto: #1F2937;
-            --cinza-fundo: #F5F7FA;
-            --cinza-borda: #DCE1E7;
-            --vermelho: #E53E3E;
-            --vermelho-claro: #FDEAEA;
-        }
-        * { box-sizing: border-box; }
-        .pagina {
-            max-width: 980px;
-            margin: 0 auto;
-            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-            color: var(--cinza-texto);
-        }
-        .cabecalho {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-        }
-        .cabecalho h1 {
-            margin: 0;
-            font-size: 1.6rem;
-            color: var(--azul-escuro);
-        }
-        .badge {
-            display: inline-block;
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 0.25rem 0.7rem;
-            border-radius: 999px;
-        }
-        .badge.ativa { background: var(--verde-claro); color: var(--verde); }
-        .badge.inativa { background: #ECEFF1; color: #52606D; }
-
-        .erro-geral {
-            background: var(--vermelho-claro);
-            border: 1px solid #f5c6cb;
-            color: var(--vermelho);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .layout {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
-            gap: 1.5rem;
-            align-items: start;
-        }
-        @media (max-width: 780px) {
-            .layout { grid-template-columns: 1fr; }
-        }
-
-        .card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem 1.75rem;
-        }
-        .card + .card { margin-top: 1.5rem; }
-        .card h2 {
-            margin: 0 0 1rem;
-            font-size: 1.05rem;
-            color: var(--azul-escuro);
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.9rem 1.5rem;
-            margin-bottom: 1.1rem;
-        }
-        .info-item .rotulo {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            color: #7B8794;
-            font-weight: 600;
-            margin-bottom: 0.15rem;
-        }
-        .info-item .valor { font-size: 0.95rem; }
-
-        .descricao {
-            font-size: 0.92rem;
-            line-height: 1.5;
-            color: #3E4C59;
-            margin: 0 0 1.1rem;
-        }
-
-        .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-        .tag-equip {
-            background: #EAF1FB;
-            color: var(--azul);
-            font-size: 0.78rem;
-            font-weight: 600;
-            padding: 0.25rem 0.6rem;
-            border-radius: 999px;
-        }
-        .sem-equip { color: #7B8794; font-size: 0.85rem; }
-
-        .card.reserva {
-            border: 1px solid var(--verde);
-            background: linear-gradient(180deg, var(--verde-claro) 0%, #ffffff 18%);
-        }
-
-        label {
-            display: block;
-            font-size: 0.88rem;
-            font-weight: 600;
-            margin-top: 1rem;
-            margin-bottom: 0.35rem;
-            color: var(--azul-escuro);
-        }
-        label:first-of-type { margin-top: 0; }
-        .sala-fixa {
-            padding: 0.6rem 0.7rem;
-            border: 1px solid var(--cinza-borda);
-            border-radius: 8px;
-            background: #fff;
-            font-size: 0.95rem;
-        }
-        select, input[type="date"], input[type="time"], textarea {
-            width: 100%;
-            padding: 0.6rem 0.7rem;
-            border: 1px solid var(--cinza-borda);
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-family: inherit;
-            background: #fff;
-        }
-        select:focus, input:focus, textarea:focus {
-            outline: none;
-            border-color: var(--azul);
-            box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.15);
-        }
-        textarea { resize: vertical; min-height: 4.5rem; }
-
-        .horarios-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 0.25rem;
-        }
-        .horario-opcao {
-            border: 1px solid var(--cinza-borda);
-            border-radius: 8px;
-            padding: 0.5rem 0.7rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-        }
-        .horario-opcao input { margin-right: 0.4rem; }
-        .horario-opcao:has(input:checked) {
-            border-color: var(--azul);
-            background: #EAF1FB;
-            font-weight: 700;
-            color: var(--azul);
-        }
-
-        .previsao {
-            font-size: 0.85rem;
-            color: #3E4C59;
-            margin-top: 0.5rem;
-        }
-        .previsao strong { color: var(--verde); }
-
-        .erro-campo {
-            color: var(--vermelho);
-            font-size: 0.82rem;
-            margin-top: 0.3rem;
-        }
-        .vazio {
-            color: #7B8794;
-            font-size: 0.9rem;
-        }
-        .aviso-dia {
-            background: #FFF4E0;
-            border: 1px solid #F5D7A1;
-            color: #8A5A00;
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-size: 0.9rem;
-            margin: 1rem 0 0;
-        }
-
-        button.principal {
-            width: 100%;
-            margin-top: 1.5rem;
-            background: linear-gradient(90deg, var(--azul) 0%, var(--verde) 100%);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        button.secundario {
-            width: 100%;
-            margin-top: 0.75rem;
-            background: transparent;
-            color: var(--azul);
-            border: none;
-            font-size: 0.9rem;
-            cursor: pointer;
-            text-decoration: underline;
-            padding: 0.3rem;
-        }
-        button.buscar {
-            background: var(--azul);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 0.65rem 1.2rem;
-            font-size: 0.92rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 1rem;
-        }
-    </style>
 </head>
 <body>
 <div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-reserva}, 'espacos', ${usuario})}">
-<div id="conteudo-reserva" class="pagina">
-    <div class="cabecalho">
-        <h1 th:text="${salaEscolhida.roomName()}">Reservar sala</h1>
-        <span class="badge"
-              th:classappend="${salaEscolhida.active()} ? 'ativa' : 'inativa'"
-              th:text="${salaEscolhida.active()} ? 'Ativa' : 'Inativa'">Ativa</span>
+<div id="conteudo-reserva">
+    <div class="mb-4">
+        <a class="ch-voltar" th:href="@{/reservas/espacos}">&larr; Espaços</a>
+        <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
+            <h1 class="ch-titulo h3 m-0" th:text="${salaEscolhida.roomName()}">Reservar sala</h1>
+            <span class="badge rounded-pill text-bg-danger" th:if="${salaEscolhida.salaEspecial()}">Sala especial</span>
+        </div>
     </div>
 
-    <p class="erro-geral" th:if="${erro}" th:text="${erro}">Erro</p>
+    <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
 
-    <div class="layout">
-        <!-- Coluna de informações -->
-        <div>
-            <div class="card">
-                <h2>Sobre este espaço</h2>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="rotulo">Tipo</div>
-                        <div class="valor" th:text="${salaEscolhida.roomType()}">Tipo</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="rotulo">Localização</div>
-                        <div class="valor" th:text="${salaEscolhida.localization()}">Localização</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="rotulo">Capacidade máxima</div>
-                        <div class="valor" th:text="${salaEscolhida.roomCapacity()} + ' pessoas'">0 pessoas</div>
-                    </div>
-                </div>
-                <p class="descricao" th:text="${salaEscolhida.description()}">Descrição</p>
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <div class="ch-cartao p-4">
+                <h2 class="ch-titulo h6 mb-3">Sobre este espaço</h2>
 
-                <div class="rotulo" style="margin-bottom:0.4rem;">Equipamentos disponíveis</div>
-                <div class="tags">
-                    <span class="tag-equip"
+                <dl class="row mb-3">
+                    <dt class="col-sm-4 small text-secondary fw-normal">Tipo</dt>
+                    <dd class="col-sm-8" th:text="${salaEscolhida.roomType()}">Tipo</dd>
+
+                    <dt class="col-sm-4 small text-secondary fw-normal">Localização</dt>
+                    <dd class="col-sm-8" th:text="${salaEscolhida.localization()}">Localização</dd>
+
+                    <dt class="col-sm-4 small text-secondary fw-normal">Capacidade máxima</dt>
+                    <dd class="col-sm-8" th:text="${salaEscolhida.roomCapacity()} + ' pessoas'">0 pessoas</dd>
+                </dl>
+
+                <p th:text="${salaEscolhida.description()}">Descrição</p>
+
+                <h3 class="small text-secondary text-uppercase mt-4 mb-2">Equipamentos disponíveis</h3>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge rounded-pill text-bg-light border"
                           th:each="equip : ${equipamentos}"
                           th:if="${salaEscolhida.equipmentIds().contains(equip.id())}"
                           th:text="${equip.name()}">Equipamento</span>
-                    <span class="sem-equip"
+                    <span class="ch-vazio"
                           th:if="${#lists.isEmpty(equipamentos) or salaEscolhida.equipmentIds().isEmpty()}">
                         Nenhum equipamento cadastrado para esta sala.
                     </span>
@@ -279,62 +49,79 @@
             </div>
         </div>
 
-        <!-- Coluna de reserva -->
-        <div class="card reserva">
-            <h2>Fazer reserva</h2>
+        <div class="col-12 col-lg-5">
+            <div class="ch-cartao p-4">
+                <h2 class="ch-titulo h6 mb-3">Fazer reserva</h2>
 
-            <form th:action="@{/reservas/nova}" method="get">
-                <input type="hidden" name="roomId" th:value="${form.roomId}">
+                <form th:action="@{/reservas/nova}" method="get">
+                    <input type="hidden" name="roomId" th:value="${form.roomId}">
 
-                <label>Sala</label>
-                <div class="sala-fixa">
-                    <strong th:text="${salaEscolhida.roomName()}">Sala 101</strong>
-                </div>
-
-                <label for="date">Data</label>
-                <input type="date" id="date" name="date" th:value="${form.date}">
-
-                <button type="submit" class="buscar">Ver horários disponíveis</button>
-            </form>
-
-            <div th:if="${horarios != null}">
-                <p class="aviso-dia" th:if="${diaIndisponivel}" th:text="${diaIndisponivel}">
-                    Não é possível reservar nesse dia.
-                </p>
-                <p class="vazio" th:if="${diaIndisponivel == null and #lists.isEmpty(horarios)}">
-                    Nenhum horário disponível para essa sala nessa data.
-                </p>
-
-                <form th:unless="${#lists.isEmpty(horarios)}" th:action="@{/reservas}" th:object="${form}" method="post">
-                    <input type="hidden" th:field="*{roomId}">
-                    <input type="hidden" th:field="*{date}">
-
-                    <label>Horário de início</label>
-                    <div class="horarios-grid">
-                        <label class="horario-opcao" th:each="horario : ${horarios}">
-                            <input type="radio" th:field="*{startTime}" th:value="${horario}">
-                            <span th:text="${#temporals.format(horario, 'HH:mm')}">00:00</span>
-                        </label>
+                    <div class="mb-3">
+                        <label class="form-label" for="date">Data</label>
+                        <input type="date" class="form-control" id="date" name="date" th:value="${form.date}">
                     </div>
-                    <p class="erro-campo" th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}"></p>
 
-                    <label for="durationBlocks">Tempo de permanência</label>
-                    <select id="durationBlocks" th:field="*{durationBlocks}">
-                        <option value="1">30 min</option>
-                        <option value="2">1h</option>
-                        <option value="3">1h30</option>
-                        <option value="4">2h</option>
-                        <option value="5">2h30</option>
-                        <option value="6">3h</option>
-                    </select>
-                    <p class="erro-campo" th:if="${#fields.hasErrors('durationBlocks')}" th:errors="*{durationBlocks}"></p>
+                    <div class="mb-3">
+                        <label class="form-label" for="durationBlocks">Tempo de permanência</label>
+                        <select class="form-select" id="durationBlocks" name="durationBlocks">
+                            <option value="1" th:selected="${form.durationBlocks == 1}">30 min</option>
+                            <option value="2" th:selected="${form.durationBlocks == 2}">1h</option>
+                            <option value="3" th:selected="${form.durationBlocks == 3}">1h30</option>
+                            <option value="4" th:selected="${form.durationBlocks == 4}">2h</option>
+                            <option value="5" th:selected="${form.durationBlocks == 5}">2h30</option>
+                            <option value="6" th:selected="${form.durationBlocks == 6}">3h</option>
+                        </select>
+                    </div>
 
-                    <label for="purpose">Finalidade</label>
-                    <textarea id="purpose" th:field="*{purpose}" placeholder="Ex: Aula de reposição, reunião de departamento"></textarea>
-                    <p class="erro-campo" th:if="${#fields.hasErrors('purpose')}" th:errors="*{purpose}"></p>
-
-                    <button type="submit" class="principal">Confirmar reserva</button>
+                    <button type="submit" class="btn btn-outline-primary w-100">Ver horários disponíveis</button>
                 </form>
+
+                <div th:if="${horarios != null}">
+                    <hr class="my-4">
+
+                    <div class="alert alert-warning mb-0" role="alert"
+                         th:if="${diaIndisponivel}" th:text="${diaIndisponivel}">
+                        Não é possível reservar nesse dia.
+                    </div>
+
+                    <p class="ch-vazio" th:if="${diaIndisponivel == null and #lists.isEmpty(horarios)}">
+                        Nenhum horário disponível para essa sala, nessa data e com essa duração.
+                    </p>
+
+                    <form th:unless="${#lists.isEmpty(horarios)}" th:action="@{/reservas}" th:object="${form}"
+                          method="post">
+                        <input type="hidden" th:field="*{roomId}">
+                        <input type="hidden" th:field="*{date}">
+                        <input type="hidden" th:field="*{durationBlocks}">
+
+                        <div class="mb-3">
+                            <span class="form-label d-block">Horário de início</span>
+                            <div class="d-flex flex-wrap gap-2">
+                                <div th:each="horario : ${horarios}">
+                                    <input type="radio" class="btn-check" th:field="*{startTime}"
+                                           th:value="${horario}" th:id="'horario-' + ${horario}">
+                                    <label class="btn btn-sm btn-outline-primary" th:for="'horario-' + ${horario}"
+                                           th:text="${#temporals.format(horario, 'HH:mm')}">00:00</label>
+                                </div>
+                            </div>
+                            <div class="text-danger small mt-1" th:if="${#fields.hasErrors('startTime')}"
+                                 th:errors="*{startTime}"></div>
+                        </div>
+
+                        <div class="text-danger small mb-2" th:if="${#fields.hasErrors('durationBlocks')}"
+                             th:errors="*{durationBlocks}"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="purpose">Finalidade</label>
+                            <textarea class="form-control" id="purpose" rows="3" th:field="*{purpose}"
+                                      placeholder="Ex: Aula de reposição, reunião de departamento"></textarea>
+                            <div class="text-danger small mt-1" th:if="${#fields.hasErrors('purpose')}"
+                                 th:errors="*{purpose}"></div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Confirmar reserva</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

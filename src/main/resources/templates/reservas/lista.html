@@ -3,112 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>Minhas reservas - Class Holder</title>
-    <style>
-        :root {
-            --azul: #1E5AA8;
-            --azul-escuro: #123A6B;
-            --verde: #2FAE60;
-            --verde-claro: #E3F6EA;
-            --vermelho: #E53E3E;
-            --vermelho-claro: #FDEAEA;
-        }
-        * { box-sizing: border-box; }
-        .pagina {
-            max-width: 980px;
-            margin: 0 auto;
-            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-            color: #1F2937;
-        }
-        .topo-pagina {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-        .topo-pagina h1 {
-            margin: 0;
-            font-size: 1.6rem;
-            color: var(--azul-escuro);
-        }
-        a.botao {
-            background: linear-gradient(90deg, var(--azul) 0%, var(--verde) 100%);
-            color: #fff;
-            text-decoration: none;
-            border-radius: 8px;
-            padding: 0.6rem 1.2rem;
-            font-size: 0.92rem;
-            font-weight: 700;
-        }
-        .card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-            padding: 1rem 1.5rem;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            text-align: left;
-            padding: 0.65rem 0.5rem;
-            border-bottom: 1px solid #E4E7EB;
-            font-size: 0.9rem;
-        }
-        th {
-            color: #52606D;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-        .vazio { color: #7B8794; font-size: 0.9rem; }
-        .tag {
-            display: inline-block;
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 0.2rem 0.65rem;
-            border-radius: 999px;
-        }
-        .tag.confirmada { background: var(--verde-claro); color: var(--verde); }
-        .tag.cancelada { background: var(--vermelho-claro); color: var(--vermelho); }
-    </style>
 </head>
 <body>
 <div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-lista}, 'reservas', ${usuario})}">
-<div id="conteudo-lista" class="pagina">
-    <div class="topo-pagina">
-        <h1>Minhas reservas</h1>
-        <a class="botao" th:href="@{/reservas/espacos}">Nova reserva</a>
+<div id="conteudo-lista">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <h1 class="ch-titulo h3 m-0">Minhas reservas</h1>
+        <a class="btn btn-primary" th:href="@{/reservas/espacos}">Nova reserva</a>
     </div>
 
-    <div class="card">
-        <p class="vazio" th:if="${#lists.isEmpty(reservas)}">Você ainda não tem reservas.</p>
+    <div class="ch-cartao p-4">
+        <p class="ch-vazio" th:if="${#lists.isEmpty(reservas)}">Você ainda não tem reservas.</p>
 
-        <table th:unless="${#lists.isEmpty(reservas)}">
-            <thead>
-                <tr>
-                    <th>Sala</th>
-                    <th>Data</th>
-                    <th>Início</th>
-                    <th>Término</th>
-                    <th>Finalidade</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="reserva : ${reservas}">
-                    <td th:text="${reserva.roomName()}">Sala</td>
-                    <td th:text="${#temporals.format(reserva.date(), 'dd/MM/yyyy')}">Data</td>
-                    <td th:text="${#temporals.format(reserva.startTime(), 'HH:mm')}">Início</td>
-                    <td th:text="${#temporals.format(reserva.endTime(), 'HH:mm')}">Término</td>
-                    <td th:text="${reserva.purpose()}">Finalidade</td>
-                    <td>
-                        <span class="tag confirmada" th:if="${reserva.status().name() == 'CONFIRMADA'}">Confirmada</span>
-                        <span class="tag cancelada" th:if="${reserva.status().name() == 'CANCELADA'}">Cancelada</span>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(reservas)}">
+            <table class="table align-middle ch-tabela mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Sala</th>
+                        <th scope="col">Data</th>
+                        <th scope="col">Início</th>
+                        <th scope="col">Término</th>
+                        <th scope="col">Finalidade</th>
+                        <th scope="col">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="reserva : ${reservas}">
+                        <td th:text="${reserva.roomName()}">Sala</td>
+                        <td th:text="${#temporals.format(reserva.date(), 'dd/MM/yyyy')}">Data</td>
+                        <td th:text="${#temporals.format(reserva.startTime(), 'HH:mm')}">Início</td>
+                        <td th:text="${#temporals.format(reserva.endTime(), 'HH:mm')}">Término</td>
+                        <td th:text="${reserva.purpose()}">Finalidade</td>
+                        <td>
+                            <span class="badge rounded-pill text-bg-success"
+                                  th:if="${reserva.status().name() == 'CONFIRMADA'}">Confirmada</span>
+                            <span class="badge rounded-pill text-bg-danger"
+                                  th:if="${reserva.status().name() == 'CANCELADA'}">Cancelada</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 </div>
