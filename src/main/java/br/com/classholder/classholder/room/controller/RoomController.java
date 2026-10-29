@@ -84,7 +84,6 @@ public class RoomController {
         form.setLocalization(room.localization());
         form.setRoomCapacity(room.roomCapacity());
         form.setDescription(room.description());
-        form.setPermiteSolicitacaoAluno(room.permiteSolicitacaoAluno());
         form.setSalaEspecial(room.salaEspecial());
         form.setActive(room.active());
         form.setEquipmentIds(room.equipmentIds());
@@ -122,7 +121,7 @@ public class RoomController {
 
     private RoomRequest toRequest(RoomFormData form) {
         return new RoomRequest(form.getRoomName(), form.getRoomType(), form.getLocalization(),
-                form.getRoomCapacity(), form.getDescription(), form.isPermiteSolicitacaoAluno(),
+                form.getRoomCapacity(), form.getDescription(),
                 form.isSalaEspecial(), form.isActive(), form.getEquipmentIds(),
                 readOperatingHours(form.getOperatingHoursJson()));
     }

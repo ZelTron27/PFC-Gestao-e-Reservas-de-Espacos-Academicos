@@ -61,11 +61,6 @@ public class Room {
     @Column(nullable = false)
     private Boolean active;
 
-    @NotNull(message = "É necessário definir se a sala permite solicitação por aluno")
-    @Builder.Default
-    @Column(name = "permite_solicitacao_aluno", nullable = false)
-    private Boolean permiteSolicitacaoAluno = false;
-
     @NotNull(message = "É necessário definir se a sala é especial")
     @Builder.Default
     @Column(name = "sala_especial", nullable = false)

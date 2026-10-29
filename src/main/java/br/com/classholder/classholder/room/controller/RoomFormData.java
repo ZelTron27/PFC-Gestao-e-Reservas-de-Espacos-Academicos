@@ -13,7 +13,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@ValidRoomFlags
 public class RoomFormData {
 
     @NotBlank(message = "Nome (ou identificação) da sala é obrigatório")
@@ -31,8 +30,6 @@ public class RoomFormData {
 
     @NotBlank(message = "A descrição da sala é obrigatória")
     private String description;
-
-    private boolean permiteSolicitacaoAluno;
 
     private boolean salaEspecial;
 

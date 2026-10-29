@@ -11,7 +11,6 @@ public record RoomResponse(
         Integer roomCapacity,
         String description,
         boolean active,
-        boolean permiteSolicitacaoAluno,
         boolean salaEspecial,
         Set<Long> equipmentIds,
         List<TimeRange> operatingHours) {

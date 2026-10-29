@@ -25,8 +25,6 @@ public record RoomRequest(
         @NotBlank(message = "A descrição da sala é obrigatória")
         String description,
 
-        boolean permiteSolicitacaoAluno,
-
         boolean salaEspecial,
 
         boolean active,
