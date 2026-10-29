@@ -21,7 +21,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
         registry.addInterceptor(new OnboardingInterceptor(userService))
                 .excludePathPatterns("/lgpd", "/lgpd/**", "/totp/**", "/senha/trocar", "/senha/esqueci",
-                        "/senha/redefinir", "/login", "/logout", "/error");
+                        "/senha/redefinir", "/login", "/logout", "/error",
+                        "/css/**", "/js/**", "/img/**", "/favicon.ico");
     }
 
     @Override

@@ -2,90 +2,14 @@
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Termos de Uso | Class Holder</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 3rem 1rem;
-            background-color: #f4f5f7;
-            color: #1f2933;
-            font-family: Georgia, "Times New Roman", serif;
-        }
-        .documento {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #ffffff;
-            border: 1px solid #e4e7eb;
-            padding: 3rem 3.5rem;
-        }
-        h1 {
-            font-size: 1.7rem;
-            font-weight: normal;
-            text-align: center;
-            margin: 0 0 0.4rem;
-        }
-        .atualizacao {
-            text-align: center;
-            color: #52606d;
-            font-style: italic;
-            margin: 0 0 2.5rem;
-        }
-        h2 {
-            font-size: 1.1rem;
-            margin: 2.4rem 0 0.9rem;
-            scroll-margin-top: 1rem;
-        }
-        p, li {
-            line-height: 1.75;
-            text-align: justify;
-        }
-        .sumario {
-            border-top: 1px solid #e4e7eb;
-            border-bottom: 1px solid #e4e7eb;
-            padding: 1rem 0 1.25rem;
-            margin: 2rem 0;
-        }
-        .sumario strong {
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-        .sumario ol {
-            margin: 0;
-            padding-left: 1.6rem;
-        }
-        .sumario li {
-            margin-bottom: 0.15rem;
-            text-align: left;
-        }
-        .itens {
-            list-style: none;
-            padding-left: 1.5rem;
-            margin: 0.5rem 0 1rem;
-        }
-        .itens li {
-            margin-bottom: 0.35rem;
-        }
-        .definicoes {
-            list-style: none;
-            padding-left: 1.5rem;
-        }
-        .definicoes li {
-            margin-bottom: 0.5rem;
-        }
-        a {
-            color: #1d6f42;
-        }
-        @media (max-width: 640px) {
-            .documento { padding: 1.75rem 1.25rem; }
-            p, li { text-align: left; }
-        }
-    </style>
+    <title>Termos de Uso - Class Holder</title>
 </head>
 <body>
-<main class="documento">
-    <h1>Termos de Uso</h1>
-    <p class="atualizacao">Versão 1.0, atualizada em setembro de 2026</p>
+<div th:replace="~{compartilhados/publico :: documento(~{::#conteudo-termos})}">
+<div id="conteudo-termos">
+    <h1 class="ch-titulo h3 mb-1">Termos de Uso</h1>
+    <p class="text-secondary small mb-4">Versão 1.0, atualizada em setembro de 2026</p>
+
 
     <p>
         Os presentes Termos de Uso (“Termos de Uso”) têm como objetivo estabelecer as regras e condições para
@@ -143,7 +67,7 @@
         <li>Usuário: pessoa física maior de 18 (dezoito) anos, com vínculo com a instituição, que possua conta de
             acesso ao Sistema;</li>
         <li>Perfil de Acesso: conjunto de permissões atribuído a cada Usuário, podendo ser Administração,
-            Coordenação, Professor ou Aluno;</li>
+            Coordenação ou Professor;</li>
         <li>Sala: espaço físico da instituição cadastrado no Sistema, com seus equipamentos e horários de
             funcionamento;</li>
         <li>Reserva: registro que vincula uma Sala a uma data, a um horário e a um professor responsável;</li>
@@ -198,9 +122,8 @@
     <p>5.2. Os Perfis de Acesso possuem as seguintes responsabilidades:</p>
     <ul class="itens">
         <li>(i) Administração: responsável pela administração geral do Sistema, incluindo o cadastro de Usuários de todos os perfis;</li>
-        <li>(ii) Coordenação: responsável pela operação cotidiana, incluindo o cadastro de professores e alunos e a gestão das Salas e das Reservas;</li>
-        <li>(iii) Professor: responsável pelas Reservas que registra;</li>
-        <li>(iv) Aluno: Usuário com acesso restrito às funções destinadas ao seu perfil.</li>
+        <li>(ii) Coordenação: responsável pela operação cotidiana, incluindo o cadastro de professores e a gestão das Salas e das Reservas;</li>
+        <li>(iii) Professor: responsável pelas Reservas que registra.</li>
     </ul>
 
     <h2 id="secao-6">6. Regras de Reserva</h2>
@@ -296,6 +219,7 @@
     <p>
         12.1. Estes Termos de Uso são regidos pelas leis vigentes na República Federativa do Brasil.
     </p>
-</main>
+</div>
+</div>
 </body>
 </html>

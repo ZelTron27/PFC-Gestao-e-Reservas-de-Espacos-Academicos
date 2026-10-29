@@ -2,66 +2,41 @@
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Privacidade e Termos de Uso | Class Holder</title>
-    <style>
-        body {
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-            background-color: #f4f5f7;
-            color: #1f2933;
-            margin: 0;
-            padding: 2rem 1rem;
-        }
-        .container {
-            max-width: 620px;
-            margin: 0 auto;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 2rem 2.5rem;
-        }
-        h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-        p, label { line-height: 1.6; }
-        a { color: #1d6f42; }
-        .item { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 1rem; }
-        .item input { margin-top: 0.3rem; }
-        form { border-top: 1px solid #e4e7eb; margin-top: 1.5rem; padding-top: 1.25rem; }
-        button {
-            background-color: #1d6f42;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            padding: 0.7rem 1.5rem;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-        button:disabled { background-color: #9aa5b1; cursor: not-allowed; }
-        @media (max-width: 600px) { .container { padding: 1.25rem; } }
-    </style>
+    <title>Antes de continuar - Class Holder</title>
 </head>
 <body>
-<main class="container">
-    <h1>Antes de continuar</h1>
-    <p>
+<div th:replace="~{compartilhados/publico :: cartao(~{::#conteudo-termo}, '30rem')}">
+<div id="conteudo-termo">
+    <h1 class="ch-titulo h5 mb-1">Antes de continuar</h1>
+    <p class="text-secondary small mb-3">
         Consulte nossa Política de Privacidade e os Termos de Uso antes de continuar.
     </p>
-    <p>
-        <a th:href="@{/lgpd/privacidade}" target="_blank" rel="noopener">Política de Privacidade</a><br>
-        <a th:href="@{/lgpd/termos}" target="_blank" rel="noopener">Termos de Uso</a>
-    </p>
+
+    <div class="d-flex flex-column gap-1 mb-4">
+        <a class="text-decoration-none" th:href="@{/lgpd/privacidade}" target="_blank" rel="noopener">
+            Política de Privacidade
+        </a>
+        <a class="text-decoration-none" th:href="@{/lgpd/termos}" target="_blank" rel="noopener">
+            Termos de Uso
+        </a>
+    </div>
 
     <form th:action="@{/lgpd/aceitar}" method="post">
-        <div class="item">
-            <input type="checkbox" id="ciencia" required>
-            <label for="ciencia">Declaro que li a Política de Privacidade.</label>
+        <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" id="ciencia" required>
+            <label class="form-check-label" for="ciencia">Declaro que li a Política de Privacidade.</label>
         </div>
-        <div class="item">
-            <input type="checkbox" id="aceite" required>
-            <label for="aceite">Li e aceito os Termos de Uso.</label>
+
+        <div class="form-check mb-4">
+            <input type="checkbox" class="form-check-input" id="aceite" required>
+            <label class="form-check-label" for="aceite">Li e aceito os Termos de Uso.</label>
         </div>
-        <button type="submit" id="btnContinuar" disabled>Continuar</button>
+
+        <button type="submit" class="btn btn-primary w-100" id="btnContinuar" disabled>Continuar</button>
     </form>
-</main>
+</div>
+</div>
+
 <script>
     const caixas = [document.getElementById('ciencia'), document.getElementById('aceite')];
     const botao = document.getElementById('btnContinuar');

@@ -43,22 +43,20 @@ public class ReservationController {
     @GetMapping
     public String list(Authentication authentication, Model model) {
         Long professorId = professorId(authentication);
-        model.addAttribute("usuario", userService.getUserByEmail(authentication.getName()));
         model.addAttribute("reservas", reservationService.listReservationsByProfessor(professorId));
         return "reservas/lista";
     }
 
     @GetMapping("/espacos")
-    public String espacos(Authentication authentication, Model model) {
-        model.addAttribute("usuario", userService.getUserByEmail(authentication.getName()));
-        model.addAttribute("salas", roomService.listRooms());
+    public String espacos(Model model) {
+        model.addAttribute("salas", roomService.listActiveRooms());
         return "reservas/espacos";
     }
 
     @GetMapping("/nova")
     public String showForm(Authentication authentication, @RequestParam(required = false) Long roomId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            Model model) {
+            @RequestParam(required = false) Integer durationBlocks, Model model) {
         if (roomId == null) {
             return "redirect:/reservas/espacos";
         }
@@ -66,18 +64,12 @@ public class ReservationController {
         ReservationFormData form = new ReservationFormData();
         form.setRoomId(roomId);
         form.setDate(date);
-
-        model.addAttribute("usuario", userService.getUserByEmail(authentication.getName()));
-        model.addAttribute("form", form);
-        model.addAttribute("equipamentos", equipmentService.listAll());
-        model.addAttribute("salaEscolhida", roomService.findRoomById(roomId));
-
-        if (date != null) {
-            model.addAttribute("horarios", reservationService.listAvailableStartTimes(roomId, date));
-            model.addAttribute("diaIndisponivel", reservationService.findUnavailableDayReason(date).orElse(null));
+        if (durationBlocks != null) {
+            form.setDurationBlocks(durationBlocks);
         }
 
-        return "reservas/formulario";
+        model.addAttribute("form", form);
+        return showFormWithHorarios(authentication, form, model);
     }
 
     @PostMapping
@@ -98,15 +90,23 @@ public class ReservationController {
     }
 
     private String showFormWithHorarios(Authentication authentication, ReservationFormData form, Model model) {
-        model.addAttribute("usuario", userService.getUserByEmail(authentication.getName()));
         model.addAttribute("equipamentos", equipmentService.listAll());
         model.addAttribute("salaEscolhida", roomService.findRoomById(form.getRoomId()));
         if (form.getDate() != null) {
-            model.addAttribute("horarios", reservationService.listAvailableStartTimes(form.getRoomId(), form.getDate()));
+            model.addAttribute("horarios",
+                    reservationService.listAvailableStartTimes(form.getRoomId(), form.getDate(), durationMinutes(form)));
             model.addAttribute("diaIndisponivel",
                     reservationService.findUnavailableDayReason(form.getDate()).orElse(null));
         }
         return "reservas/formulario";
+    }
+
+    private int durationMinutes(ReservationFormData form) {
+        Integer blocks = form.getDurationBlocks();
+        if (blocks == null || blocks < 1 || blocks > 6) {
+            return 30;
+        }
+        return blocks * 30;
     }
 
     @GetMapping("/todas")
@@ -131,7 +131,7 @@ public class ReservationController {
 
     private ReservationRequest toRequest(ReservationFormData form) {
         return new ReservationRequest(form.getRoomId(), form.getDate(), form.getStartTime(),
-                form.getStartTime().plusMinutes(form.getDurationBlocks() * 30L), form.getPurpose());
+                form.getStartTime().plusMinutes(durationMinutes(form)), form.getPurpose());
     }
 
 }

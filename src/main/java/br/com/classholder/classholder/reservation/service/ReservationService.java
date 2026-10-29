@@ -1,6 +1,7 @@
 package br.com.classholder.classholder.reservation.service;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -29,6 +30,8 @@ import br.com.classholder.classholder.user.service.UserService;
 public class ReservationService {
 
     private static final int SLOT_MINUTES = 30;
+    private static final int MIN_DURATION_MINUTES = 30;
+    private static final int MAX_DURATION_MINUTES = 180;
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final ReservationRepository reservationRepository;
@@ -64,6 +67,7 @@ public class ReservationService {
         if (!request.startTime().isBefore(request.endTime())) {
             throw new IllegalArgumentException("O horário de início deve ser anterior ao horário de término");
         }
+        validateDuration(request.startTime(), request.endTime());
         if (LocalDateTime.of(request.date(), request.startTime()).isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("O horário da reserva não pode ser no passado");
         }
@@ -110,6 +114,10 @@ public class ReservationService {
     }
 
     public List<LocalTime> listAvailableStartTimes(Long roomId, LocalDate date) {
+        return listAvailableStartTimes(roomId, date, MIN_DURATION_MINUTES);
+    }
+
+    public List<LocalTime> listAvailableStartTimes(Long roomId, LocalDate date, int durationMinutes) {
         if (findUnavailableDayReason(date).isPresent()) {
             return List.of();
         }
@@ -121,29 +129,43 @@ public class ReservationService {
 
         List<LocalTime> starts = new ArrayList<>();
         for (TimeRange range : room.operatingHours()) {
-            starts.addAll(generateSlotStarts(range));
+            starts.addAll(generateSlotStarts(range, durationMinutes));
         }
 
         return starts.stream()
                 .filter(start -> LocalDateTime.of(date, start).isAfter(now))
                 .filter(start -> confirmedReservations.stream()
-                        .noneMatch(reservation -> overlaps(start, start.plusMinutes(SLOT_MINUTES),
+                        .noneMatch(reservation -> overlaps(start, start.plusMinutes(durationMinutes),
                                 reservation.getStartTime(), reservation.getEndTime())))
                 .sorted()
                 .toList();
     }
 
-    private List<LocalTime> generateSlotStarts(TimeRange range) {
+    private List<LocalTime> generateSlotStarts(TimeRange range, int durationMinutes) {
         List<LocalTime> starts = new ArrayList<>();
         LocalTime cursor = LocalTime.parse(range.start());
         LocalTime rangeEnd = LocalTime.parse(range.end());
 
-        while (!cursor.plusMinutes(SLOT_MINUTES).isAfter(rangeEnd)) {
+        while (!cursor.plusMinutes(durationMinutes).isAfter(rangeEnd)) {
             starts.add(cursor);
             cursor = cursor.plusMinutes(SLOT_MINUTES);
         }
 
         return starts;
+    }
+
+    private void validateDuration(LocalTime startTime, LocalTime endTime) {
+        long durationMinutes = Duration.between(startTime, endTime).toMinutes();
+
+        if (durationMinutes < MIN_DURATION_MINUTES) {
+            throw new IllegalArgumentException("A reserva deve ter no mínimo 30 minutos");
+        }
+        if (durationMinutes > MAX_DURATION_MINUTES) {
+            throw new IllegalArgumentException("A reserva deve ter no máximo 3 horas");
+        }
+        if (durationMinutes % SLOT_MINUTES != 0 || startTime.getMinute() % SLOT_MINUTES != 0) {
+            throw new IllegalArgumentException("Os horários são oferecidos em blocos de 30 minutos");
+        }
     }
 
     private boolean fitsWithinOperatingHours(List<TimeRange> operatingHours, LocalTime startTime, LocalTime endTime) {

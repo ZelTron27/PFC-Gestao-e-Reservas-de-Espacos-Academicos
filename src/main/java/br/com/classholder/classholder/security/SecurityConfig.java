@@ -17,13 +17,14 @@ public class SecurityConfig {
             throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/css/**", "/js/**", "/img/**").permitAll()
                         .requestMatchers("/senha/esqueci", "/senha/redefinir").permitAll()
                         .requestMatchers("/salas", "/salas/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/equipamentos", "/equipamentos/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/usuarios", "/usuarios/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/feriados", "/feriados/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/reservas/todas", "/reservas/*/cancelar").hasAnyRole("ADMIN", "COORDENACAO")
-                        .requestMatchers("/reservas", "/reservas/**").hasAnyRole("ADMIN", "PROFESSOR")
+                        .requestMatchers("/reservas", "/reservas/**").hasAnyRole("ADMIN", "COORDENACAO", "PROFESSOR")
                         .requestMatchers("/lgpd/privacidade", "/lgpd/termos").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(form -> form

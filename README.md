@@ -220,7 +220,7 @@ Nos logins seguintes, o código do app autenticador é pedido sempre após a sen
 A partir daí, o cadastro segue a hierarquia do sistema:
 
 1. O **ADMIN** cadastra os usuários da **coordenação**.
-2. A **coordenação** cadastra professores, alunos, salas e equipamentos.
+2. A **coordenação** cadastra professores, salas e equipamentos.
 
 O ADMIN também tem acesso a todas as telas da coordenação.
 

@@ -54,8 +54,8 @@ public class UserService {
 
     @Auditable(acao = "USUARIO_CRIADO", entidadeTipo = "USUARIO")
     public UserResponse createUser(UserRole creatorRole, UserRequest request) {
-        if (creatorRole != UserRole.ADMIN && request.role() == UserRole.ADMIN) {
-            throw new IllegalArgumentException("Coordenação não pode criar usuários administradores");
+        if (creatorRole != UserRole.ADMIN && request.role() != UserRole.PROFESSOR) {
+            throw new IllegalArgumentException("A coordenação só pode cadastrar professores");
         }
 
         if (userRepository.existsByEmail(request.email())) {
