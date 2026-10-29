@@ -11,9 +11,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -109,6 +111,66 @@ class ReservationControllerIntegrationTest {
                 .andReturn();
 
         assertNull(result.getModelAndView());
+    }
+
+    @Test
+    void shouldReturn200AndListReservationsWhenCoordenacaoAccessesReservations() throws Exception {
+        mockMvc.perform(get("/reservas")
+                .with(user(EMAIL).roles("COORDENACAO"))
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
+                .andExpect(status().isOk())
+                .andExpect(view().name("reservas/lista"));
+    }
+
+    @Test
+    void shouldReturn200AndListSpacesWhenCoordenacaoAccessesSpaces() throws Exception {
+        mockMvc.perform(get("/reservas/espacos")
+                .with(user(EMAIL).roles("COORDENACAO"))
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
+                .andExpect(status().isOk())
+                .andExpect(view().name("reservas/espacos"))
+                .andExpect(content().string(containsString(ROOM_NAME)));
+    }
+
+    @Test
+    void shouldNotListInactiveRoomsAmongSpaces() throws Exception {
+        roomRepository.save(Room.builder()
+                .roomName("Sala Desativada 999")
+                .roomType("Sala comum")
+                .localization("Predio B")
+                .roomCapacity(20)
+                .description("Sala inativa de teste")
+                .active(false)
+                .operatingHours(List.of(new TimeRange("08:00", "18:00")))
+                .build());
+
+        mockMvc.perform(get("/reservas/espacos")
+                .with(user(EMAIL).roles("PROFESSOR"))
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(ROOM_NAME)))
+                .andExpect(content().string(not(containsString("Sala Desativada 999"))));
+    }
+
+    @Test
+    void shouldOfferOnlyStartTimesThatFitTheChosenDuration() throws Exception {
+        LocalDate nextMonday = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+
+        MvcResult result = mockMvc.perform(get("/reservas/nova")
+                .param("roomId", String.valueOf(room.getId()))
+                .param("date", nextMonday.toString())
+                .param("durationBlocks", "6")
+                .with(user(EMAIL).roles("PROFESSOR"))
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
+                .andExpect(status().isOk())
+                .andExpect(view().name("reservas/formulario"))
+                .andExpect(model().attributeExists("horarios"))
+                .andReturn();
+
+        @SuppressWarnings("unchecked")
+        List<LocalTime> horarios = (List<LocalTime>) result.getModelAndView().getModel().get("horarios");
+        assertEquals(LocalTime.of(8, 0), horarios.get(0));
+        assertEquals(LocalTime.of(15, 0), horarios.get(horarios.size() - 1));
     }
 
     private Reservation saveReservation(String purpose) {

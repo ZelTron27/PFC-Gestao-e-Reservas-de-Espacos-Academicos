@@ -29,7 +29,6 @@ public class RoomService {
                 .roomCapacity(request.roomCapacity())
                 .description(request.description())
                 .active(true)
-                .permiteSolicitacaoAluno(request.permiteSolicitacaoAluno())
                 .salaEspecial(request.salaEspecial())
                 .equipmentIds(request.equipmentIds())
                 .operatingHours(request.operatingHours())
@@ -51,7 +50,6 @@ public class RoomService {
         room.setRoomCapacity(request.roomCapacity());
         room.setDescription(request.description());
         room.setActive(request.active());
-        room.setPermiteSolicitacaoAluno(request.permiteSolicitacaoAluno());
         room.setSalaEspecial(request.salaEspecial());
         room.setEquipmentIds(request.equipmentIds());
         room.setOperatingHours(request.operatingHours());
@@ -70,6 +68,12 @@ public class RoomService {
 
     public RoomResponse findRoomById(Long id) {
         return toResponse(findRoomEntity(id));
+    }
+
+    public List<RoomResponse> listActiveRooms() {
+        return roomRepository.findAllByActiveTrueOrderByRoomNameAsc().stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     public List<RoomResponse> listActiveCommonRooms() {
@@ -92,7 +96,6 @@ public class RoomService {
                 room.getRoomCapacity(),
                 room.getDescription(),
                 room.getActive(),
-                room.getPermiteSolicitacaoAluno(),
                 room.getSalaEspecial(),
                 room.getEquipmentIds(),
                 room.getOperatingHours());
