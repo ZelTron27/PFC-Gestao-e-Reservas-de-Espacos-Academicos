@@ -36,13 +36,13 @@ public class UserController {
 
     @GetMapping("/novo")
     public String showForm(Authentication authentication, Model model) {
-        model.addAttribute("usuario", new UserFormData());
+        model.addAttribute("form", new UserFormData());
         model.addAttribute("perfisDisponiveis", availableRoles(authentication));
         return "usuarios/formulario";
     }
 
     @PostMapping
-    public String create(Authentication authentication, @ModelAttribute("usuario") @Valid UserFormData form,
+    public String create(Authentication authentication, @ModelAttribute("form") @Valid UserFormData form,
             BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("perfisDisponiveis", availableRoles(authentication));
@@ -68,7 +68,7 @@ public class UserController {
         if (creatorRole(authentication) == UserRole.ADMIN) {
             return Arrays.asList(UserRole.values());
         }
-        return List.of(UserRole.COORDENACAO, UserRole.PROFESSOR, UserRole.ALUNO);
+        return List.of(UserRole.PROFESSOR);
     }
 
     private UserRequest toRequest(UserFormData form) {
