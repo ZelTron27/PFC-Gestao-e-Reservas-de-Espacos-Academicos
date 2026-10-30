@@ -13,7 +13,7 @@ import br.com.classholder.classholder.reservation.domain.Reservation;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
-    List<Reservation> findAllByProfessorIdOrderByDateDescStartTimeDesc(Long professorId);
+    List<Reservation> findAllByResponsibleIdOrderByDateDescStartTimeDesc(Long responsibleId);
 
     List<Reservation> findAllByOrderByDateDescStartTimeDesc();
 
@@ -30,5 +30,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findConflicting(@Param("roomId") Long roomId, @Param("date") LocalDate date,
             @Param("startTime") LocalTime startTime, @Param("endTime") LocalTime endTime,
             @Param("status") ReservationStatus status);
+
+    @Query("""
+            select r.id from Reservation r
+            where r.status = :status
+              and r.checkInAt is null
+              and (r.date < :limitDate or (r.date = :limitDate and r.startTime <= :limitTime))
+            """)
+    List<Long> findIdsWithoutCheckInStartedUntil(@Param("status") ReservationStatus status,
+            @Param("limitDate") LocalDate limitDate, @Param("limitTime") LocalTime limitTime);
 
 }

@@ -9,9 +9,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import br.com.classholder.classholder.reservation.CancellationReason;
 import br.com.classholder.classholder.reservation.ReservationStatus;
 
 @Entity
@@ -32,9 +36,9 @@ public class Reservation {
     @Column(name = "room_id", nullable = false)
     private Long roomId;
 
-    @NotNull(message = "Professor é obrigatório")
-    @Column(name = "professor_id", nullable = false)
-    private Long professorId;
+    @NotNull(message = "Responsável é obrigatório")
+    @Column(name = "responsavel_id", nullable = false)
+    private Long responsibleId;
 
     @NotNull(message = "Data é obrigatória")
     @Column(nullable = false)
@@ -57,4 +61,24 @@ public class Reservation {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ReservationStatus status = ReservationStatus.CONFIRMADA;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "motivo_cancelamento", length = 40)
+    private CancellationReason cancellationReason;
+
+    @Column(name = "check_in_at")
+    private Instant checkInAt;
+
+    @Column(name = "avaliado_por")
+    private Long evaluatedById;
+
+    @Column(name = "avaliado_em")
+    private Instant evaluatedAt;
+
+    @Column(name = "justificativa_recusa", length = 500)
+    private String rejectionJustification;
 }

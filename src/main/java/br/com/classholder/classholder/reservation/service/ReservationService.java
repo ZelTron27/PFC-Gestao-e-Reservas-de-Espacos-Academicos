@@ -2,6 +2,7 @@ package br.com.classholder.classholder.reservation.service;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import br.com.classholder.classholder.audit.aop.AuditContext;
 import br.com.classholder.classholder.audit.aop.Auditable;
 import br.com.classholder.classholder.holiday.service.HolidayService;
+import br.com.classholder.classholder.reservation.CancellationReason;
 import br.com.classholder.classholder.reservation.ReservationStatus;
 import br.com.classholder.classholder.reservation.domain.Reservation;
 import br.com.classholder.classholder.reservation.dto.ReservationRequest;
@@ -32,6 +34,7 @@ public class ReservationService {
     private static final int SLOT_MINUTES = 30;
     private static final int MIN_DURATION_MINUTES = 30;
     private static final int MAX_DURATION_MINUTES = 180;
+    private static final int CHECK_IN_WINDOW_MINUTES = 15;
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final ReservationRepository reservationRepository;
@@ -63,7 +66,7 @@ public class ReservationService {
     }
 
     @Auditable(acao = "RESERVA_CRIADA", entidadeTipo = "RESERVA")
-    public ReservationResponse reserveCommonRoom(Long professorId, ReservationRequest request) {
+    public ReservationResponse reserveCommonRoom(Long responsibleId, ReservationRequest request) {
         if (!request.startTime().isBefore(request.endTime())) {
             throw new IllegalArgumentException("O horário de início deve ser anterior ao horário de término");
         }
@@ -99,18 +102,18 @@ public class ReservationService {
 
         Reservation reservation = Reservation.builder()
                 .roomId(request.roomId())
-                .professorId(professorId)
+                .responsibleId(responsibleId)
                 .date(request.date())
                 .startTime(request.startTime())
                 .endTime(request.endTime())
                 .purpose(request.purpose())
                 .build();
 
-        String professorName = userService.getUserById(professorId).name();
+        String responsibleName = userService.getUserById(responsibleId).name();
         Reservation saved = reservationRepository.save(reservation);
         AuditContext.setEntidadeId(saved.getId());
         AuditContext.setNome(room.roomName() + " - " + request.date() + " " + request.startTime());
-        return toResponse(saved, room.roomName(), professorName);
+        return toResponse(saved, room.roomName(), responsibleName);
     }
 
     public List<LocalTime> listAvailableStartTimes(Long roomId, LocalDate date) {
@@ -180,11 +183,11 @@ public class ReservationService {
         return startA.isBefore(endB) && endA.isAfter(startB);
     }
 
-    public List<ReservationResponse> listReservationsByProfessor(Long professorId) {
-        String professorName = userService.getUserById(professorId).name();
-        return reservationRepository.findAllByProfessorIdOrderByDateDescStartTimeDesc(professorId).stream()
+    public List<ReservationResponse> listReservationsByResponsible(Long responsibleId) {
+        String responsibleName = userService.getUserById(responsibleId).name();
+        return reservationRepository.findAllByResponsibleIdOrderByDateDescStartTimeDesc(responsibleId).stream()
                 .map(reservation -> toResponse(reservation, roomService.findRoomById(reservation.getRoomId()).roomName(),
-                        professorName))
+                        responsibleName))
                 .toList();
     }
 
@@ -192,31 +195,123 @@ public class ReservationService {
         return reservationRepository.findAllByOrderByDateDescStartTimeDesc().stream()
                 .map(reservation -> toResponse(reservation,
                         roomService.findRoomById(reservation.getRoomId()).roomName(),
-                        userService.getUserById(reservation.getProfessorId()).name()))
+                        userService.getUserById(reservation.getResponsibleId()).name()))
                 .toList();
     }
 
     @Auditable(acao = "RESERVA_CANCELADA", entidadeTipo = "RESERVA")
-    public void cancelReservation(Long reservationId) {
-        Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new IllegalArgumentException("Reserva não encontrada"));
-
-        if (reservation.getStatus() == ReservationStatus.CANCELADA) {
-            throw new IllegalStateException("Essa reserva já está cancelada");
+    public void cancelOwnReservation(Long userId, Long reservationId) {
+        Reservation reservation = findOwnedReservation(userId, reservationId);
+        ensureConfirmed(reservation);
+        if (hasFinished(reservation, LocalDateTime.now())) {
+            throw new IllegalStateException("Essa reserva já foi finalizada");
         }
 
-        String roomName = roomService.findRoomById(reservation.getRoomId()).roomName();
-        AuditContext.setEntidadeId(reservation.getId());
-        AuditContext.setNome(roomName + " - " + reservation.getDate() + " " + reservation.getStartTime());
+        cancel(reservation, CancellationReason.PELO_RESPONSAVEL);
+    }
 
-        reservation.setStatus(ReservationStatus.CANCELADA);
+    @Auditable(acao = "RESERVA_CANCELADA", entidadeTipo = "RESERVA")
+    public void cancelReservationByManagement(Long reservationId) {
+        Reservation reservation = findReservation(reservationId);
+        ensureConfirmed(reservation);
+        if (hasStarted(reservation, LocalDateTime.now())) {
+            throw new IllegalStateException("Não é possível cancelar uma reserva que já começou");
+        }
+
+        cancel(reservation, CancellationReason.PELA_GESTAO);
+    }
+
+    @Auditable(acao = "RESERVA_CHECKIN", entidadeTipo = "RESERVA")
+    public void checkIn(Long userId, Long reservationId) {
+        Reservation reservation = findOwnedReservation(userId, reservationId);
+        ensureConfirmed(reservation);
+        if (reservation.getCheckInAt() != null) {
+            throw new IllegalStateException("O check-in dessa reserva já foi feito");
+        }
+        if (!isCheckInOpen(reservation, LocalDateTime.now())) {
+            throw new IllegalStateException(
+                    "O check-in só pode ser feito nos " + CHECK_IN_WINDOW_MINUTES + " minutos iniciais da reserva");
+        }
+
+        setAuditContext(reservation);
+        reservation.setCheckInAt(Instant.now());
         reservationRepository.save(reservation);
     }
 
-    private ReservationResponse toResponse(Reservation reservation, String roomName, String professorName) {
+    public List<Long> listReservationIdsWithMissedCheckIn() {
+        LocalDateTime limit = LocalDateTime.now().minusMinutes(CHECK_IN_WINDOW_MINUTES);
+        return reservationRepository.findIdsWithoutCheckInStartedUntil(ReservationStatus.CONFIRMADA,
+                limit.toLocalDate(), limit.toLocalTime());
+    }
+
+    @Auditable(acao = "RESERVA_CANCELADA", entidadeTipo = "RESERVA")
+    public void cancelForMissedCheckIn(Long reservationId) {
+        Reservation reservation = findReservation(reservationId);
+        LocalDateTime now = LocalDateTime.now();
+        if (reservation.getStatus() != ReservationStatus.CONFIRMADA || reservation.getCheckInAt() != null
+                || !hasStarted(reservation, now) || isCheckInOpen(reservation, now)) {
+            throw new IllegalStateException("A reserva " + reservationId + " não está sem check-in");
+        }
+
+        cancel(reservation, CancellationReason.SEM_CHECKIN);
+    }
+
+    private Reservation findReservation(Long reservationId) {
+        return reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("Reserva não encontrada"));
+    }
+
+    private Reservation findOwnedReservation(Long userId, Long reservationId) {
+        Reservation reservation = findReservation(reservationId);
+        if (!reservation.getResponsibleId().equals(userId)) {
+            throw new IllegalArgumentException("Reserva não encontrada");
+        }
+        return reservation;
+    }
+
+    private void ensureConfirmed(Reservation reservation) {
+        if (reservation.getStatus() == ReservationStatus.CANCELADA) {
+            throw new IllegalStateException("Essa reserva já está cancelada");
+        }
+    }
+
+    private void cancel(Reservation reservation, CancellationReason reason) {
+        setAuditContext(reservation);
+        AuditContext.setDetalhes("Motivo: " + reason.name());
+
+        reservation.setStatus(ReservationStatus.CANCELADA);
+        reservation.setCancellationReason(reason);
+        reservationRepository.save(reservation);
+    }
+
+    private void setAuditContext(Reservation reservation) {
+        String roomName = roomService.findRoomById(reservation.getRoomId()).roomName();
+        AuditContext.setEntidadeId(reservation.getId());
+        AuditContext.setNome(roomName + " - " + reservation.getDate() + " " + reservation.getStartTime());
+    }
+
+    private boolean hasStarted(Reservation reservation, LocalDateTime now) {
+        return !now.isBefore(LocalDateTime.of(reservation.getDate(), reservation.getStartTime()));
+    }
+
+    private boolean hasFinished(Reservation reservation, LocalDateTime now) {
+        return !now.isBefore(LocalDateTime.of(reservation.getDate(), reservation.getEndTime()));
+    }
+
+    private boolean isCheckInOpen(Reservation reservation, LocalDateTime now) {
+        LocalDateTime start = LocalDateTime.of(reservation.getDate(), reservation.getStartTime());
+        return !now.isBefore(start) && now.isBefore(start.plusMinutes(CHECK_IN_WINDOW_MINUTES));
+    }
+
+    private ReservationResponse toResponse(Reservation reservation, String roomName, String responsibleName) {
+        LocalDateTime now = LocalDateTime.now();
+        boolean confirmed = reservation.getStatus() == ReservationStatus.CONFIRMADA;
+        boolean checkedIn = reservation.getCheckInAt() != null;
         return new ReservationResponse(reservation.getId(), reservation.getRoomId(), roomName, reservation.getDate(),
-                reservation.getStartTime(), reservation.getEndTime(), reservation.getPurpose(), professorName,
-                reservation.getStatus());
+                reservation.getStartTime(), reservation.getEndTime(), reservation.getPurpose(), responsibleName,
+                reservation.getStatus(), reservation.getCancellationReason(), checkedIn,
+                hasStarted(reservation, now), confirmed && hasFinished(reservation, now),
+                confirmed && !checkedIn && isCheckInOpen(reservation, now));
     }
 
 }

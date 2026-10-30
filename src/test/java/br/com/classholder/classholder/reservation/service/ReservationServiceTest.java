@@ -2,6 +2,8 @@ package br.com.classholder.classholder.reservation.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -12,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
@@ -27,6 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.com.classholder.classholder.holiday.service.HolidayService;
+import br.com.classholder.classholder.reservation.CancellationReason;
 import br.com.classholder.classholder.reservation.ReservationStatus;
 import br.com.classholder.classholder.reservation.domain.Reservation;
 import br.com.classholder.classholder.reservation.dto.ReservationRequest;
@@ -85,7 +89,7 @@ class ReservationServiceTest {
 
         assertEquals(99L, response.id());
         assertEquals("Sala 12", response.roomName());
-        assertEquals("Maria", response.professorName());
+        assertEquals("Maria", response.responsibleName());
         assertEquals(ReservationStatus.CONFIRMADA, response.status());
         verify(reservationRepository).save(any(Reservation.class));
     }
@@ -190,7 +194,7 @@ class ReservationServiceTest {
 
     @Test
     void shouldNotOfferStartTimesOverlappingAConfirmedReservationForTheChosenDuration() {
-        Reservation confirmed = Reservation.builder().id(3L).roomId(ROOM_ID).professorId(PROFESSOR_ID)
+        Reservation confirmed = Reservation.builder().id(3L).roomId(ROOM_ID).responsibleId(PROFESSOR_ID)
                 .date(nextMonday).startTime(LocalTime.of(10, 0)).endTime(LocalTime.of(12, 0)).purpose("Aula")
                 .build();
         when(holidayService.findHolidayDescription(nextMonday)).thenReturn(Optional.empty());
@@ -206,17 +210,109 @@ class ReservationServiceTest {
     }
 
     @Test
-    void shouldCancelConfirmedReservation() {
-        Reservation reservation = Reservation.builder().id(5L).roomId(ROOM_ID).professorId(PROFESSOR_ID)
-                .date(nextMonday).startTime(LocalTime.of(10, 0)).endTime(LocalTime.of(11, 0)).purpose("Class")
-                .build();
+    void shouldCancelFutureReservationByManagementWithReason() {
+        Reservation reservation = reservationAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)));
         when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
         when(roomService.findRoomById(ROOM_ID)).thenReturn(commonRoom());
 
-        service.cancelReservation(5L);
+        service.cancelReservationByManagement(5L);
 
         assertEquals(ReservationStatus.CANCELADA, reservation.getStatus());
+        assertEquals(CancellationReason.PELA_GESTAO, reservation.getCancellationReason());
         verify(reservationRepository).save(reservation);
+    }
+
+    @Test
+    void shouldNotCancelByManagementWhenReservationAlreadyStarted() {
+        Reservation reservation = reservationAt(LocalDateTime.now().minusMinutes(5));
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.cancelReservationByManagement(5L));
+
+        assertEquals("Não é possível cancelar uma reserva que já começou", ex.getMessage());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldCancelOwnReservationWithReason() {
+        Reservation reservation = reservationAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)));
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(commonRoom());
+
+        service.cancelOwnReservation(PROFESSOR_ID, 5L);
+
+        assertEquals(ReservationStatus.CANCELADA, reservation.getStatus());
+        assertEquals(CancellationReason.PELO_RESPONSAVEL, reservation.getCancellationReason());
+    }
+
+    @Test
+    void shouldNotCancelReservationOfAnotherUser() {
+        Reservation reservation = reservationAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)));
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
+
+        assertThrows(IllegalArgumentException.class, () -> service.cancelOwnReservation(99L, 5L));
+
+        assertEquals(ReservationStatus.CONFIRMADA, reservation.getStatus());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldCheckInWithinFirstFifteenMinutes() {
+        Reservation reservation = reservationAt(LocalDateTime.now().minusMinutes(5));
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(commonRoom());
+
+        service.checkIn(PROFESSOR_ID, 5L);
+
+        assertNotNull(reservation.getCheckInAt());
+        verify(reservationRepository).save(reservation);
+    }
+
+    @Test
+    void shouldNotCheckInAfterFifteenMinutes() {
+        Reservation reservation = reservationAt(LocalDateTime.now().minusMinutes(20));
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
+
+        assertThrows(IllegalStateException.class, () -> service.checkIn(PROFESSOR_ID, 5L));
+
+        assertNull(reservation.getCheckInAt());
+    }
+
+    @Test
+    void shouldNotCheckInBeforeStart() {
+        Reservation reservation = reservationAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)));
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
+
+        assertThrows(IllegalStateException.class, () -> service.checkIn(PROFESSOR_ID, 5L));
+    }
+
+    @Test
+    void shouldCancelReservationWithMissedCheckIn() {
+        Reservation reservation = reservationAt(LocalDateTime.now().minusMinutes(20));
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(commonRoom());
+
+        service.cancelForMissedCheckIn(5L);
+
+        assertEquals(ReservationStatus.CANCELADA, reservation.getStatus());
+        assertEquals(CancellationReason.SEM_CHECKIN, reservation.getCancellationReason());
+    }
+
+    @Test
+    void shouldNotCancelForMissedCheckInWhileWindowIsOpen() {
+        Reservation reservation = reservationAt(LocalDateTime.now().minusMinutes(5));
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
+
+        assertThrows(IllegalStateException.class, () -> service.cancelForMissedCheckIn(5L));
+
+        assertEquals(ReservationStatus.CONFIRMADA, reservation.getStatus());
+    }
+
+    private Reservation reservationAt(LocalDateTime start) {
+        return Reservation.builder().id(5L).roomId(ROOM_ID).responsibleId(PROFESSOR_ID)
+                .date(start.toLocalDate()).startTime(start.toLocalTime()).endTime(start.toLocalTime().plusHours(1))
+                .purpose("Class").build();
     }
 
     @Test

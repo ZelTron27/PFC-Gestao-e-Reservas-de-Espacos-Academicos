@@ -42,8 +42,7 @@ public class ReservationController {
 
     @GetMapping
     public String list(Authentication authentication, Model model) {
-        Long professorId = professorId(authentication);
-        model.addAttribute("reservas", reservationService.listReservationsByProfessor(professorId));
+        model.addAttribute("reservas", reservationService.listReservationsByResponsible(currentUserId(authentication)));
         return "reservas/lista";
     }
 
@@ -80,7 +79,7 @@ public class ReservationController {
         }
 
         try {
-            reservationService.reserveCommonRoom(professorId(authentication), toRequest(form));
+            reservationService.reserveCommonRoom(currentUserId(authentication), toRequest(form));
         } catch (IllegalArgumentException | IllegalStateException e) {
             model.addAttribute("erro", e.getMessage());
             return showFormWithHorarios(authentication, form, model);
@@ -115,17 +114,42 @@ public class ReservationController {
         return "reservas/todas";
     }
 
-    @PostMapping("/{id}/cancelar")
-    public String cancel(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    @PostMapping("/todas/{id}/cancelar")
+    public String cancelByManagement(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            reservationService.cancelReservation(id);
+            reservationService.cancelReservationByManagement(id);
+            redirectAttributes.addFlashAttribute("sucesso", "Reserva cancelada");
         } catch (IllegalArgumentException | IllegalStateException e) {
             redirectAttributes.addFlashAttribute("erro", e.getMessage());
         }
         return "redirect:/reservas/todas";
     }
 
-    private Long professorId(Authentication authentication) {
+    @PostMapping("/{id}/cancelar")
+    public String cancelOwn(Authentication authentication, @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
+        try {
+            reservationService.cancelOwnReservation(currentUserId(authentication), id);
+            redirectAttributes.addFlashAttribute("sucesso", "Reserva cancelada");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("erro", e.getMessage());
+        }
+        return "redirect:/reservas";
+    }
+
+    @PostMapping("/{id}/check-in")
+    public String checkIn(Authentication authentication, @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
+        try {
+            reservationService.checkIn(currentUserId(authentication), id);
+            redirectAttributes.addFlashAttribute("sucesso", "Check-in realizado");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("erro", e.getMessage());
+        }
+        return "redirect:/reservas";
+    }
+
+    private Long currentUserId(Authentication authentication) {
         return userService.getUserByEmail(authentication.getName()).id();
     }
 

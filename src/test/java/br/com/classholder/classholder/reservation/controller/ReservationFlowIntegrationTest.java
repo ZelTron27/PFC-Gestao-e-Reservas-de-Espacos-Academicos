@@ -97,7 +97,7 @@ class ReservationFlowIntegrationTest {
         List<Reservation> saved = reservationRepository.findAll();
         assertEquals(1, saved.size());
         Reservation reservation = saved.get(0);
-        assertEquals(professor.getId(), reservation.getProfessorId());
+        assertEquals(professor.getId(), reservation.getResponsibleId());
         assertEquals(LocalTime.of(10, 0), reservation.getStartTime());
         assertEquals(LocalTime.of(11, 0), reservation.getEndTime());
         assertEquals(ReservationStatus.CONFIRMADA, reservation.getStatus());

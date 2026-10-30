@@ -176,7 +176,7 @@ class ReservationControllerIntegrationTest {
     private Reservation saveReservation(String purpose) {
         return reservationRepository.save(Reservation.builder()
                 .roomId(room.getId())
-                .professorId(professor.getId())
+                .responsibleId(professor.getId())
                 .date(LocalDate.now().plusDays(7))
                 .startTime(LocalTime.of(10, 0))
                 .endTime(LocalTime.of(11, 0))
