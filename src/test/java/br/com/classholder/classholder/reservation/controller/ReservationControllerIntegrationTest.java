@@ -10,6 +10,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
@@ -23,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.classholder.classholder.reservation.CancellationReason;
 import br.com.classholder.classholder.reservation.ReservationStatus;
 import br.com.classholder.classholder.reservation.domain.Reservation;
 import br.com.classholder.classholder.reservation.dto.ReservationResponse;
@@ -87,7 +89,7 @@ class ReservationControllerIntegrationTest {
 
         assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
         assertThat(result.getResponse().getContentAsString()).contains("Sala não encontrada");
-        assertThat(reservationRepository.findAllByProfessorIdOrderByDateDescStartTimeDesc(professor.getId()))
+        assertThat(reservationRepository.findAllByResponsibleIdOrderByDateDescStartTimeDesc(professor.getId()))
                 .isEmpty();
     }
 
@@ -206,19 +208,19 @@ class ReservationControllerIntegrationTest {
                 .get("reservas");
         assertThat(reservas).extracting(ReservationResponse::purpose)
                 .contains(reservaA.getPurpose(), reservaB.getPurpose());
-        assertThat(reservas).extracting(ReservationResponse::professorName)
+        assertThat(reservas).extracting(ReservationResponse::responsibleName)
                 .contains(professorA.getName(), professorB.getName());
         assertThat(result.getResponse().getContentAsString())
                 .contains(professorA.getName(), professorB.getName(), reservaA.getPurpose(), reservaB.getPurpose());
     }
 
     @Test
-    void cancelar_comoCoordenacao_deveRedirecionarEMarcarCancelada() throws Exception {
+    void cancelarPelaGestao_comoCoordenacao_deveRedirecionarEMarcarCanceladaPelaGestao() throws Exception {
         User coordenacao = criarUsuario(UserRole.COORDENACAO);
         User professor = criarUsuario(UserRole.PROFESSOR);
         Reservation reserva = criarReserva(criarSala(true), professor, "Reserva a cancelar " + System.nanoTime());
 
-        MvcResult result = mockMvc.perform(post("/reservas/{id}/cancelar", reserva.getId())
+        MvcResult result = mockMvc.perform(post("/reservas/todas/{id}/cancelar", reserva.getId())
                 .with(user(coordenacao.getEmail()).roles("COORDENACAO"))
                 .with(csrf())
                 .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
@@ -226,17 +228,34 @@ class ReservationControllerIntegrationTest {
 
         assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.FOUND.value());
         assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/reservas/todas");
+        assertThat(result.getFlashMap().get("sucesso")).isNotNull();
         assertThat(result.getFlashMap().get("erro")).isNull();
-        assertThat(reservationRepository.findById(reserva.getId()))
-                .get()
-                .extracting(Reservation::getStatus)
-                .isEqualTo(ReservationStatus.CANCELADA);
+        Reservation cancelada = reservationRepository.findById(reserva.getId()).orElseThrow();
+        assertThat(cancelada.getStatus()).isEqualTo(ReservationStatus.CANCELADA);
+        assertThat(cancelada.getCancellationReason()).isEqualTo(CancellationReason.PELA_GESTAO);
     }
 
     @Test
-    void cancelar_comoProfessor_deveRetornar403() throws Exception {
+    void cancelarPelaGestao_comoProfessor_deveRetornar403() throws Exception {
         User professor = criarUsuario(UserRole.PROFESSOR);
         Reservation reserva = criarReserva(criarSala(true), professor, "Reserva protegida " + System.nanoTime());
+
+        MvcResult result = mockMvc.perform(post("/reservas/todas/{id}/cancelar", reserva.getId())
+                .with(user(professor.getEmail()).roles("PROFESSOR"))
+                .with(csrf())
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.FORBIDDEN.value());
+        Reservation intacta = reservationRepository.findById(reserva.getId()).orElseThrow();
+        assertThat(intacta.getStatus()).isEqualTo(ReservationStatus.CONFIRMADA);
+        assertThat(intacta.getCancellationReason()).isNull();
+    }
+
+    @Test
+    void cancelar_comoResponsavel_deveRedirecionarEMarcarCanceladaPeloResponsavel() throws Exception {
+        User professor = criarUsuario(UserRole.PROFESSOR);
+        Reservation reserva = criarReserva(criarSala(true), professor, "Reserva propria " + System.nanoTime());
 
         MvcResult result = mockMvc.perform(post("/reservas/{id}/cancelar", reserva.getId())
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
@@ -244,11 +263,35 @@ class ReservationControllerIntegrationTest {
                 .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
                 .andReturn();
 
-        assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.FORBIDDEN.value());
-        assertThat(reservationRepository.findById(reserva.getId()))
-                .get()
-                .extracting(Reservation::getStatus)
-                .isEqualTo(ReservationStatus.CONFIRMADA);
+        assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.FOUND.value());
+        assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/reservas");
+        assertThat(result.getFlashMap().get("sucesso")).isNotNull();
+        assertThat(result.getFlashMap().get("erro")).isNull();
+        Reservation cancelada = reservationRepository.findById(reserva.getId()).orElseThrow();
+        assertThat(cancelada.getStatus()).isEqualTo(ReservationStatus.CANCELADA);
+        assertThat(cancelada.getCancellationReason()).isEqualTo(CancellationReason.PELO_RESPONSAVEL);
+    }
+
+    @Test
+    void checkIn_comoResponsavelDentroDaJanela_deveRedirecionarERegistrarCheckIn() throws Exception {
+        User professor = criarUsuario(UserRole.PROFESSOR);
+        LocalDateTime inicio = LocalDateTime.now().minusMinutes(1).truncatedTo(ChronoUnit.MINUTES);
+        Reservation reserva = criarReserva(criarSala(true), professor, "Aula em andamento " + System.nanoTime(),
+                inicio);
+
+        MvcResult result = mockMvc.perform(post("/reservas/{id}/check-in", reserva.getId())
+                .with(user(professor.getEmail()).roles("PROFESSOR"))
+                .with(csrf())
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.FOUND.value());
+        assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/reservas");
+        assertThat(result.getFlashMap().get("sucesso")).isNotNull();
+        assertThat(result.getFlashMap().get("erro")).isNull();
+        Reservation comCheckIn = reservationRepository.findById(reserva.getId()).orElseThrow();
+        assertThat(comCheckIn.getCheckInAt()).isNotNull();
+        assertThat(comCheckIn.getStatus()).isEqualTo(ReservationStatus.CONFIRMADA);
     }
 
     private User criarUsuario(UserRole role) {
@@ -276,17 +319,21 @@ class ReservationControllerIntegrationTest {
                 .build());
     }
 
-    private Reservation criarReserva(Room sala, User professor, String finalidade) {
-        return criarReserva(sala, professor, finalidade, LocalTime.of(10, 0));
+    private Reservation criarReserva(Room sala, User responsavel, String finalidade) {
+        return criarReserva(sala, responsavel, finalidade, LocalTime.of(10, 0));
     }
 
-    private Reservation criarReserva(Room sala, User professor, String finalidade, LocalTime inicio) {
+    private Reservation criarReserva(Room sala, User responsavel, String finalidade, LocalTime inicio) {
+        return criarReserva(sala, responsavel, finalidade, LocalDateTime.of(PROXIMA_SEGUNDA, inicio));
+    }
+
+    private Reservation criarReserva(Room sala, User responsavel, String finalidade, LocalDateTime inicio) {
         return reservationRepository.save(Reservation.builder()
                 .roomId(sala.getId())
-                .professorId(professor.getId())
-                .date(PROXIMA_SEGUNDA)
-                .startTime(inicio)
-                .endTime(inicio.plusHours(1))
+                .responsibleId(responsavel.getId())
+                .date(inicio.toLocalDate())
+                .startTime(inicio.toLocalTime())
+                .endTime(inicio.toLocalTime().plusHours(1))
                 .purpose(finalidade)
                 .build());
     }

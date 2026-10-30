@@ -83,7 +83,7 @@ class ReservationFlowIntegrationTest {
         assertThat(criacaoReserva.getResponse().getStatus()).isEqualTo(HttpStatus.FOUND.value());
         assertThat(criacaoReserva.getResponse().getRedirectedUrl()).isEqualTo("/reservas");
         List<Reservation> reservas = reservationRepository
-                .findAllByProfessorIdOrderByDateDescStartTimeDesc(professor.getId());
+                .findAllByResponsibleIdOrderByDateDescStartTimeDesc(professor.getId());
         assertThat(reservas).singleElement().satisfies(reserva -> {
             assertThat(reserva.getRoomId()).isEqualTo(sala.getId());
             assertThat(reserva.getDate()).isEqualTo(proximaSegunda);
