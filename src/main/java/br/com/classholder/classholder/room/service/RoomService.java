@@ -1,5 +1,9 @@
 package br.com.classholder.classholder.room.service;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -9,10 +13,13 @@ import br.com.classholder.classholder.audit.aop.Auditable;
 import br.com.classholder.classholder.room.domain.Room;
 import br.com.classholder.classholder.room.dto.RoomRequest;
 import br.com.classholder.classholder.room.dto.RoomResponse;
+import br.com.classholder.classholder.room.dto.TimeRange;
 import br.com.classholder.classholder.room.repository.RoomRepository;
 
 @Service
 public class RoomService {
+
+    private static final int SLOT_MINUTES = 30;
 
     private final RoomRepository roomRepository;
 
@@ -22,6 +29,8 @@ public class RoomService {
 
     @Auditable(acao = "SALA_CRIADA", entidadeTipo = "SALA")
     public RoomResponse createRoom(RoomRequest request) {
+        validateOperatingHours(request.operatingHours());
+
         Room room = Room.builder()
                 .roomName(request.roomName())
                 .roomType(request.roomType())
@@ -42,6 +51,8 @@ public class RoomService {
 
     @Auditable(acao = "SALA_ATUALIZADA", entidadeTipo = "SALA")
     public RoomResponse updateRoom(Long id, RoomRequest request) {
+        validateOperatingHours(request.operatingHours());
+
         Room room = findRoomEntity(id);
 
         room.setRoomName(request.roomName());
@@ -80,6 +91,42 @@ public class RoomService {
         return roomRepository.findAllByActiveTrueAndSalaEspecialFalseOrderByRoomNameAsc().stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    private void validateOperatingHours(List<TimeRange> operatingHours) {
+        List<LocalTime[]> ranges = new ArrayList<>();
+        for (TimeRange range : operatingHours) {
+            LocalTime start = parseSlotTime(range.start());
+            LocalTime end = parseSlotTime(range.end());
+            if (!start.isBefore(end)) {
+                throw new IllegalArgumentException(
+                        "No horário de funcionamento, o início deve ser anterior ao fim");
+            }
+            ranges.add(new LocalTime[] { start, end });
+        }
+
+        ranges.sort(Comparator.comparing(range -> range[0]));
+        for (int i = 1; i < ranges.size(); i++) {
+            if (ranges.get(i)[0].isBefore(ranges.get(i - 1)[1])) {
+                throw new IllegalArgumentException("Os intervalos de horário de funcionamento não podem se sobrepor");
+            }
+        }
+    }
+
+    private LocalTime parseSlotTime(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Preencha o início e o fim de todos os horários de funcionamento");
+        }
+        LocalTime time;
+        try {
+            time = LocalTime.parse(value);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Horário de funcionamento inválido: " + value);
+        }
+        if (time.getMinute() % SLOT_MINUTES != 0 || time.getSecond() != 0 || time.getNano() != 0) {
+            throw new IllegalArgumentException("Os horários de funcionamento devem ser em blocos de 30 minutos");
+        }
+        return time;
     }
 
     private Room findRoomEntity(Long id) {
