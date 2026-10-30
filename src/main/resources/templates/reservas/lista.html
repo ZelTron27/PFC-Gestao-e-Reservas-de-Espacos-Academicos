@@ -12,6 +12,9 @@
         <a class="btn btn-primary" th:href="@{/reservas/espacos}">Nova reserva</a>
     </div>
 
+    <div class="alert alert-success" role="alert" th:if="${sucesso}" th:text="${sucesso}">Sucesso</div>
+    <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
+
     <div class="ch-cartao p-4">
         <p class="ch-vazio" th:if="${#lists.isEmpty(reservas)}">Você ainda não tem reservas.</p>
 
@@ -25,6 +28,7 @@
                         <th scope="col">Término</th>
                         <th scope="col">Finalidade</th>
                         <th scope="col">Status</th>
+                        <th scope="col"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -36,9 +40,28 @@
                         <td th:text="${reserva.purpose()}">Finalidade</td>
                         <td>
                             <span class="badge rounded-pill text-bg-success"
-                                  th:if="${reserva.status().name() == 'CONFIRMADA'}">Confirmada</span>
+                                  th:if="${reserva.status().name() == 'CONFIRMADA' and !reserva.finished()}">Confirmada</span>
+                            <span class="badge rounded-pill text-bg-secondary"
+                                  th:if="${reserva.finished()}">Finalizada</span>
                             <span class="badge rounded-pill text-bg-danger"
                                   th:if="${reserva.status().name() == 'CANCELADA'}">Cancelada</span>
+                            <div class="small text-body-secondary mt-1" th:if="${reserva.cancellationReason() != null}"
+                                 th:text="${reserva.cancellationReason().label()}">Motivo</div>
+                            <div class="small text-body-secondary mt-1"
+                                 th:if="${reserva.checkedIn() and reserva.status().name() == 'CONFIRMADA'}">Check-in feito</div>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-2">
+                                <form th:if="${reserva.checkInOpen()}"
+                                      th:action="@{/reservas/{id}/check-in(id=${reserva.id()})}" method="post">
+                                    <button type="submit" class="btn btn-sm btn-primary">Check-in</button>
+                                </form>
+                                <form th:if="${reserva.status().name() == 'CONFIRMADA' and !reserva.finished()}"
+                                      th:action="@{/reservas/{id}/cancelar(id=${reserva.id()})}" method="post"
+                                      onsubmit="return confirm('Cancelar essa reserva?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
