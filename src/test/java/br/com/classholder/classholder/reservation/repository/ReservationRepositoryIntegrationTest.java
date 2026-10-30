@@ -32,7 +32,7 @@ class ReservationRepositoryIntegrationTest {
     void setUp() {
         saved = reservationRepository.save(Reservation.builder()
                 .roomId(ROOM_ID)
-                .professorId(7L)
+                .responsibleId(7L)
                 .date(DAY)
                 .startTime(LocalTime.of(10, 0))
                 .endTime(LocalTime.of(11, 0))

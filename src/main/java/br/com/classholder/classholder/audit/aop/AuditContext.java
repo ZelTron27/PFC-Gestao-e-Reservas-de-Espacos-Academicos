@@ -4,6 +4,7 @@ public final class AuditContext {
 
     private static final ThreadLocal<String> NOME = new ThreadLocal<>();
     private static final ThreadLocal<Long> ENTIDADE_ID = new ThreadLocal<>();
+    private static final ThreadLocal<String> DETALHES = new ThreadLocal<>();
 
     private AuditContext() {
     }
@@ -14,6 +15,10 @@ public final class AuditContext {
 
     public static void setEntidadeId(Long entidadeId) {
         ENTIDADE_ID.set(entidadeId);
+    }
+
+    public static void setDetalhes(String detalhes) {
+        DETALHES.set(detalhes);
     }
 
     static String consumeNome() {
@@ -28,9 +33,16 @@ public final class AuditContext {
         return entidadeId;
     }
 
+    static String consumeDetalhes() {
+        String detalhes = DETALHES.get();
+        DETALHES.remove();
+        return detalhes;
+    }
+
     static void clear() {
         NOME.remove();
         ENTIDADE_ID.remove();
+        DETALHES.remove();
     }
 
 }

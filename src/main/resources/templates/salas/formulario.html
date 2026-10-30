@@ -163,27 +163,38 @@
     const horariosContainer = document.getElementById('horariosContainer');
     const operatingHoursInput = document.getElementById('operatingHoursJson');
 
+    const HORARIOS = [];
+    for (let minutos = 0; minutos < 24 * 60; minutos += 30) {
+        HORARIOS.push(String(Math.floor(minutos / 60)).padStart(2, '0') + ':' + String(minutos % 60).padStart(2, '0'));
+    }
+
+    function criarSelectHorario(classe, valor) {
+        const select = document.createElement('select');
+        select.className = classe + ' form-select form-select-sm';
+        select.style.maxWidth = '9rem';
+        select.add(new Option('--:--', ''));
+        if (valor && !HORARIOS.includes(valor)) {
+            select.add(new Option(valor, valor));
+        }
+        HORARIOS.forEach(function (horario) {
+            select.add(new Option(horario, horario));
+        });
+        select.value = valor || '';
+        select.addEventListener('change', sincronizarHorarios);
+        return select;
+    }
+
     function adicionarLinhaHorario(intervalo) {
         const linha = document.createElement('div');
         linha.className = 'horario-linha d-flex align-items-center gap-2 mb-2';
 
-        const inicio = document.createElement('input');
-        inicio.type = 'time';
-        inicio.className = 'horario-inicio form-control form-control-sm';
-        inicio.style.maxWidth = '9rem';
-        inicio.value = intervalo.start || '';
-        inicio.addEventListener('input', sincronizarHorarios);
+        const inicio = criarSelectHorario('horario-inicio', intervalo.start);
 
         const ate = document.createElement('span');
         ate.className = 'text-secondary small';
         ate.textContent = 'até';
 
-        const fim = document.createElement('input');
-        fim.type = 'time';
-        fim.className = 'horario-fim form-control form-control-sm';
-        fim.style.maxWidth = '9rem';
-        fim.value = intervalo.end || '';
-        fim.addEventListener('input', sincronizarHorarios);
+        const fim = criarSelectHorario('horario-fim', intervalo.end);
 
         const remover = document.createElement('button');
         remover.type = 'button';
@@ -203,9 +214,17 @@
 
     function sincronizarHorarios() {
         const intervalos = Array.from(horariosContainer.querySelectorAll('.horario-linha')).map(function (linha) {
+            const inicio = linha.querySelector('.horario-inicio');
+            const fim = linha.querySelector('.horario-fim');
+            Array.from(fim.options).forEach(function (opcao) {
+                opcao.disabled = opcao.value !== '' && inicio.value !== '' && opcao.value <= inicio.value;
+            });
+            if (fim.value && inicio.value && fim.value <= inicio.value) {
+                fim.value = '';
+            }
             return {
-                start: linha.querySelector('.horario-inicio').value,
-                end: linha.querySelector('.horario-fim').value
+                start: inicio.value,
+                end: fim.value
             };
         });
         operatingHoursInput.value = JSON.stringify(intervalos);
@@ -218,6 +237,7 @@
 
     try {
         JSON.parse(operatingHoursInput.value || '[]').forEach(adicionarLinhaHorario);
+        sincronizarHorarios();
     } catch (e) {
         // valor inválido, começa vazio
     }
