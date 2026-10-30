@@ -19,6 +19,7 @@ import br.com.classholder.classholder.audit.repository.AuditLogRepository;
 public class AuditAspect {
 
     private static final Logger log = LoggerFactory.getLogger(AuditAspect.class);
+    private static final String USUARIO_SISTEMA = "SISTEMA";
 
     private final AuditLogRepository auditLogRepository;
 
@@ -29,7 +30,7 @@ public class AuditAspect {
     @AfterReturning(pointcut = "@annotation(auditable)")
     public void audit(Auditable auditable) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication != null ? authentication.getName() : null;
+        String email = authentication != null ? authentication.getName() : USUARIO_SISTEMA;
 
         AuditLog auditLog = AuditLog.builder()
                 .usuarioEmail(email)
@@ -37,6 +38,7 @@ public class AuditAspect {
                 .entidadeTipo(auditable.entidadeTipo())
                 .entidadeId(AuditContext.consumeEntidadeId())
                 .entidadeNome(AuditContext.consumeNome())
+                .detalhes(AuditContext.consumeDetalhes())
                 .timestamp(Instant.now())
                 .build();
 
