@@ -44,7 +44,7 @@ import br.com.classholder.classholder.user.repository.UserRepository;
 @Transactional
 class ReservationControllerIntegrationTest {
 
-    private static final LocalDate PROXIMA_SEGUNDA = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+    private static final LocalDate NEXT_MONDAY = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
 
     @Autowired
     private MockMvc mockMvc;
@@ -56,10 +56,10 @@ class ReservationControllerIntegrationTest {
     private ReservationRepository reservationRepository;
 
     @Test
-    void todas_comoProfessor_deveRetornar403() throws Exception {
-        User professor = criarUsuario(UserRole.PROFESSOR);
-        Room sala = criarSala(true);
-        criarReserva(sala, professor, "Reserva Restrita " + System.nanoTime());
+    void listAll_asProfessor_shouldReturn403() throws Exception {
+        User professor = createUser(UserRole.PROFESSOR);
+        Room room = createRoom(true);
+        createReservation(room, professor, "Reserva Restrita " + System.nanoTime());
 
         MvcResult result = mockMvc.perform(get("/reservas/todas")
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
@@ -72,16 +72,16 @@ class ReservationControllerIntegrationTest {
     }
 
     @Test
-    void criar_comSalaInexistente_deveRetornar404() throws Exception {
-        User professor = criarUsuario(UserRole.PROFESSOR);
-        long salaInexistente = Long.MAX_VALUE;
+    void create_withNonexistentRoom_shouldReturn404WithMessage() throws Exception {
+        User professor = createUser(UserRole.PROFESSOR);
+        long nonexistentRoomId = Long.MAX_VALUE;
 
         MvcResult result = mockMvc.perform(post("/reservas")
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
                 .with(csrf())
                 .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true)
-                .param("roomId", String.valueOf(salaInexistente))
-                .param("date", PROXIMA_SEGUNDA.toString())
+                .param("roomId", String.valueOf(nonexistentRoomId))
+                .param("date", NEXT_MONDAY.toString())
                 .param("startTime", "10:00")
                 .param("durationBlocks", "2")
                 .param("purpose", "Sala que nao existe"))
@@ -94,10 +94,10 @@ class ReservationControllerIntegrationTest {
     }
 
     @Test
-    void listar_comoCoordenacao_deveRetornar200ComListaDeReservas() throws Exception {
-        User coordenacao = criarUsuario(UserRole.COORDENACAO);
-        Room sala = criarSala(true);
-        Reservation reserva = criarReserva(sala, coordenacao, "Reuniao Coordenacao " + System.nanoTime());
+    void list_asCoordenacao_shouldReturn200WithOwnReservations() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        Room room = createRoom(true);
+        Reservation reservation = createReservation(room, coordenacao, "Reuniao Coordenacao " + System.nanoTime());
 
         MvcResult result = mockMvc.perform(get("/reservas")
                 .with(user(coordenacao.getEmail()).roles("COORDENACAO"))
@@ -107,18 +107,18 @@ class ReservationControllerIntegrationTest {
         assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.OK.value());
         assertThat(result.getModelAndView().getViewName()).isEqualTo("reservas/lista");
         @SuppressWarnings("unchecked")
-        List<ReservationResponse> reservas = (List<ReservationResponse>) result.getModelAndView().getModel()
+        List<ReservationResponse> reservations = (List<ReservationResponse>) result.getModelAndView().getModel()
                 .get("reservas");
-        assertThat(reservas).extracting(ReservationResponse::purpose).containsExactly(reserva.getPurpose());
+        assertThat(reservations).extracting(ReservationResponse::purpose).containsExactly(reservation.getPurpose());
         assertThat(result.getResponse().getContentAsString())
-                .contains(sala.getRoomName(), reserva.getPurpose());
+                .contains(room.getRoomName(), reservation.getPurpose());
     }
 
     @Test
-    void espacos_comoCoordenacao_deveRetornar200ComSalasAtivas() throws Exception {
-        User coordenacao = criarUsuario(UserRole.COORDENACAO);
-        Room ativa = criarSala(true);
-        Room inativa = criarSala(false);
+    void spaces_asCoordenacao_shouldReturn200WithActiveRoomsOnly() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        Room active = createRoom(true);
+        Room inactive = createRoom(false);
 
         MvcResult result = mockMvc.perform(get("/reservas/espacos")
                 .with(user(coordenacao.getEmail()).roles("COORDENACAO"))
@@ -128,20 +128,20 @@ class ReservationControllerIntegrationTest {
         assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.OK.value());
         assertThat(result.getModelAndView().getViewName()).isEqualTo("reservas/espacos");
         @SuppressWarnings("unchecked")
-        List<RoomResponse> salas = (List<RoomResponse>) result.getModelAndView().getModel().get("salas");
-        assertThat(salas).extracting(RoomResponse::roomName)
-                .contains(ativa.getRoomName())
-                .doesNotContain(inativa.getRoomName());
+        List<RoomResponse> rooms = (List<RoomResponse>) result.getModelAndView().getModel().get("salas");
+        assertThat(rooms).extracting(RoomResponse::roomName)
+                .contains(active.getRoomName())
+                .doesNotContain(inactive.getRoomName());
         assertThat(result.getResponse().getContentAsString())
-                .contains(ativa.getRoomName())
-                .doesNotContain(inativa.getRoomName());
+                .contains(active.getRoomName())
+                .doesNotContain(inactive.getRoomName());
     }
 
     @Test
-    void espacos_comoProfessor_deveRetornar200ComSalasAtivas() throws Exception {
-        User professor = criarUsuario(UserRole.PROFESSOR);
-        Room ativa = criarSala(true);
-        Room inativa = criarSala(false);
+    void spaces_asProfessor_shouldReturn200WithActiveRoomsOnly() throws Exception {
+        User professor = createUser(UserRole.PROFESSOR);
+        Room active = createRoom(true);
+        Room inactive = createRoom(false);
 
         MvcResult result = mockMvc.perform(get("/reservas/espacos")
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
@@ -151,25 +151,25 @@ class ReservationControllerIntegrationTest {
         assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.OK.value());
         assertThat(result.getModelAndView().getViewName()).isEqualTo("reservas/espacos");
         @SuppressWarnings("unchecked")
-        List<RoomResponse> salas = (List<RoomResponse>) result.getModelAndView().getModel().get("salas");
-        assertThat(salas).extracting(RoomResponse::roomName)
-                .contains(ativa.getRoomName())
-                .doesNotContain(inativa.getRoomName());
+        List<RoomResponse> rooms = (List<RoomResponse>) result.getModelAndView().getModel().get("salas");
+        assertThat(rooms).extracting(RoomResponse::roomName)
+                .contains(active.getRoomName())
+                .doesNotContain(inactive.getRoomName());
         assertThat(result.getResponse().getContentAsString())
-                .contains(ativa.getRoomName())
-                .doesNotContain(inativa.getRoomName());
+                .contains(active.getRoomName())
+                .doesNotContain(inactive.getRoomName());
     }
 
     @Test
-    void novaReserva_comoProfessor_deveRetornar200ComFormulario() throws Exception {
-        User professor = criarUsuario(UserRole.PROFESSOR);
-        Room sala = criarSala(true);
+    void newForm_asProfessor_shouldReturn200WithAvailableStartTimes() throws Exception {
+        User professor = createUser(UserRole.PROFESSOR);
+        Room room = createRoom(true);
 
         MvcResult result = mockMvc.perform(get("/reservas/nova")
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
                 .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true)
-                .param("roomId", String.valueOf(sala.getId()))
-                .param("date", PROXIMA_SEGUNDA.toString())
+                .param("roomId", String.valueOf(room.getId()))
+                .param("date", NEXT_MONDAY.toString())
                 .param("durationBlocks", "6"))
                 .andReturn();
 
@@ -177,24 +177,24 @@ class ReservationControllerIntegrationTest {
         assertThat(result.getModelAndView().getViewName()).isEqualTo("reservas/formulario");
         var model = result.getModelAndView().getModel();
         ReservationFormData form = (ReservationFormData) model.get("form");
-        assertThat(form.getRoomId()).isEqualTo(sala.getId());
-        assertThat(form.getDate()).isEqualTo(PROXIMA_SEGUNDA);
-        assertThat(((RoomResponse) model.get("salaEscolhida")).roomName()).isEqualTo(sala.getRoomName());
+        assertThat(form.getRoomId()).isEqualTo(room.getId());
+        assertThat(form.getDate()).isEqualTo(NEXT_MONDAY);
+        assertThat(((RoomResponse) model.get("salaEscolhida")).roomName()).isEqualTo(room.getRoomName());
         @SuppressWarnings("unchecked")
-        List<LocalTime> horarios = (List<LocalTime>) model.get("horarios");
-        assertThat(horarios).first().isEqualTo(LocalTime.of(8, 0));
-        assertThat(horarios).last().isEqualTo(LocalTime.of(15, 0));
-        assertThat(result.getResponse().getContentAsString()).contains(sala.getRoomName());
+        List<LocalTime> startTimes = (List<LocalTime>) model.get("horarios");
+        assertThat(startTimes).first().isEqualTo(LocalTime.of(8, 0));
+        assertThat(startTimes).last().isEqualTo(LocalTime.of(15, 0));
+        assertThat(result.getResponse().getContentAsString()).contains(room.getRoomName());
     }
 
     @Test
-    void todas_comoCoordenacao_deveRetornar200ComReservasDeTodos() throws Exception {
-        User coordenacao = criarUsuario(UserRole.COORDENACAO);
-        User professorA = criarUsuario(UserRole.PROFESSOR);
-        User professorB = criarUsuario(UserRole.PROFESSOR);
-        Room sala = criarSala(true);
-        Reservation reservaA = criarReserva(sala, professorA, "Aula A " + System.nanoTime(), LocalTime.of(9, 0));
-        Reservation reservaB = criarReserva(sala, professorB, "Aula B " + System.nanoTime(), LocalTime.of(14, 0));
+    void listAll_asCoordenacao_shouldReturn200WithEveryonesReservations() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        User professorA = createUser(UserRole.PROFESSOR);
+        User professorB = createUser(UserRole.PROFESSOR);
+        Room room = createRoom(true);
+        Reservation reservationA = createReservation(room, professorA, "Aula A " + System.nanoTime(), LocalTime.of(9, 0));
+        Reservation reservationB = createReservation(room, professorB, "Aula B " + System.nanoTime(), LocalTime.of(14, 0));
 
         MvcResult result = mockMvc.perform(get("/reservas/todas")
                 .with(user(coordenacao.getEmail()).roles("COORDENACAO"))
@@ -204,23 +204,23 @@ class ReservationControllerIntegrationTest {
         assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.OK.value());
         assertThat(result.getModelAndView().getViewName()).isEqualTo("reservas/todas");
         @SuppressWarnings("unchecked")
-        List<ReservationResponse> reservas = (List<ReservationResponse>) result.getModelAndView().getModel()
+        List<ReservationResponse> reservations = (List<ReservationResponse>) result.getModelAndView().getModel()
                 .get("reservas");
-        assertThat(reservas).extracting(ReservationResponse::purpose)
-                .contains(reservaA.getPurpose(), reservaB.getPurpose());
-        assertThat(reservas).extracting(ReservationResponse::responsibleName)
+        assertThat(reservations).extracting(ReservationResponse::purpose)
+                .contains(reservationA.getPurpose(), reservationB.getPurpose());
+        assertThat(reservations).extracting(ReservationResponse::responsibleName)
                 .contains(professorA.getName(), professorB.getName());
         assertThat(result.getResponse().getContentAsString())
-                .contains(professorA.getName(), professorB.getName(), reservaA.getPurpose(), reservaB.getPurpose());
+                .contains(professorA.getName(), professorB.getName(), reservationA.getPurpose(), reservationB.getPurpose());
     }
 
     @Test
-    void cancelarPelaGestao_comoCoordenacao_deveRedirecionarEMarcarCanceladaPelaGestao() throws Exception {
-        User coordenacao = criarUsuario(UserRole.COORDENACAO);
-        User professor = criarUsuario(UserRole.PROFESSOR);
-        Reservation reserva = criarReserva(criarSala(true), professor, "Reserva a cancelar " + System.nanoTime());
+    void cancelByManagement_asCoordenacao_shouldRedirectAndMarkCancelledByManagement() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        User professor = createUser(UserRole.PROFESSOR);
+        Reservation reservation = createReservation(createRoom(true), professor, "Reserva a cancelar " + System.nanoTime());
 
-        MvcResult result = mockMvc.perform(post("/reservas/todas/{id}/cancelar", reserva.getId())
+        MvcResult result = mockMvc.perform(post("/reservas/todas/{id}/cancelar", reservation.getId())
                 .with(user(coordenacao.getEmail()).roles("COORDENACAO"))
                 .with(csrf())
                 .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
@@ -230,34 +230,34 @@ class ReservationControllerIntegrationTest {
         assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/reservas/todas");
         assertThat(result.getFlashMap().get("sucesso")).isNotNull();
         assertThat(result.getFlashMap().get("erro")).isNull();
-        Reservation cancelada = reservationRepository.findById(reserva.getId()).orElseThrow();
-        assertThat(cancelada.getStatus()).isEqualTo(ReservationStatus.CANCELADA);
-        assertThat(cancelada.getCancellationReason()).isEqualTo(CancellationReason.PELA_GESTAO);
+        Reservation cancelled = reservationRepository.findById(reservation.getId()).orElseThrow();
+        assertThat(cancelled.getStatus()).isEqualTo(ReservationStatus.CANCELADA);
+        assertThat(cancelled.getCancellationReason()).isEqualTo(CancellationReason.PELA_GESTAO);
     }
 
     @Test
-    void cancelarPelaGestao_comoProfessor_deveRetornar403() throws Exception {
-        User professor = criarUsuario(UserRole.PROFESSOR);
-        Reservation reserva = criarReserva(criarSala(true), professor, "Reserva protegida " + System.nanoTime());
+    void cancelByManagement_asProfessor_shouldReturn403() throws Exception {
+        User professor = createUser(UserRole.PROFESSOR);
+        Reservation reservation = createReservation(createRoom(true), professor, "Reserva protegida " + System.nanoTime());
 
-        MvcResult result = mockMvc.perform(post("/reservas/todas/{id}/cancelar", reserva.getId())
+        MvcResult result = mockMvc.perform(post("/reservas/todas/{id}/cancelar", reservation.getId())
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
                 .with(csrf())
                 .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.FORBIDDEN.value());
-        Reservation intacta = reservationRepository.findById(reserva.getId()).orElseThrow();
-        assertThat(intacta.getStatus()).isEqualTo(ReservationStatus.CONFIRMADA);
-        assertThat(intacta.getCancellationReason()).isNull();
+        Reservation untouched = reservationRepository.findById(reservation.getId()).orElseThrow();
+        assertThat(untouched.getStatus()).isEqualTo(ReservationStatus.CONFIRMADA);
+        assertThat(untouched.getCancellationReason()).isNull();
     }
 
     @Test
-    void cancelar_comoResponsavel_deveRedirecionarEMarcarCanceladaPeloResponsavel() throws Exception {
-        User professor = criarUsuario(UserRole.PROFESSOR);
-        Reservation reserva = criarReserva(criarSala(true), professor, "Reserva propria " + System.nanoTime());
+    void cancelOwn_asResponsible_shouldRedirectAndMarkCancelledByResponsible() throws Exception {
+        User professor = createUser(UserRole.PROFESSOR);
+        Reservation reservation = createReservation(createRoom(true), professor, "Reserva propria " + System.nanoTime());
 
-        MvcResult result = mockMvc.perform(post("/reservas/{id}/cancelar", reserva.getId())
+        MvcResult result = mockMvc.perform(post("/reservas/{id}/cancelar", reservation.getId())
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
                 .with(csrf())
                 .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
@@ -267,19 +267,19 @@ class ReservationControllerIntegrationTest {
         assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/reservas");
         assertThat(result.getFlashMap().get("sucesso")).isNotNull();
         assertThat(result.getFlashMap().get("erro")).isNull();
-        Reservation cancelada = reservationRepository.findById(reserva.getId()).orElseThrow();
-        assertThat(cancelada.getStatus()).isEqualTo(ReservationStatus.CANCELADA);
-        assertThat(cancelada.getCancellationReason()).isEqualTo(CancellationReason.PELO_RESPONSAVEL);
+        Reservation cancelled = reservationRepository.findById(reservation.getId()).orElseThrow();
+        assertThat(cancelled.getStatus()).isEqualTo(ReservationStatus.CANCELADA);
+        assertThat(cancelled.getCancellationReason()).isEqualTo(CancellationReason.PELO_RESPONSAVEL);
     }
 
     @Test
-    void checkIn_comoResponsavelDentroDaJanela_deveRedirecionarERegistrarCheckIn() throws Exception {
-        User professor = criarUsuario(UserRole.PROFESSOR);
-        LocalDateTime inicio = LocalDateTime.now().minusMinutes(1).truncatedTo(ChronoUnit.MINUTES);
-        Reservation reserva = criarReserva(criarSala(true), professor, "Aula em andamento " + System.nanoTime(),
-                inicio);
+    void checkIn_asResponsibleWithinWindow_shouldRedirectAndRecordCheckIn() throws Exception {
+        User professor = createUser(UserRole.PROFESSOR);
+        LocalDateTime start = LocalDateTime.now().minusMinutes(1).truncatedTo(ChronoUnit.MINUTES);
+        Reservation reservation = createReservation(createRoom(true), professor, "Aula em andamento " + System.nanoTime(),
+                start);
 
-        MvcResult result = mockMvc.perform(post("/reservas/{id}/check-in", reserva.getId())
+        MvcResult result = mockMvc.perform(post("/reservas/{id}/check-in", reservation.getId())
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
                 .with(csrf())
                 .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
@@ -289,16 +289,16 @@ class ReservationControllerIntegrationTest {
         assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/reservas");
         assertThat(result.getFlashMap().get("sucesso")).isNotNull();
         assertThat(result.getFlashMap().get("erro")).isNull();
-        Reservation comCheckIn = reservationRepository.findById(reserva.getId()).orElseThrow();
-        assertThat(comCheckIn.getCheckInAt()).isNotNull();
-        assertThat(comCheckIn.getStatus()).isEqualTo(ReservationStatus.CONFIRMADA);
+        Reservation withCheckIn = reservationRepository.findById(reservation.getId()).orElseThrow();
+        assertThat(withCheckIn.getCheckInAt()).isNotNull();
+        assertThat(withCheckIn.getStatus()).isEqualTo(ReservationStatus.CONFIRMADA);
     }
 
-    private User criarUsuario(UserRole role) {
-        long sufixo = System.nanoTime();
+    private User createUser(UserRole role) {
+        long suffix = System.nanoTime();
         return userRepository.save(User.builder()
-                .name(role.name() + " Teste " + sufixo)
-                .email(role.name().toLowerCase() + "." + sufixo + "@classholder.com")
+                .name(role.name() + " Teste " + suffix)
+                .email(role.name().toLowerCase() + "." + suffix + "@classholder.com")
                 .passwordHash("hash")
                 .role(role)
                 .firstLogin(false)
@@ -307,34 +307,34 @@ class ReservationControllerIntegrationTest {
                 .build());
     }
 
-    private Room criarSala(boolean ativa) {
+    private Room createRoom(boolean active) {
         return roomRepository.save(Room.builder()
-                .roomName((ativa ? "Sala Ativa " : "Sala Inativa ") + System.nanoTime())
+                .roomName((active ? "Sala Ativa " : "Sala Inativa ") + System.nanoTime())
                 .roomType("Sala comum")
                 .localization("Predio A")
                 .roomCapacity(30)
                 .description("Sala de teste")
-                .active(ativa)
+                .active(active)
                 .operatingHours(List.of(new TimeRange("08:00", "18:00")))
                 .build());
     }
 
-    private Reservation criarReserva(Room sala, User responsavel, String finalidade) {
-        return criarReserva(sala, responsavel, finalidade, LocalTime.of(10, 0));
+    private Reservation createReservation(Room room, User responsible, String purpose) {
+        return createReservation(room, responsible, purpose, LocalTime.of(10, 0));
     }
 
-    private Reservation criarReserva(Room sala, User responsavel, String finalidade, LocalTime inicio) {
-        return criarReserva(sala, responsavel, finalidade, LocalDateTime.of(PROXIMA_SEGUNDA, inicio));
+    private Reservation createReservation(Room room, User responsible, String purpose, LocalTime start) {
+        return createReservation(room, responsible, purpose, LocalDateTime.of(NEXT_MONDAY, start));
     }
 
-    private Reservation criarReserva(Room sala, User responsavel, String finalidade, LocalDateTime inicio) {
+    private Reservation createReservation(Room room, User responsible, String purpose, LocalDateTime start) {
         return reservationRepository.save(Reservation.builder()
-                .roomId(sala.getId())
-                .responsibleId(responsavel.getId())
-                .date(inicio.toLocalDate())
-                .startTime(inicio.toLocalTime())
-                .endTime(inicio.toLocalTime().plusHours(1))
-                .purpose(finalidade)
+                .roomId(room.getId())
+                .responsibleId(responsible.getId())
+                .date(start.toLocalDate())
+                .startTime(start.toLocalTime())
+                .endTime(start.toLocalTime().plusHours(1))
+                .purpose(purpose)
                 .build());
     }
 

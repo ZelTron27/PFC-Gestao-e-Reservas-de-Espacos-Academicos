@@ -40,11 +40,11 @@ class ClassHolderHttpIntegrationTest {
     }
 
     @Test
-    void todas_semLogin_deveRetornar302ComLocationParaLogin() {
-        String rotaProtegida = "/reservas/todas";
+    void listAll_withoutLogin_shouldReturn302RedirectingToLogin() {
+        String protectedRoute = "/reservas/todas";
 
         ResponseEntity<String> response = restClient.get()
-                .uri(rotaProtegida)
+                .uri(protectedRoute)
                 .retrieve()
                 .toEntity(String.class);
 

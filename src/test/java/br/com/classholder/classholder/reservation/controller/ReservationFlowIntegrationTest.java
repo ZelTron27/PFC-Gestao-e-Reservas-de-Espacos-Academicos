@@ -52,69 +52,69 @@ class ReservationFlowIntegrationTest {
     private ReservationRepository reservationRepository;
 
     @Test
-    void fluxo_coordenacaoCriaSalaEProfessorReserva_deveRedirecionarPersistirEExibirNaLista() throws Exception {
-        User coordenacao = criarUsuario(UserRole.COORDENACAO);
-        User professor = criarUsuario(UserRole.PROFESSOR);
-        String nomeSala = "Sala Fluxo " + System.nanoTime();
-        String finalidade = "Fluxo Completo " + System.nanoTime();
-        LocalDate proximaSegunda = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+    void flow_coordenacaoCreatesRoomAndProfessorReserves_shouldRedirectPersistAndShowInList() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        User professor = createUser(UserRole.PROFESSOR);
+        String roomName = "Sala Fluxo " + System.nanoTime();
+        String purpose = "Fluxo Completo " + System.nanoTime();
+        LocalDate nextMonday = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
 
-        MvcResult criacaoSala = criarSalaViaEndpoint(coordenacao, nomeSala);
+        MvcResult roomCreation = createRoomViaEndpoint(coordenacao, roomName);
 
-        assertThat(criacaoSala.getResponse().getStatus()).isEqualTo(HttpStatus.FOUND.value());
-        assertThat(criacaoSala.getResponse().getHeader(HttpHeaders.LOCATION)).isEqualTo("/salas");
-        Room sala = roomRepository.findAll().stream()
-                .filter(room -> nomeSala.equals(room.getRoomName()))
+        assertThat(roomCreation.getResponse().getStatus()).isEqualTo(HttpStatus.FOUND.value());
+        assertThat(roomCreation.getResponse().getHeader(HttpHeaders.LOCATION)).isEqualTo("/salas");
+        Room room = roomRepository.findAll().stream()
+                .filter(candidate -> roomName.equals(candidate.getRoomName()))
                 .findFirst()
                 .orElseThrow();
-        assertThat(sala.getActive()).isTrue();
+        assertThat(room.getActive()).isTrue();
 
-        MvcResult criacaoReserva = mockMvc.perform(post("/reservas")
+        MvcResult reservationCreation = mockMvc.perform(post("/reservas")
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
                 .with(csrf())
                 .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true)
-                .param("roomId", String.valueOf(sala.getId()))
-                .param("date", proximaSegunda.toString())
+                .param("roomId", String.valueOf(room.getId()))
+                .param("date", nextMonday.toString())
                 .param("startTime", "10:00")
                 .param("durationBlocks", "2")
-                .param("purpose", finalidade))
+                .param("purpose", purpose))
                 .andReturn();
 
-        assertThat(criacaoReserva.getResponse().getStatus()).isEqualTo(HttpStatus.FOUND.value());
-        assertThat(criacaoReserva.getResponse().getRedirectedUrl()).isEqualTo("/reservas");
-        List<Reservation> reservas = reservationRepository
+        assertThat(reservationCreation.getResponse().getStatus()).isEqualTo(HttpStatus.FOUND.value());
+        assertThat(reservationCreation.getResponse().getRedirectedUrl()).isEqualTo("/reservas");
+        List<Reservation> reservations = reservationRepository
                 .findAllByResponsibleIdOrderByDateDescStartTimeDesc(professor.getId());
-        assertThat(reservas).singleElement().satisfies(reserva -> {
-            assertThat(reserva.getRoomId()).isEqualTo(sala.getId());
-            assertThat(reserva.getDate()).isEqualTo(proximaSegunda);
-            assertThat(reserva.getStartTime()).isEqualTo(LocalTime.of(10, 0));
-            assertThat(reserva.getEndTime()).isEqualTo(LocalTime.of(11, 0));
-            assertThat(reserva.getPurpose()).isEqualTo(finalidade);
-            assertThat(reserva.getStatus()).isEqualTo(ReservationStatus.CONFIRMADA);
+        assertThat(reservations).singleElement().satisfies(reservation -> {
+            assertThat(reservation.getRoomId()).isEqualTo(room.getId());
+            assertThat(reservation.getDate()).isEqualTo(nextMonday);
+            assertThat(reservation.getStartTime()).isEqualTo(LocalTime.of(10, 0));
+            assertThat(reservation.getEndTime()).isEqualTo(LocalTime.of(11, 0));
+            assertThat(reservation.getPurpose()).isEqualTo(purpose);
+            assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMADA);
         });
 
-        MvcResult lista = mockMvc.perform(get("/reservas")
+        MvcResult listResult = mockMvc.perform(get("/reservas")
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
                 .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
                 .andReturn();
 
-        assertThat(lista.getResponse().getStatus()).isEqualTo(HttpStatus.OK.value());
-        assertThat(lista.getModelAndView().getViewName()).isEqualTo("reservas/lista");
-        assertThat(lista.getResponse().getContentAsString()).contains(nomeSala, finalidade);
+        assertThat(listResult.getResponse().getStatus()).isEqualTo(HttpStatus.OK.value());
+        assertThat(listResult.getModelAndView().getViewName()).isEqualTo("reservas/lista");
+        assertThat(listResult.getResponse().getContentAsString()).contains(roomName, purpose);
     }
 
-    private MvcResult criarSalaViaEndpoint(User autor, String nomeSala) throws Exception {
+    private MvcResult createRoomViaEndpoint(User author, String roomName) throws Exception {
         return mockMvc.perform(post("/salas")
-                .with(user(autor.getEmail()).roles(autor.getRole().name()))
+                .with(user(author.getEmail()).roles(author.getRole().name()))
                 .with(csrf())
                 .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true)
-                .params(buildSalaParams(nomeSala)))
+                .params(buildRoomParams(roomName)))
                 .andReturn();
     }
 
-    private MultiValueMap<String, String> buildSalaParams(String nomeSala) {
+    private MultiValueMap<String, String> buildRoomParams(String roomName) {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("roomName", nomeSala);
+        params.add("roomName", roomName);
         params.add("roomType", "Sala comum");
         params.add("localization", "Predio B");
         params.add("roomCapacity", "40");
@@ -123,11 +123,11 @@ class ReservationFlowIntegrationTest {
         return params;
     }
 
-    private User criarUsuario(UserRole role) {
-        long sufixo = System.nanoTime();
+    private User createUser(UserRole role) {
+        long suffix = System.nanoTime();
         return userRepository.save(User.builder()
-                .name(role.name() + " Fluxo " + sufixo)
-                .email(role.name().toLowerCase() + ".fluxo." + sufixo + "@classholder.com")
+                .name(role.name() + " Fluxo " + suffix)
+                .email(role.name().toLowerCase() + ".fluxo." + suffix + "@classholder.com")
                 .passwordHash("hash")
                 .role(role)
                 .firstLogin(false)
