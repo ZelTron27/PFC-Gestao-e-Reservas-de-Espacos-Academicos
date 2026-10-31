@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Não encontrado - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/publico :: documento(~{::#conteudo-nao-encontrado})}">
+<div id="conteudo-nao-encontrado">
+    <h1 class="ch-titulo h3 mb-3">Não encontrado</h1>
+    <p th:text="${mensagem}">Recurso não encontrado</p>
+</div>
+</div>
+</body>
+</html>

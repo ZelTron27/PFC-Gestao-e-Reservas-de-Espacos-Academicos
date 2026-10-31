@@ -15,6 +15,7 @@ import br.com.classholder.classholder.room.dto.RoomRequest;
 import br.com.classholder.classholder.room.dto.RoomResponse;
 import br.com.classholder.classholder.room.dto.TimeRange;
 import br.com.classholder.classholder.room.repository.RoomRepository;
+import br.com.classholder.classholder.shared.RecursoNaoEncontradoException;
 
 @Service
 public class RoomService {
@@ -131,7 +132,7 @@ public class RoomService {
 
     private Room findRoomEntity(Long id) {
         return roomRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Sala não encontrada"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Sala não encontrada"));
     }
 
     private RoomResponse toResponse(Room room) {
