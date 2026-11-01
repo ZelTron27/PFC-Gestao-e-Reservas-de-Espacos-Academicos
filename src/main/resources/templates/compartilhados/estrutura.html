@@ -23,6 +23,8 @@
                 <a th:href="@{/reservas}" th:classappend="${paginaAtiva == 'reservas'} ? 'ativo'">Minhas Reservas</a>
                 <a th:href="@{/reservas/todas}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')"
                    th:classappend="${paginaAtiva == 'todas'} ? 'ativo'">Todas as Reservas</a>
+                <a th:href="@{/solicitacoes}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')"
+                   th:classappend="${paginaAtiva == 'solicitacoes'} ? 'ativo'">Solicitações</a>
                 <a th:href="@{/salas}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')"
                    th:classappend="${paginaAtiva == 'salas'} ? 'ativo'">Salas</a>
                 <a th:href="@{/equipamentos}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')"

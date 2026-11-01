@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Reservar sala - Class Holder</title>
@@ -16,6 +17,8 @@
     </div>
 
     <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
+    <div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('${form.date}')}"
+         th:errors="${form.date}">Data inválida</div>
 
     <div class="row g-4">
         <div class="col-12 col-lg-7">
@@ -51,14 +54,27 @@
 
         <div class="col-12 col-lg-5">
             <div class="ch-cartao p-4">
-                <h2 class="ch-titulo h6 mb-3">Fazer reserva</h2>
+                <h2 class="ch-titulo h6 mb-3"
+                    th:text="${salaEscolhida.salaEspecial()} ? 'Solicitar sala especial' : 'Fazer reserva'">Fazer reserva</h2>
+
+                <div class="alert alert-info small" role="note" th:if="${salaEscolhida.salaEspecial()}">
+                    <span sec:authorize="hasRole('PROFESSOR')">
+                        Esta sala exige aprovação da coordenação. A solicitação expira em 72 horas ou no horário
+                        pedido, o que ocorrer primeiro.
+                    </span>
+                    <span sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">
+                        Como gestão, sua solicitação é aprovada automaticamente e cancela as solicitações
+                        pendentes no mesmo horário.
+                    </span>
+                </div>
 
                 <form id="filtroHorarios" th:action="@{/reservas/nova}" method="get">
                     <input type="hidden" name="roomId" th:value="${form.roomId}">
 
                     <div class="mb-3">
                         <label class="form-label" for="date">Data</label>
-                        <input type="date" class="form-control" id="date" name="date" th:value="${form.date}">
+                        <input type="date" class="form-control" id="date" name="date" th:value="${form.date}"
+                               th:max="${#temporals.createToday().plusYears(2)}">
                     </div>
 
                     <div class="mb-3">
@@ -115,13 +131,14 @@
 
                         <div class="mb-3">
                             <label class="form-label" for="purpose">Finalidade</label>
-                            <textarea class="form-control" id="purpose" rows="3" th:field="*{purpose}"
+                            <textarea class="form-control" id="purpose" rows="3" maxlength="500" th:field="*{purpose}"
                                       placeholder="Ex: Aula de reposição, reunião de departamento"></textarea>
                             <div class="text-danger small mt-1" th:if="${#fields.hasErrors('purpose')}"
                                  th:errors="*{purpose}"></div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">Confirmar reserva</button>
+                        <button type="submit" class="btn btn-primary w-100"
+                                th:text="${salaEscolhida.salaEspecial()} ? 'Enviar solicitação' : 'Confirmar reserva'">Confirmar reserva</button>
                     </form>
                 </div>
             </div>
