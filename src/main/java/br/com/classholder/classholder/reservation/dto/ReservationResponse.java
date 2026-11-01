@@ -17,6 +17,8 @@ public record ReservationResponse(
         String responsibleName,
         ReservationStatus status,
         CancellationReason cancellationReason,
+        String rejectionJustification,
+        String evaluatorName,
         boolean checkedIn,
         boolean started,
         boolean finished,

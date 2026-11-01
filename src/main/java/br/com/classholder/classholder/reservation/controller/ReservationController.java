@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import br.com.classholder.classholder.equipment.service.EquipmentService;
+import br.com.classholder.classholder.reservation.ReservationStatus;
 import br.com.classholder.classholder.reservation.dto.ReservationRequest;
+import br.com.classholder.classholder.reservation.dto.ReservationResponse;
 import br.com.classholder.classholder.reservation.service.ReservationService;
 import br.com.classholder.classholder.room.service.RoomService;
 import br.com.classholder.classholder.user.service.UserService;
@@ -73,13 +75,24 @@ public class ReservationController {
 
     @PostMapping
     public String reserve(Authentication authentication, @ModelAttribute("form") @Valid ReservationFormData form,
-            BindingResult bindingResult, Model model) {
+            BindingResult bindingResult, Model model, RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasFieldErrors("roomId")) {
+            return "redirect:/reservas/espacos";
+        }
         if (bindingResult.hasErrors()) {
             return showFormWithHorarios(authentication, form, model);
         }
 
         try {
-            reservationService.reserveCommonRoom(currentUserId(authentication), toRequest(form));
+            if (roomService.findRoomById(form.getRoomId()).salaEspecial()) {
+                ReservationResponse response = reservationService.requestSpecialRoom(currentUserId(authentication),
+                        toRequest(form));
+                redirectAttributes.addFlashAttribute("sucesso", response.status() == ReservationStatus.PENDENTE
+                        ? "Solicitação enviada para avaliação da coordenação"
+                        : "Reserva confirmada");
+            } else {
+                reservationService.reserveCommonRoom(currentUserId(authentication), toRequest(form));
+            }
         } catch (IllegalArgumentException | IllegalStateException e) {
             model.addAttribute("erro", e.getMessage());
             return showFormWithHorarios(authentication, form, model);

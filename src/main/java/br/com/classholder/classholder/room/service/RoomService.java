@@ -7,6 +7,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.com.classholder.classholder.audit.aop.AuditContext;
 import br.com.classholder.classholder.audit.aop.Auditable;
@@ -80,6 +82,13 @@ public class RoomService {
 
     public RoomResponse findRoomById(Long id) {
         return toResponse(findRoomEntity(id));
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public RoomResponse findRoomForReservation(Long id) {
+        return roomRepository.findByIdForUpdate(id)
+                .map(this::toResponse)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Sala não encontrada"));
     }
 
     public List<RoomResponse> listActiveRooms() {
