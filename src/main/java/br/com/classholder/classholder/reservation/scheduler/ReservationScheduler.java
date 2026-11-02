@@ -29,4 +29,15 @@ public class ReservationScheduler {
         }
     }
 
+    @Scheduled(cron = "${app.reservas.expiracao-cron}", zone = "America/Sao_Paulo")
+    public void expirePendingRequests() {
+        for (Long reservationId : reservationService.listExpirableRequestIds()) {
+            try {
+                reservationService.expireRequest(reservationId);
+            } catch (RuntimeException e) {
+                log.warn("Não foi possível expirar a solicitação {}", reservationId, e);
+            }
+        }
+    }
+
 }

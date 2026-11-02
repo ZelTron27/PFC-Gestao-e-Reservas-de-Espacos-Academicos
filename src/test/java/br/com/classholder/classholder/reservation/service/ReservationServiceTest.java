@@ -8,11 +8,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -26,6 +31,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -48,6 +56,7 @@ class ReservationServiceTest {
 
     private static final Long ROOM_ID = 1L;
     private static final Long PROFESSOR_ID = 7L;
+    private static final Long COORDINATOR_ID = 8L;
     private static final LocalDate WEDNESDAY = LocalDate.of(2026, 9, 30);
     private static final LocalDate SATURDAY = LocalDate.of(2026, 10, 3);
     private static final LocalDate SUNDAY = LocalDate.of(2026, 10, 4);
@@ -69,6 +78,9 @@ class ReservationServiceTest {
     void setUp() {
         service = new ReservationService(reservationRepository, roomService, userService, holidayService, true);
         nextMonday = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+        lenient().when(roomService.findRoomForReservation(anyLong()))
+                .thenAnswer(invocation -> roomService.findRoomById(invocation.getArgument(0)));
+        lenient().when(reservationRepository.findRoomIdById(anyLong())).thenReturn(Optional.of(ROOM_ID));
     }
 
     @Test
@@ -309,10 +321,341 @@ class ReservationServiceTest {
         assertEquals(ReservationStatus.CONFIRMADA, reservation.getStatus());
     }
 
+    @Test
+    void shouldRefusePurposeLongerThanFiveHundredCharacters() {
+        ReservationRequest request = new ReservationRequest(ROOM_ID, nextMonday, LocalTime.of(10, 0),
+                LocalTime.of(11, 0), "a".repeat(501));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.reserveCommonRoom(PROFESSOR_ID, request));
+
+        assertEquals("A finalidade deve ter no máximo 500 caracteres", ex.getMessage());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldLockRoomBeforeCheckingConflicts() {
+        ReservationRequest request = request(LocalTime.of(10, 0), LocalTime.of(11, 0));
+        when(holidayService.findHolidayDescription(nextMonday)).thenReturn(Optional.empty());
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(commonRoom());
+        when(reservationRepository.findConflicting(any(), any(), any(), any(), any())).thenReturn(List.of());
+        when(userService.getUserById(PROFESSOR_ID))
+                .thenReturn(new UserResponse(PROFESSOR_ID, "Maria", "maria@teste.com", UserRole.PROFESSOR));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.reserveCommonRoom(PROFESSOR_ID, request);
+
+        InOrder inOrder = inOrder(roomService, reservationRepository);
+        inOrder.verify(roomService).findRoomForReservation(ROOM_ID);
+        inOrder.verify(reservationRepository).findConflicting(any(), any(), any(), any(), any());
+        inOrder.verify(reservationRepository).save(any(Reservation.class));
+    }
+
+    @Test
+    void shouldLockRoomBeforeChangingReservationStatus() {
+        Reservation pending = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)), 5L);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+
+        service.rejectRequest(COORDINATOR_ID, 5L, "Sem disponibilidade");
+
+        InOrder inOrder = inOrder(roomService, reservationRepository);
+        inOrder.verify(roomService).findRoomForReservation(ROOM_ID);
+        inOrder.verify(reservationRepository).findById(5L);
+    }
+
+    @Test
+    void shouldRefuseSpecialRequestForCommonRoom() {
+        ReservationRequest request = request(LocalTime.of(10, 0), LocalTime.of(11, 0));
+        when(holidayService.findHolidayDescription(nextMonday)).thenReturn(Optional.empty());
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(commonRoom());
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.requestSpecialRoom(PROFESSOR_ID, request));
+
+        assertEquals("Essa sala não é especial e pode ser reservada diretamente", ex.getMessage());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldCreatePendingRequestWhenProfessorAsksForSpecialRoom() {
+        ReservationRequest request = request(LocalTime.of(10, 0), LocalTime.of(11, 0));
+        when(holidayService.findHolidayDescription(nextMonday)).thenReturn(Optional.empty());
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+        when(reservationRepository.findConflicting(ROOM_ID, nextMonday, request.startTime(), request.endTime(),
+                ReservationStatus.CONFIRMADA)).thenReturn(List.of());
+        when(userService.getUserById(PROFESSOR_ID))
+                .thenReturn(new UserResponse(PROFESSOR_ID, "Maria", "maria@teste.com", UserRole.PROFESSOR));
+        when(reservationRepository.existsOverlappingByResponsible(PROFESSOR_ID, ROOM_ID, nextMonday,
+                request.startTime(), request.endTime(), ReservationStatus.PENDENTE)).thenReturn(false);
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
+            Reservation saved = invocation.getArgument(0);
+            saved.setId(50L);
+            return saved;
+        });
+
+        ReservationResponse response = service.requestSpecialRoom(PROFESSOR_ID, request);
+
+        assertEquals(50L, response.id());
+        assertEquals(ReservationStatus.PENDENTE, response.status());
+        assertNull(response.evaluatorName());
+        verify(reservationRepository, never()).findConflicting(any(), any(), any(), any(), eq(ReservationStatus.PENDENTE));
+    }
+
+    @Test
+    void shouldRefuseSecondOverlappingPendingRequestFromSameResponsible() {
+        ReservationRequest request = request(LocalTime.of(10, 0), LocalTime.of(11, 0));
+        when(holidayService.findHolidayDescription(nextMonday)).thenReturn(Optional.empty());
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+        when(reservationRepository.findConflicting(any(), any(), any(), any(), any())).thenReturn(List.of());
+        when(userService.getUserById(PROFESSOR_ID))
+                .thenReturn(new UserResponse(PROFESSOR_ID, "Maria", "maria@teste.com", UserRole.PROFESSOR));
+        when(reservationRepository.existsOverlappingByResponsible(any(), any(), any(), any(), any(), any()))
+                .thenReturn(true);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.requestSpecialRoom(PROFESSOR_ID, request));
+
+        assertEquals("Você já tem uma solicitação pendente para essa sala nesse horário", ex.getMessage());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRefuseSpecialRequestOverlappingConfirmedReservation() {
+        ReservationRequest request = request(LocalTime.of(10, 0), LocalTime.of(11, 0));
+        when(holidayService.findHolidayDescription(nextMonday)).thenReturn(Optional.empty());
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+        when(reservationRepository.findConflicting(ROOM_ID, nextMonday, request.startTime(), request.endTime(),
+                ReservationStatus.CONFIRMADA)).thenReturn(List.of(new Reservation()));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.requestSpecialRoom(PROFESSOR_ID, request));
+
+        assertEquals("Já existe uma reserva para essa sala nesse dia e horário", ex.getMessage());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldAutoApproveSpecialRequestFromManagementAndCancelOverlappingPendingOnes() {
+        ReservationRequest request = request(LocalTime.of(10, 0), LocalTime.of(11, 0));
+        Reservation otherPending = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 30)), 60L);
+        when(holidayService.findHolidayDescription(nextMonday)).thenReturn(Optional.empty());
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+        when(reservationRepository.findConflicting(ROOM_ID, nextMonday, request.startTime(), request.endTime(),
+                ReservationStatus.CONFIRMADA)).thenReturn(List.of());
+        when(userService.getUserById(COORDINATOR_ID))
+                .thenReturn(new UserResponse(COORDINATOR_ID, "Ana", "ana@teste.com", UserRole.COORDENACAO));
+        when(reservationRepository.findConflicting(ROOM_ID, nextMonday, request.startTime(),
+                request.endTime(), ReservationStatus.PENDENTE)).thenReturn(List.of(otherPending));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
+            Reservation saved = invocation.getArgument(0);
+            if (saved.getId() == null) {
+                saved.setId(51L);
+            }
+            return saved;
+        });
+
+        ReservationResponse response = service.requestSpecialRoom(COORDINATOR_ID, request);
+
+        assertEquals(ReservationStatus.CONFIRMADA, response.status());
+        assertEquals("Ana", response.evaluatorName());
+        assertEquals(ReservationStatus.CANCELADA, otherPending.getStatus());
+        assertEquals(CancellationReason.HORARIO_APROVADO_PARA_OUTRA, otherPending.getCancellationReason());
+        verify(reservationRepository, never()).existsOverlappingByResponsible(any(), any(), any(), any(), any(),
+                any());
+    }
+
+    @Test
+    void shouldApproveRequestAndCancelOverlappingPendingOnes() {
+        Reservation pending = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)), 5L);
+        Reservation competing = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 30)), 6L);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+        when(reservationRepository.findConflicting(ROOM_ID, nextMonday, pending.getStartTime(),
+                pending.getEndTime(), ReservationStatus.PENDENTE)).thenReturn(List.of(pending, competing));
+        when(reservationRepository.findConflicting(ROOM_ID, nextMonday, pending.getStartTime(),
+                pending.getEndTime(), ReservationStatus.CONFIRMADA)).thenReturn(List.of());
+
+        service.approveRequest(COORDINATOR_ID, 5L);
+
+        assertEquals(ReservationStatus.CONFIRMADA, pending.getStatus());
+        assertEquals(COORDINATOR_ID, pending.getEvaluatedById());
+        assertNotNull(pending.getEvaluatedAt());
+        assertNull(pending.getCancellationReason());
+        assertEquals(ReservationStatus.CANCELADA, competing.getStatus());
+        assertEquals(CancellationReason.HORARIO_APROVADO_PARA_OUTRA, competing.getCancellationReason());
+    }
+
+    @Test
+    void shouldNotApproveWhenSlotWasConfirmedMeanwhile() {
+        Reservation pending = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)), 5L);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+        when(reservationRepository.findConflicting(ROOM_ID, nextMonday, pending.getStartTime(),
+                pending.getEndTime(), ReservationStatus.PENDENTE)).thenReturn(List.of(pending));
+        when(reservationRepository.findConflicting(ROOM_ID, nextMonday, pending.getStartTime(),
+                pending.getEndTime(), ReservationStatus.CONFIRMADA)).thenReturn(List.of(new Reservation()));
+
+        assertThrows(IllegalStateException.class, () -> service.approveRequest(COORDINATOR_ID, 5L));
+
+        assertEquals(ReservationStatus.PENDENTE, pending.getStatus());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldNotApproveRequestThatIsNoLongerPending() {
+        Reservation rejected = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)), 5L);
+        rejected.setStatus(ReservationStatus.RECUSADA);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(rejected));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.approveRequest(COORDINATOR_ID, 5L));
+
+        assertEquals("Essa solicitação não está mais pendente", ex.getMessage());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRejectRequestWithJustification() {
+        Reservation pending = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)), 5L);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+
+        service.rejectRequest(COORDINATOR_ID, 5L, "  Laboratório em manutenção  ");
+
+        assertEquals(ReservationStatus.RECUSADA, pending.getStatus());
+        assertEquals("Laboratório em manutenção", pending.getRejectionJustification());
+        assertEquals(COORDINATOR_ID, pending.getEvaluatedById());
+        assertNotNull(pending.getEvaluatedAt());
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   "})
+    void shouldRejectRequestWithoutJustification(String justification) {
+        Reservation pending = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)), 5L);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+
+        service.rejectRequest(COORDINATOR_ID, 5L, justification);
+
+        assertEquals(ReservationStatus.RECUSADA, pending.getStatus());
+        assertNull(pending.getRejectionJustification());
+        assertEquals(COORDINATOR_ID, pending.getEvaluatedById());
+    }
+
+    @Test
+    void shouldRefuseJustificationLongerThanFiveHundredCharacters() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.rejectRequest(COORDINATOR_ID, 5L, "a".repeat(501)));
+
+        assertEquals("A justificativa deve ter no máximo 500 caracteres", ex.getMessage());
+    }
+
+    @Test
+    void shouldExpireRequestAfterSeventyTwoHours() {
+        Reservation pending = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)), 5L);
+        pending.setCreatedAt(Instant.now().minus(Duration.ofHours(73)));
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+
+        service.expireRequest(5L);
+
+        assertEquals(ReservationStatus.EXPIRADA, pending.getStatus());
+    }
+
+    @Test
+    void shouldExpireRequestWhenRequestedTimeHasStarted() {
+        Reservation pending = pendingAt(LocalDateTime.now().minusMinutes(1), 5L);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+
+        service.expireRequest(5L);
+
+        assertEquals(ReservationStatus.EXPIRADA, pending.getStatus());
+    }
+
+    @Test
+    void shouldNotExpireRecentRequestForFutureTime() {
+        Reservation pending = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)), 5L);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
+
+        assertThrows(IllegalStateException.class, () -> service.expireRequest(5L));
+
+        assertEquals(ReservationStatus.PENDENTE, pending.getStatus());
+    }
+
+    @Test
+    void shouldLetResponsibleCancelOwnPendingRequest() {
+        Reservation pending = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)), 5L);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(specialRoom());
+
+        service.cancelOwnReservation(PROFESSOR_ID, 5L);
+
+        assertEquals(ReservationStatus.CANCELADA, pending.getStatus());
+        assertEquals(CancellationReason.PELO_RESPONSAVEL, pending.getCancellationReason());
+    }
+
+    @Test
+    void shouldNotCheckInPendingRequest() {
+        Reservation pending = pendingAt(LocalDateTime.now().minusMinutes(5), 5L);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.checkIn(PROFESSOR_ID, 5L));
+
+        assertEquals("Essa solicitação ainda aguarda avaliação", ex.getMessage());
+        assertNull(pending.getCheckInAt());
+    }
+
+    @Test
+    void shouldNotCancelPendingRequestByManagement() {
+        Reservation pending = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)), 5L);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
+
+        assertThrows(IllegalStateException.class, () -> service.cancelReservationByManagement(5L));
+
+        assertEquals(ReservationStatus.PENDENTE, pending.getStatus());
+    }
+
+    private Reservation pendingAt(LocalDateTime start, Long id) {
+        return Reservation.builder().id(id).roomId(ROOM_ID).responsibleId(PROFESSOR_ID)
+                .date(start.toLocalDate()).startTime(start.toLocalTime()).endTime(start.toLocalTime().plusHours(1))
+                .purpose("Aula prática").status(ReservationStatus.PENDENTE).createdAt(Instant.now()).build();
+    }
+
     private Reservation reservationAt(LocalDateTime start) {
         return Reservation.builder().id(5L).roomId(ROOM_ID).responsibleId(PROFESSOR_ID)
                 .date(start.toLocalDate()).startTime(start.toLocalTime()).endTime(start.toLocalTime().plusHours(1))
                 .purpose("Class").build();
+    }
+
+    @Test
+    void shouldBlockDatesMoreThanTwoYearsAhead() {
+        LocalDate beyondLimit = LocalDate.now().plusYears(2).plusDays(1);
+
+        assertThat(service.findUnavailableDayReason(beyondLimit))
+                .contains("Só é possível reservar com até 2 anos de antecedência");
+    }
+
+    @Test
+    void shouldNotApplyAdvanceLimitOnTheLastAllowedDate() {
+        assertThat(service.findUnavailableDayReason(LocalDate.now().plusYears(2))
+                .filter(reason -> reason.contains("antecedência")))
+                .isEmpty();
+    }
+
+    @Test
+    void shouldRefuseReservationBeyondAdvanceLimit() {
+        ReservationRequest request = new ReservationRequest(ROOM_ID, LocalDate.of(9999, 12, 29), LocalTime.of(10, 0),
+                LocalTime.of(11, 0), "Usar a sala");
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.reserveCommonRoom(PROFESSOR_ID, request));
+
+        assertEquals("Só é possível reservar com até 2 anos de antecedência", ex.getMessage());
+        verify(reservationRepository, never()).save(any());
     }
 
     @Test
@@ -353,6 +696,11 @@ class ReservationServiceTest {
     private RoomResponse commonRoom() {
         return new RoomResponse(ROOM_ID, "Sala 12", "SALA", "Predio 1", 30, "Uma sala muito legal", true, false,
                 Set.of(), List.of(new TimeRange("08:00", "18:00")));
+    }
+
+    private RoomResponse specialRoom() {
+        return new RoomResponse(ROOM_ID, "Laboratório 3", "LABORATORIO", "Predio 2", 20, "Laboratório de química",
+                true, true, Set.of(), List.of(new TimeRange("08:00", "18:00")));
     }
 
 }

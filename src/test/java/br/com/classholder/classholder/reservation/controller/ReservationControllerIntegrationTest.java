@@ -294,6 +294,67 @@ class ReservationControllerIntegrationTest {
         assertThat(withCheckIn.getStatus()).isEqualTo(ReservationStatus.CONFIRMADA);
     }
 
+    @Test
+    void create_withInvalidRoomId_shouldRedirectToSpaces() throws Exception {
+        User professor = createUser(UserRole.PROFESSOR);
+
+        MvcResult result = mockMvc.perform(post("/reservas")
+                .with(user(professor.getEmail()).roles("PROFESSOR"))
+                .with(csrf())
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true)
+                .param("roomId", "abc")
+                .param("date", NEXT_MONDAY.toString())
+                .param("startTime", "10:00")
+                .param("durationBlocks", "2")
+                .param("purpose", "Sala com id invalido"))
+                .andReturn();
+
+        assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/reservas/espacos");
+    }
+
+    @Test
+    void create_withPurposeLongerThan500Characters_shouldShowMessage() throws Exception {
+        User professor = createUser(UserRole.PROFESSOR);
+        Room room = createRoom(true);
+
+        MvcResult result = mockMvc.perform(post("/reservas")
+                .with(user(professor.getEmail()).roles("PROFESSOR"))
+                .with(csrf())
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true)
+                .param("roomId", String.valueOf(room.getId()))
+                .param("date", NEXT_MONDAY.toString())
+                .param("startTime", "10:00")
+                .param("durationBlocks", "2")
+                .param("purpose", "a".repeat(501)))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.OK.value());
+        assertThat(result.getResponse().getContentAsString())
+                .contains("A finalidade deve ter no máximo 500 caracteres");
+        assertThat(reservationRepository.findAllByResponsibleIdOrderByDateDescStartTimeDesc(professor.getId()))
+                .isEmpty();
+    }
+
+    @Test
+    void create_withPastDate_shouldShowMessage() throws Exception {
+        User professor = createUser(UserRole.PROFESSOR);
+        Room room = createRoom(true);
+
+        MvcResult result = mockMvc.perform(post("/reservas")
+                .with(user(professor.getEmail()).roles("PROFESSOR"))
+                .with(csrf())
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true)
+                .param("roomId", String.valueOf(room.getId()))
+                .param("date", "2020-01-07")
+                .param("startTime", "10:00")
+                .param("durationBlocks", "2")
+                .param("purpose", "Data passada"))
+                .andReturn();
+
+        assertThat(result.getResponse().getContentAsString())
+                .contains("A data da reserva não pode ser no passado");
+    }
+
     private User createUser(UserRole role) {
         long suffix = System.nanoTime();
         return userRepository.save(User.builder()

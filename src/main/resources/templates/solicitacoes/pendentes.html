@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitações - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-solicitacoes}, 'solicitacoes', ${usuario})}">
+<div id="conteudo-solicitacoes">
+    <h1 class="ch-titulo h3 mb-1">Solicitações de sala especial</h1>
+    <p class="text-secondary mb-4">
+        Pedidos aguardando avaliação, agrupados por sala e data. Aprovar um pedido cancela os outros pendentes no
+        mesmo horário. Pedidos não avaliados expiram em 72 horas ou no horário pedido.
+    </p>
+
+    <div class="alert alert-success" role="alert" th:if="${sucesso}" th:text="${sucesso}">Sucesso</div>
+    <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
+
+    <div class="ch-cartao p-4" th:if="${#lists.isEmpty(grupos)}">
+        <p class="ch-vazio m-0">Nenhuma solicitação aguardando avaliação.</p>
+    </div>
+
+    <div class="ch-cartao p-4 mb-3" th:each="grupo : ${grupos}">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h2 class="ch-titulo h6 m-0">
+                <span th:text="${grupo.roomName()}">Sala</span>
+                <span class="text-secondary fw-normal"
+                      th:text="' · ' + ${#temporals.format(grupo.date(), 'dd/MM/yyyy')}">· 01/01/2026</span>
+            </h2>
+            <span class="badge rounded-pill text-bg-warning"
+                  th:text="${#lists.size(grupo.requests()) == 1 ? '1 pedido' : #lists.size(grupo.requests()) + ' pedidos'}">1 pedido</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle ch-tabela mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Horário</th>
+                        <th scope="col">Responsável</th>
+                        <th scope="col">Finalidade</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="pedido : ${grupo.requests()}">
+                        <td class="text-nowrap"
+                            th:text="${#temporals.format(pedido.startTime(), 'HH:mm')} + ' - ' + ${#temporals.format(pedido.endTime(), 'HH:mm')}">
+                            10:00 - 11:00
+                        </td>
+                        <td th:text="${pedido.responsibleName()}">Responsável</td>
+                        <td class="ch-texto-longo" th:text="${pedido.purpose()}">Finalidade</td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end align-items-start gap-2 flex-wrap">
+                                <form th:action="@{/solicitacoes/{id}/aprovar(id=${pedido.id()})}" method="post"
+                                      onsubmit="return confirm('Aprovar essa solicitação? Os pedidos pendentes no mesmo horário serão cancelados.');">
+                                    <button type="submit" class="btn btn-sm btn-primary">Aprovar</button>
+                                </form>
+                                <details>
+                                    <summary class="btn btn-sm btn-outline-danger">Recusar</summary>
+                                    <form class="mt-2 text-start" style="min-width: 16rem"
+                                          th:action="@{/solicitacoes/{id}/recusar(id=${pedido.id()})}" method="post">
+                                        <label class="form-label small" th:for="'justificativa-' + ${pedido.id()}">Justificativa (opcional)</label>
+                                        <textarea class="form-control form-control-sm mb-2" rows="3" name="justificativa"
+                                                  th:id="'justificativa-' + ${pedido.id()}" maxlength="500"></textarea>
+                                        <button type="submit" class="btn btn-sm btn-danger w-100">Confirmar recusa</button>
+                                    </form>
+                                </details>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+</body>
+</html>

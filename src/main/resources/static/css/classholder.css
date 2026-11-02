@@ -221,6 +221,11 @@ body {
     vertical-align: middle;
 }
 
+.ch-texto-longo {
+    min-width: 12rem;
+    overflow-wrap: anywhere;
+}
+
 .ch-vazio {
     color: #7B8794;
     font-size: 0.9rem;
