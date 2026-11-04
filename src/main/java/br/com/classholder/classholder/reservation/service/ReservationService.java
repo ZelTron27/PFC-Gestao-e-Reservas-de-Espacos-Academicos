@@ -386,8 +386,8 @@ public class ReservationService {
     public void cancelOwnReservation(Long userId, Long reservationId) {
         Reservation reservation = findOwnedReservation(userId, reservationId);
         ensureOpen(reservation);
-        if (hasFinished(reservation, LocalDateTime.now())) {
-            throw new IllegalStateException("Essa reserva já foi finalizada");
+        if (hasStarted(reservation, LocalDateTime.now())) {
+            throw new IllegalStateException("Não é possível cancelar uma reserva que já começou");
         }
 
         cancel(reservation, CancellationReason.PELO_RESPONSAVEL);
