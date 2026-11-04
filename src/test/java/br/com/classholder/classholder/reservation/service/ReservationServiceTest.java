@@ -270,6 +270,35 @@ class ReservationServiceTest {
     }
 
     @Test
+    void shouldNotCancelOwnReservationWhenAlreadyStarted() {
+        Reservation reservation = reservationAt(LocalDateTime.now().minusMinutes(5));
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.cancelOwnReservation(PROFESSOR_ID, 5L));
+
+        assertEquals("Não é possível cancelar uma reserva que já começou", ex.getMessage());
+        assertEquals(ReservationStatus.CONFIRMADA, reservation.getStatus());
+        assertNull(reservation.getCancellationReason());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldNotCancelOwnReservationWhenAlreadyCancelled() {
+        Reservation reservation = reservationAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)));
+        reservation.setStatus(ReservationStatus.CANCELADA);
+        reservation.setCancellationReason(CancellationReason.PELA_GESTAO);
+        when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.cancelOwnReservation(PROFESSOR_ID, 5L));
+
+        assertEquals("Essa reserva já está cancelada", ex.getMessage());
+        assertEquals(CancellationReason.PELA_GESTAO, reservation.getCancellationReason());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
     void shouldCheckInWithinFirstFifteenMinutes() {
         Reservation reservation = reservationAt(LocalDateTime.now().minusMinutes(5));
         when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
