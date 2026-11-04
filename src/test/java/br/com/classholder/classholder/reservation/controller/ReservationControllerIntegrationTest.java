@@ -273,6 +273,28 @@ class ReservationControllerIntegrationTest {
     }
 
     @Test
+    void cancelOwn_whenReservationAlreadyStarted_shouldRedirectWithErrorAndKeepConfirmed() throws Exception {
+        User professor = createUser(UserRole.PROFESSOR);
+        LocalDateTime start = LocalDateTime.now().minusMinutes(1).truncatedTo(ChronoUnit.MINUTES);
+        Reservation reservation = createReservation(createRoom(true), professor, "Aula em andamento " + System.nanoTime(),
+                start);
+
+        MvcResult result = mockMvc.perform(post("/reservas/{id}/cancelar", reservation.getId())
+                .with(user(professor.getEmail()).roles("PROFESSOR"))
+                .with(csrf())
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.FOUND.value());
+        assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/reservas");
+        assertThat(result.getFlashMap().get("erro")).isEqualTo("Não é possível cancelar uma reserva que já começou");
+        assertThat(result.getFlashMap().get("sucesso")).isNull();
+        Reservation untouched = reservationRepository.findById(reservation.getId()).orElseThrow();
+        assertThat(untouched.getStatus()).isEqualTo(ReservationStatus.CONFIRMADA);
+        assertThat(untouched.getCancellationReason()).isNull();
+    }
+
+    @Test
     void checkIn_asResponsibleWithinWindow_shouldRedirectAndRecordCheckIn() throws Exception {
         User professor = createUser(UserRole.PROFESSOR);
         LocalDateTime start = LocalDateTime.now().minusMinutes(1).truncatedTo(ChronoUnit.MINUTES);
