@@ -72,4 +72,8 @@ public class User {
     @Column(name = "locked_until")
     private LocalDateTime lockedUntil;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean active = true;
+
 }

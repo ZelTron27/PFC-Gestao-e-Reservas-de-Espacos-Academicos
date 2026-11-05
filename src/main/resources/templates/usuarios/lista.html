@@ -12,6 +12,9 @@
         <a class="btn btn-primary" th:href="@{/usuarios/novo}">Novo usuário</a>
     </div>
 
+    <div class="alert alert-success" role="alert" th:if="${sucesso}" th:text="${sucesso}">Sucesso</div>
+    <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
+
     <div class="ch-cartao p-4">
         <p class="ch-vazio" th:if="${#lists.isEmpty(usuarios)}">Nenhum usuário cadastrado ainda.</p>
 
@@ -22,6 +25,8 @@
                         <th scope="col">Nome</th>
                         <th scope="col">E-mail</th>
                         <th scope="col">Perfil</th>
+                        <th scope="col">Situação</th>
+                        <th scope="col"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -31,6 +36,28 @@
                         <td>
                             <span class="badge rounded-pill text-bg-light border"
                                   th:text="${cadastrado.role()}">PERFIL</span>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill text-bg-success" th:if="${cadastrado.active()}">Ativo</span>
+                            <span class="badge rounded-pill text-bg-secondary"
+                                  th:unless="${cadastrado.active()}">Desativado</span>
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-end gap-2"
+                                 th:if="${usuario.role().canManage(cadastrado.role()) and cadastrado.id() != usuario.id()}">
+                                <a class="btn btn-sm btn-outline-primary"
+                                   th:href="@{/usuarios/{id}/editar(id=${cadastrado.id()})}">Editar</a>
+                                <form th:if="${cadastrado.active()}"
+                                      th:action="@{/usuarios/{id}/desativar(id=${cadastrado.id()})}" method="post"
+                                      onsubmit="return confirm('Desativar esse usuário? As reservas futuras e as solicitações pendentes dele serão canceladas.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Desativar</button>
+                                </form>
+                                <form th:unless="${cadastrado.active()}"
+                                      th:action="@{/usuarios/{id}/reativar(id=${cadastrado.id()})}" method="post"
+                                      onsubmit="return confirm('Reativar esse usuário? As reservas canceladas não serão restauradas.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Reativar</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 </tbody>

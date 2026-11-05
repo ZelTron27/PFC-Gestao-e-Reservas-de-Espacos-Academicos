@@ -30,6 +30,13 @@ public class OnboardingInterceptor implements HandlerInterceptor {
 
         String email = authentication.getName();
 
+        if (!userService.isActive(email)) {
+            request.getSession().invalidate();
+            SecurityContextHolder.clearContext();
+            response.sendRedirect("/login?desativado");
+            return false;
+        }
+
         if (!userService.hasAcceptedLgpdTerm(email)) {
             response.sendRedirect("/lgpd");
             return false;
