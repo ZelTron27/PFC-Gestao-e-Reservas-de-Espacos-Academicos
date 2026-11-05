@@ -26,7 +26,9 @@
                         <th scope="col">Término</th>
                         <th scope="col">Finalidade</th>
                         <th scope="col">Status</th>
+                        <th scope="col">Criada em</th>
                         <th scope="col">Avaliador</th>
+                        <th scope="col">Cancelamento</th>
                         <th scope="col"></th>
                     </tr>
                 </thead>
@@ -58,7 +60,17 @@
                             <div class="small text-body-secondary mt-1"
                                  th:if="${reserva.checkedIn() and reserva.status().name() == 'CONFIRMADA'}">Check-in feito</div>
                         </td>
-                        <td th:text="${reserva.evaluatorName() ?: '-'}">Avaliador</td>
+                        <td th:text="${reserva.createdAt() != null ? #temporals.format(reserva.createdAt(), 'dd/MM/yyyy HH:mm') : '-'}">Criada em</td>
+                        <td>
+                            <span th:text="${reserva.evaluatorName() ?: '-'}">Avaliador</span>
+                            <div class="small text-body-secondary" th:if="${reserva.evaluatedAt() != null}"
+                                 th:text="${#temporals.format(reserva.evaluatedAt(), 'dd/MM/yyyy HH:mm')}">Quando</div>
+                        </td>
+                        <td>
+                            <span th:text="${reserva.cancelledByName() ?: '-'}">Quem cancelou</span>
+                            <div class="small text-body-secondary" th:if="${reserva.cancelledAt() != null}"
+                                 th:text="${#temporals.format(reserva.cancelledAt(), 'dd/MM/yyyy HH:mm')}">Quando</div>
+                        </td>
                         <td class="text-end">
                             <form th:if="${reserva.status().name() == 'CONFIRMADA' and !reserva.started()}"
                                   th:action="@{/reservas/todas/{id}/cancelar(id=${reserva.id()})}" method="post"

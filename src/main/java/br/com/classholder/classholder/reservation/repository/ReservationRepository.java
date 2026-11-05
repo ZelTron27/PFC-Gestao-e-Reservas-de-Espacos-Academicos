@@ -70,4 +70,39 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Long> findIdsWithoutCheckInStartedUntil(@Param("status") ReservationStatus status,
             @Param("limitDate") LocalDate limitDate, @Param("limitTime") LocalTime limitTime);
 
+    @Query("""
+            select r.id from Reservation r
+            where r.responsibleId = :responsibleId
+              and r.status in :statuses
+              and (r.date > :today or (r.date = :today and r.startTime > :now))
+            order by r.roomId, r.id
+            """)
+    List<Long> findUpcomingIdsByResponsible(@Param("responsibleId") Long responsibleId,
+            @Param("statuses") List<ReservationStatus> statuses, @Param("today") LocalDate today,
+            @Param("now") LocalTime now);
+
+    @Query("""
+            select r.id from Reservation r
+            where r.roomId = :roomId
+              and r.status in :statuses
+              and (r.date > :today or (r.date = :today and r.startTime > :now))
+            order by r.id
+            """)
+    List<Long> findUpcomingIdsByRoom(@Param("roomId") Long roomId,
+            @Param("statuses") List<ReservationStatus> statuses, @Param("today") LocalDate today,
+            @Param("now") LocalTime now);
+
+    @Query("""
+            select count(r) > 0 from Reservation r
+            where r.roomId = :roomId
+              and (r.status = :pending
+                   or (r.status = :confirmed
+                       and (r.checkInAt is null
+                            or r.date > :today
+                            or (r.date = :today and r.endTime > :now))))
+            """)
+    boolean existsOpenByRoom(@Param("roomId") Long roomId, @Param("pending") ReservationStatus pending,
+            @Param("confirmed") ReservationStatus confirmed, @Param("today") LocalDate today,
+            @Param("now") LocalTime now);
+
 }

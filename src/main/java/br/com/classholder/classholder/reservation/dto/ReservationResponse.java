@@ -1,6 +1,7 @@
 package br.com.classholder.classholder.reservation.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import br.com.classholder.classholder.reservation.CancellationReason;
@@ -22,5 +23,9 @@ public record ReservationResponse(
         boolean checkedIn,
         boolean started,
         boolean finished,
-        boolean checkInOpen) {
+        boolean checkInOpen,
+        LocalDateTime createdAt,
+        LocalDateTime evaluatedAt,
+        String cancelledByName,
+        LocalDateTime cancelledAt) {
 }

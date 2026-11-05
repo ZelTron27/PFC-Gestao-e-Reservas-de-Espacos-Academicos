@@ -22,6 +22,7 @@ import br.com.classholder.classholder.reservation.ReservationStatus;
 import br.com.classholder.classholder.reservation.dto.ReservationRequest;
 import br.com.classholder.classholder.reservation.dto.ReservationResponse;
 import br.com.classholder.classholder.reservation.service.ReservationService;
+import br.com.classholder.classholder.room.dto.RoomFilter;
 import br.com.classholder.classholder.room.service.RoomService;
 import br.com.classholder.classholder.user.service.UserService;
 
@@ -49,8 +50,17 @@ public class ReservationController {
     }
 
     @GetMapping("/espacos")
-    public String espacos(Model model) {
-        model.addAttribute("salas", roomService.listActiveRooms());
+    public String espacos(@ModelAttribute("filtro") @Valid RoomFilterFormData filtro, BindingResult bindingResult,
+            Model model) {
+        model.addAttribute("equipamentos", equipmentService.listAll());
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("erro", "Filtros inválidos: informe uma capacidade mínima maior que zero e um tipo com até 250 caracteres");
+            model.addAttribute("salas", roomService.listActiveRooms());
+            return "reservas/espacos";
+        }
+
+        model.addAttribute("salas", roomService.searchActiveRooms(
+                new RoomFilter(filtro.getEquipamentos(), filtro.getCapacidadeMinima(), filtro.getTipo())));
         return "reservas/espacos";
     }
 
@@ -128,9 +138,10 @@ public class ReservationController {
     }
 
     @PostMapping("/todas/{id}/cancelar")
-    public String cancelByManagement(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String cancelByManagement(Authentication authentication, @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
         try {
-            reservationService.cancelReservationByManagement(id);
+            reservationService.cancelReservationByManagement(currentUserId(authentication), id);
             redirectAttributes.addFlashAttribute("sucesso", "Reserva cancelada");
         } catch (IllegalArgumentException | IllegalStateException e) {
             redirectAttributes.addFlashAttribute("erro", e.getMessage());

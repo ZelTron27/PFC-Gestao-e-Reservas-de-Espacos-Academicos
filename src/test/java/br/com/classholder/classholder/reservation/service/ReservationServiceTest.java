@@ -70,13 +70,15 @@ class ReservationServiceTest {
     private UserService userService;
     @Mock
     private HolidayService holidayService;
+    @Mock
+    private ReservationNotifier notifier;
 
     private ReservationService service;
     private LocalDate nextMonday;
 
     @BeforeEach
     void setUp() {
-        service = new ReservationService(reservationRepository, roomService, userService, holidayService, true);
+        service = new ReservationService(reservationRepository, roomService, userService, holidayService, notifier, true);
         nextMonday = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
         lenient().when(roomService.findRoomForReservation(anyLong()))
                 .thenAnswer(invocation -> roomService.findRoomById(invocation.getArgument(0)));
@@ -227,7 +229,7 @@ class ReservationServiceTest {
         when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
         when(roomService.findRoomById(ROOM_ID)).thenReturn(commonRoom());
 
-        service.cancelReservationByManagement(5L);
+        service.cancelReservationByManagement(COORDINATOR_ID, 5L);
 
         assertEquals(ReservationStatus.CANCELADA, reservation.getStatus());
         assertEquals(CancellationReason.PELA_GESTAO, reservation.getCancellationReason());
@@ -240,7 +242,7 @@ class ReservationServiceTest {
         when(reservationRepository.findById(5L)).thenReturn(Optional.of(reservation));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> service.cancelReservationByManagement(5L));
+                () -> service.cancelReservationByManagement(COORDINATOR_ID, 5L));
 
         assertEquals("Não é possível cancelar uma reserva que já começou", ex.getMessage());
         verify(reservationRepository, never()).save(any());
@@ -643,7 +645,7 @@ class ReservationServiceTest {
         Reservation pending = pendingAt(LocalDateTime.of(nextMonday, LocalTime.of(10, 0)), 5L);
         when(reservationRepository.findById(5L)).thenReturn(Optional.of(pending));
 
-        assertThrows(IllegalStateException.class, () -> service.cancelReservationByManagement(5L));
+        assertThrows(IllegalStateException.class, () -> service.cancelReservationByManagement(COORDINATOR_ID, 5L));
 
         assertEquals(ReservationStatus.PENDENTE, pending.getStatus());
     }
@@ -696,7 +698,7 @@ class ReservationServiceTest {
     void blocksSaturdayOnlyWhenConfigured() {
         when(holidayService.findHolidayDescription(any())).thenReturn(Optional.empty());
         ReservationService saturdayAllowed = new ReservationService(reservationRepository, roomService, userService,
-                holidayService, false);
+                holidayService, notifier, false);
 
         assertThat(service.findUnavailableDayReason(SATURDAY)).contains("Não há reservas aos sábados");
         assertThat(saturdayAllowed.findUnavailableDayReason(SATURDAY)).isEmpty();
