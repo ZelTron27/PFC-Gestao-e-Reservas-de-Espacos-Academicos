@@ -8,7 +8,7 @@
 <div th:replace="~{compartilhados/publico :: documento(~{::#conteudo-privacidade})}">
 <div id="conteudo-privacidade">
     <h1 class="ch-titulo h3 mb-1">Política de Privacidade</h1>
-    <p class="text-secondary small mb-4">Versão 1.1, atualizada em setembro de 2026</p>
+    <p class="text-secondary small mb-4">Versão 1.2, atualizada em novembro de 2026</p>
 
 
     <p>
@@ -62,9 +62,9 @@
             autenticação em dois fatores, armazenada cifrada;</li>
         <li>(iii) dados de reservas: sala, data, horário, finalidade informada, situação da reserva e professor
             responsável;</li>
-        <li>(iv) registros de auditoria: e-mail do Usuário que realizou a ação, tipo de ação, item afetado, data e
-            hora, incluindo o endereço IP nos eventos de login, falha de login e logout, e o nome e o e-mail do
-            Usuário afetado quando a ação envolver outro Usuário, como no cadastro de uma conta;</li>
+        <li>(iv) registros de auditoria: identificador numérico do Usuário que realizou a ação, tipo de ação, item
+            afetado, data e hora. Quando a ação envolve outro Usuário, ele também é identificado apenas por seu
+            identificador numérico. Os registros de auditoria não armazenam nome, e-mail nem endereço IP;</li>
         <li>(v) registro de ciência e aceite: data e hora em que o Usuário declarou ciência desta Política de
             Privacidade e aceitou os Termos de Uso;</li>
         <li>(vi) registros técnicos de acesso: endereço IP e informações da requisição, gerados pela
@@ -160,9 +160,11 @@
             com ela;</li>
         <li>(iii) registro de ciência e aceite: mantido enquanto existir a conta do Usuário e excluído junto com
             ela;</li>
-        <li>(iv) registros de auditoria: mantidos no Sistema por até 12 (doze) meses a partir da data do registro.
-            Após esse prazo, são retirados da base em uso e arquivados em ambiente separado, com acesso restrito à
-            Administração, pelo período necessário à apuração de incidentes e ao exercício regular de direitos;</li>
+        <li>(iv) registros de auditoria: mantidos por 5 (cinco) anos a partir da data do registro, prazo necessário
+            à apuração de incidentes e ao exercício regular de direitos em processos judiciais, administrativos ou
+            arbitrais, inclusive trabalhistas. Durante esse período, não são alterados nem excluídos pelo Sistema.
+            Ao final do prazo, são eliminados pela equipe de tecnologia da instituição, conforme o procedimento do
+            manual de implantação. Registros relativos a contas anonimizadas deixam de identificar o titular;</li>
         <li>(v) registros técnicos de acesso: mantidos conforme o prazo de retenção de logs do fornecedor de
             hospedagem e excluídos por ele.</li>
         <li>(vi) dados de recuperação de senha: o token é invalidado após o uso ou ao fim do prazo de validade, e os
