@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
@@ -116,6 +117,39 @@ public class RoomController {
             return "salas/formulario";
         }
 
+        return "redirect:/salas";
+    }
+
+    @PostMapping("/{id}/inativar")
+    public String inactivate(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            roomService.inactivateRoom(id);
+            redirectAttributes.addFlashAttribute("sucesso", "Sala inativada");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("erro", e.getMessage());
+        }
+        return "redirect:/salas";
+    }
+
+    @PostMapping("/{id}/reativar")
+    public String reactivate(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            roomService.reactivateRoom(id);
+            redirectAttributes.addFlashAttribute("sucesso", "Sala reativada");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("erro", e.getMessage());
+        }
+        return "redirect:/salas";
+    }
+
+    @PostMapping("/{id}/excluir")
+    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            roomService.deleteRoom(id);
+            redirectAttributes.addFlashAttribute("sucesso", "Sala excluída");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("erro", e.getMessage());
+        }
         return "redirect:/salas";
     }
 

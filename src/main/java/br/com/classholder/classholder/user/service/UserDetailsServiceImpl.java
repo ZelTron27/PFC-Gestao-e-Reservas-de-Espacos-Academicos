@@ -31,6 +31,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .password(user.getPasswordHash())
                 .authorities(user.getRole().getAuthority())
                 .accountLocked(locked)
+                .disabled(!user.isActive())
                 .build();
     }
 

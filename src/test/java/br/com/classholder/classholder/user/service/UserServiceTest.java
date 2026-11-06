@@ -15,7 +15,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -91,15 +90,14 @@ class UserServiceTest {
     }
 
 
-    @ParameterizedTest
-    @EnumSource(value = UserRole.class, names = {"ADMIN", "COORDENACAO"})
-    void shouldRejectWhenCoordenacaoCreatesAnyoneOtherThanProfessor(UserRole role) {
-        UserRequest request = new UserRequest("Ana Souza", "ana@classholder.com", SENHA_VALIDA, role);
+    @Test
+    void shouldRejectWhenCoordenacaoCreatesAdmin() {
+        UserRequest request = new UserRequest("Ana Souza", "ana@classholder.com", SENHA_VALIDA, UserRole.ADMIN);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> userService.createUser(UserRole.COORDENACAO, request));
 
-        assertEquals("A coordenação só pode cadastrar professores", exception.getMessage());
+        assertEquals("A coordenação não pode cadastrar administradores", exception.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
 

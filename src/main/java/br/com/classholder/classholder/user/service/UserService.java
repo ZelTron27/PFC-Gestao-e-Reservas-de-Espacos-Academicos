@@ -7,15 +7,21 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.com.classholder.classholder.audit.aop.AuditContext;
 import br.com.classholder.classholder.audit.aop.Auditable;
 import br.com.classholder.classholder.audit.domain.AuditLog;
 import br.com.classholder.classholder.audit.repository.AuditLogRepository;
+import br.com.classholder.classholder.shared.WhenChangesSaved;
+import br.com.classholder.classholder.shared.RecursoNaoEncontradoException;
+import br.com.classholder.classholder.user.UserDeactivatedEvent;
 import br.com.classholder.classholder.user.UserRole;
 import br.com.classholder.classholder.user.domain.User;
+import br.com.classholder.classholder.user.dto.UserEditRequest;
 import br.com.classholder.classholder.user.dto.UserRequest;
 import br.com.classholder.classholder.user.dto.UserResponse;
 import br.com.classholder.classholder.user.repository.UserRepository;
@@ -40,10 +46,12 @@ public class UserService {
     private final PasswordResetService passwordResetService;
     private final EmailService emailService;
     private final AuditLogRepository auditLogRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, TotpService totpService,
             PasswordResetService passwordResetService, EmailService emailService,
-            AuditLogRepository auditLogRepository) {
+            AuditLogRepository auditLogRepository, ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.totpService = totpService;
@@ -54,8 +62,8 @@ public class UserService {
 
     @Auditable(acao = "USUARIO_CRIADO", entidadeTipo = "USUARIO")
     public UserResponse createUser(UserRole creatorRole, UserRequest request) {
-        if (creatorRole != UserRole.ADMIN && request.role() != UserRole.PROFESSOR) {
-            throw new IllegalArgumentException("A coordenação só pode cadastrar professores");
+        if (creatorRole != UserRole.ADMIN && request.role() == UserRole.ADMIN) {
+            throw new IllegalArgumentException("A coordenação não pode cadastrar administradores");
         }
 
         if (userRepository.existsByEmail(request.email())) {
@@ -74,12 +82,95 @@ public class UserService {
         User saved = userRepository.save(user);
         AuditContext.setEntidadeId(saved.getId());
         AuditContext.setNome(saved.getName() + " (" + saved.getEmail() + ")");
-        return new UserResponse(saved.getId(), saved.getName(), saved.getEmail(), saved.getRole());
+        return toResponse(saved);
+    }
+
+    public UserResponse getManageableUser(Long actorId, UserRole actorRole, Long id) {
+        return toResponse(findManageableUser(actorId, actorRole, id));
+    }
+
+    @Auditable(acao = "USUARIO_ATUALIZADO", entidadeTipo = "USUARIO")
+    public UserResponse updateUser(Long actorId, UserRole actorRole, Long id, UserEditRequest request) {
+        User user = findManageableUser(actorId, actorRole, id);
+        if (userRepository.existsByEmailAndIdNot(request.email(), id)) {
+            throw new IllegalArgumentException("E-mail já cadastrado");
+        }
+
+        user.setName(request.name());
+        user.setEmail(request.email());
+        User saved = userRepository.save(user);
+        AuditContext.setEntidadeId(saved.getId());
+        return toResponse(saved);
+    }
+
+    @Transactional
+    @Auditable(acao = "USUARIO_DESATIVADO", entidadeTipo = "USUARIO")
+    public void deactivateUser(Long actorId, UserRole actorRole, Long id) {
+        User user = findManageableUser(actorId, actorRole, id);
+        if (!user.isActive()) {
+            throw new IllegalStateException("Esse usuário já está desativado");
+        }
+
+        user.setActive(false);
+        userRepository.save(user);
+
+        UserDeactivatedEvent event = new UserDeactivatedEvent(id);
+        eventPublisher.publishEvent(event);
+
+        List<String> cancelledReservations = event.cancelledReservations();
+        String email = user.getEmail();
+        String name = user.getName();
+        WhenChangesSaved.run(() -> sendDeactivationEmail(id, email, name, cancelledReservations));
+        AuditContext.setEntidadeId(id);
+        AuditContext.setDetalhes("Reservas e solicitações canceladas: " + cancelledReservations.size());
+    }
+
+    @Auditable(acao = "USUARIO_REATIVADO", entidadeTipo = "USUARIO")
+    public void reactivateUser(Long actorId, UserRole actorRole, Long id) {
+        User user = findManageableUser(actorId, actorRole, id);
+        if (user.isActive()) {
+            throw new IllegalStateException("Esse usuário já está ativo");
+        }
+
+        user.setActive(true);
+        userRepository.save(user);
+        AuditContext.setEntidadeId(id);
+    }
+
+    public boolean isActive(String email) {
+        return userRepository.findByEmail(email)
+                .map(User::isActive)
+                .orElse(true);
+    }
+
+    private void sendDeactivationEmail(Long id, String email, String name, List<String> cancelledReservations) {
+        try {
+            emailService.sendAccountDeactivatedEmail(email, name, cancelledReservations);
+        } catch (RuntimeException e) {
+            log.error("Falha ao enviar e-mail de desativação para o usuário {}", id, e);
+        }
+    }
+
+    private User findManageableUser(Long actorId, UserRole actorRole, Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
+
+        if (id.equals(actorId)) {
+            throw new IllegalArgumentException("Você não pode alterar a própria conta por aqui");
+        }
+        if (!actorRole.canManage(user.getRole())) {
+            throw new IllegalArgumentException("Você não tem permissão para alterar esse usuário");
+        }
+        return user;
+    }
+
+    private UserResponse toResponse(User user) {
+        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole(), user.isActive());
     }
 
     public List<UserResponse> listUsers() {
         return userRepository.findAll().stream()
-                .map(user -> new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole()))
+                .map(this::toResponse)
                 .toList();
     }
 
@@ -87,14 +178,14 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
-        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole());
+        return toResponse(user);
     }
 
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
-        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole());
+        return toResponse(user);
     }
 
     public boolean hasAcceptedLgpdTerm(String email) {
@@ -156,7 +247,7 @@ public class UserService {
     }
 
     public void requestPasswordReset(String email) {
-        userRepository.findByEmail(email).ifPresent(user -> {
+        userRepository.findByEmail(email).filter(User::isActive).ifPresent(user -> {
             String token = passwordResetService.createToken(user.getId());
             try {
                 emailService.sendPasswordResetEmail(user.getEmail(), token, passwordResetService.getTtlMinutes());

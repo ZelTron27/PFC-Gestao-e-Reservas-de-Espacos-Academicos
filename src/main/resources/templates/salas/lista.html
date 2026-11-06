@@ -12,6 +12,9 @@
         <a class="btn btn-primary" th:href="@{/salas/nova}">Nova sala</a>
     </div>
 
+    <div class="alert alert-success" role="alert" th:if="${sucesso}" th:text="${sucesso}">Sucesso</div>
+    <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
+
     <div class="ch-cartao p-4">
         <p class="ch-vazio" th:if="${#lists.isEmpty(salas)}">Nenhuma sala cadastrada ainda.</p>
 
@@ -40,9 +43,26 @@
                             <span class="badge rounded-pill text-bg-secondary"
                                   th:unless="${sala.active()}">Inativa</span>
                         </td>
-                        <td class="text-end">
-                            <a class="btn btn-sm btn-outline-primary"
-                               th:href="@{/salas/{id}/editar(id=${sala.id()})}">Editar</a>
+                        <td>
+                            <div class="d-flex justify-content-end gap-2">
+                                <a class="btn btn-sm btn-outline-primary"
+                                   th:href="@{/salas/{id}/editar(id=${sala.id()})}">Editar</a>
+                                <form th:if="${sala.active()}"
+                                      th:action="@{/salas/{id}/inativar(id=${sala.id()})}" method="post"
+                                      onsubmit="return confirm('Inativar essa sala? As reservas futuras e as solicitações pendentes serão canceladas.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Inativar</button>
+                                </form>
+                                <form th:unless="${sala.active()}"
+                                      th:action="@{/salas/{id}/reativar(id=${sala.id()})}" method="post"
+                                      onsubmit="return confirm('Reativar essa sala? As reservas canceladas não serão restauradas.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Reativar</button>
+                                </form>
+                                <form th:unless="${sala.active()}"
+                                      th:action="@{/salas/{id}/excluir(id=${sala.id()})}" method="post"
+                                      onsubmit="return confirm('Excluir essa sala definitivamente?');">
+                                    <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 </tbody>

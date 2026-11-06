@@ -5,14 +5,19 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.classholder.classholder.audit.aop.AuditContext;
 import br.com.classholder.classholder.audit.aop.Auditable;
+import br.com.classholder.classholder.room.RoomDeletionRequestedEvent;
+import br.com.classholder.classholder.room.RoomInactivatedEvent;
 import br.com.classholder.classholder.room.domain.Room;
+import br.com.classholder.classholder.room.dto.RoomFilter;
 import br.com.classholder.classholder.room.dto.RoomRequest;
 import br.com.classholder.classholder.room.dto.RoomResponse;
 import br.com.classholder.classholder.room.dto.TimeRange;
@@ -25,9 +30,11 @@ public class RoomService {
     private static final int SLOT_MINUTES = 30;
 
     private final RoomRepository roomRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public RoomService(RoomRepository roomRepository) {
+    public RoomService(RoomRepository roomRepository, ApplicationEventPublisher eventPublisher) {
         this.roomRepository = roomRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Auditable(acao = "SALA_CRIADA", entidadeTipo = "SALA")
@@ -52,11 +59,13 @@ public class RoomService {
         return toResponse(saved);
     }
 
+    @Transactional
     @Auditable(acao = "SALA_ATUALIZADA", entidadeTipo = "SALA")
     public RoomResponse updateRoom(Long id, RoomRequest request) {
         validateOperatingHours(request.operatingHours());
 
-        Room room = findRoomEntity(id);
+        Room room = lockRoomEntity(id);
+        boolean inactivating = room.getActive() && !request.active();
 
         room.setRoomName(request.roomName());
         room.setRoomType(request.roomType());
@@ -69,9 +78,76 @@ public class RoomService {
         room.setOperatingHours(request.operatingHours());
 
         Room saved = roomRepository.save(room);
+        if (inactivating) {
+            eventPublisher.publishEvent(new RoomInactivatedEvent(id));
+        }
         AuditContext.setEntidadeId(saved.getId());
         AuditContext.setNome(saved.getRoomName());
         return toResponse(saved);
+    }
+
+    @Transactional
+    @Auditable(acao = "SALA_INATIVADA", entidadeTipo = "SALA")
+    public void inactivateRoom(Long id) {
+        Room room = lockRoomEntity(id);
+        if (!room.getActive()) {
+            throw new IllegalStateException("Essa sala já está inativa");
+        }
+
+        room.setActive(false);
+        roomRepository.save(room);
+        eventPublisher.publishEvent(new RoomInactivatedEvent(id));
+        AuditContext.setEntidadeId(id);
+        AuditContext.setNome(room.getRoomName());
+    }
+
+    @Transactional
+    @Auditable(acao = "SALA_REATIVADA", entidadeTipo = "SALA")
+    public void reactivateRoom(Long id) {
+        Room room = lockRoomEntity(id);
+        if (room.getActive()) {
+            throw new IllegalStateException("Essa sala já está ativa");
+        }
+
+        room.setActive(true);
+        roomRepository.save(room);
+        AuditContext.setEntidadeId(id);
+        AuditContext.setNome(room.getRoomName());
+    }
+
+    @Transactional
+    @Auditable(acao = "SALA_EXCLUIDA", entidadeTipo = "SALA")
+    public void deleteRoom(Long id) {
+        Room room = lockRoomEntity(id);
+        if (room.getActive()) {
+            throw new IllegalStateException("Só é possível excluir salas inativas");
+        }
+
+        eventPublisher.publishEvent(new RoomDeletionRequestedEvent(id));
+        roomRepository.delete(room);
+        AuditContext.setEntidadeId(id);
+        AuditContext.setNome(room.getRoomName());
+    }
+
+    public String findRoomName(Long id) {
+        return roomRepository.findById(id)
+                .map(Room::getRoomName)
+                .orElse("Sala excluída (ID " + id + ")");
+    }
+
+    public List<RoomResponse> searchActiveRooms(RoomFilter filter) {
+        return listActiveRooms().stream()
+                .filter(room -> room.equipmentIds().containsAll(filter.equipmentIds()))
+                .filter(room -> filter.minCapacity() == null || room.roomCapacity() >= filter.minCapacity())
+                .filter(room -> matchesType(room, filter.roomType()))
+                .toList();
+    }
+
+    private boolean matchesType(RoomResponse room, String roomType) {
+        if (roomType == null || roomType.isBlank()) {
+            return true;
+        }
+        return room.roomType().toLowerCase(Locale.ROOT).contains(roomType.strip().toLowerCase(Locale.ROOT));
     }
 
     public List<RoomResponse> listRooms() {
@@ -137,6 +213,11 @@ public class RoomService {
             throw new IllegalArgumentException("Os horários de funcionamento devem ser em blocos de 30 minutos");
         }
         return time;
+    }
+
+    private Room lockRoomEntity(Long id) {
+        return roomRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Sala não encontrada"));
     }
 
     private Room findRoomEntity(Long id) {

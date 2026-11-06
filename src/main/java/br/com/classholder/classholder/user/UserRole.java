@@ -8,4 +8,8 @@ public enum UserRole {
     public String getAuthority() {
         return "ROLE_" + name();
     }
+
+    public boolean canManage(UserRole target) {
+        return this != PROFESSOR && target != ADMIN;
+    }
 }

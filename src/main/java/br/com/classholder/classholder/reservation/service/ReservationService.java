@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -48,20 +49,25 @@ public class ReservationService {
     private static final int MAX_ADVANCE_YEARS = 2;
     private static final Duration REQUEST_TIME_TO_LIVE = Duration.ofHours(72);
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final List<ReservationStatus> CASCADE_STATUSES = List.of(ReservationStatus.CONFIRMADA,
+            ReservationStatus.PENDENTE);
+    private static final String SYSTEM_NAME = "Sistema";
 
     private final ReservationRepository reservationRepository;
     private final RoomService roomService;
     private final UserService userService;
     private final HolidayService holidayService;
+    private final ReservationNotifier notifier;
     private final boolean blockSaturday;
 
     public ReservationService(ReservationRepository reservationRepository, RoomService roomService,
-            UserService userService, HolidayService holidayService,
+            UserService userService, HolidayService holidayService, ReservationNotifier notifier,
             @Value("${app.reservas.bloquear-sabado}") boolean blockSaturday) {
         this.reservationRepository = reservationRepository;
         this.roomService = roomService;
         this.userService = userService;
         this.holidayService = holidayService;
+        this.notifier = notifier;
         this.blockSaturday = blockSaturday;
     }
 
@@ -155,6 +161,7 @@ public class ReservationService {
         if (!displacedIds.isEmpty()) {
             AuditContext.setDetalhes(displacedDetails(displacedIds));
         }
+        notifier.notifyStatusChange(reservation);
     }
 
     @Transactional
@@ -175,6 +182,7 @@ public class ReservationService {
         reservation.setEvaluatedById(evaluatorId);
         reservation.setEvaluatedAt(Instant.now());
         reservationRepository.save(reservation);
+        notifier.notifyStatusChange(reservation);
     }
 
     public List<PendingRequestGroup> listPendingRequests() {
@@ -214,6 +222,7 @@ public class ReservationService {
         setAuditContext(reservation);
         reservation.setStatus(ReservationStatus.EXPIRADA);
         reservationRepository.save(reservation);
+        notifier.notifyStatusChange(reservation);
     }
 
     public List<LocalTime> listAvailableStartTimes(Long roomId, LocalDate date) {
@@ -339,7 +348,7 @@ public class ReservationService {
             if (other == reservation || Objects.equals(other.getId(), reservation.getId())) {
                 continue;
             }
-            markCancelled(other, CancellationReason.HORARIO_APROVADO_PARA_OUTRA);
+            markCancelled(other, CancellationReason.HORARIO_APROVADO_PARA_OUTRA, evaluatorId);
             displacedIds.add(other.getId());
         }
         return displacedIds;
@@ -368,7 +377,7 @@ public class ReservationService {
     public List<ReservationResponse> listReservationsByResponsible(Long responsibleId) {
         String responsibleName = userService.getUserById(responsibleId).name();
         return reservationRepository.findAllByResponsibleIdOrderByDateDescStartTimeDesc(responsibleId).stream()
-                .map(reservation -> toResponse(reservation, roomService.findRoomById(reservation.getRoomId()).roomName(),
+                .map(reservation -> toResponse(reservation, roomService.findRoomName(reservation.getRoomId()),
                         responsibleName))
                 .toList();
     }
@@ -376,7 +385,7 @@ public class ReservationService {
     public List<ReservationResponse> listAllReservations() {
         return reservationRepository.findAllByOrderByDateDescStartTimeDesc().stream()
                 .map(reservation -> toResponse(reservation,
-                        roomService.findRoomById(reservation.getRoomId()).roomName(),
+                        roomService.findRoomName(reservation.getRoomId()),
                         userService.getUserById(reservation.getResponsibleId()).name()))
                 .toList();
     }
@@ -390,19 +399,56 @@ public class ReservationService {
             throw new IllegalStateException("Não é possível cancelar uma reserva que já começou");
         }
 
-        cancel(reservation, CancellationReason.PELO_RESPONSAVEL);
+        cancel(reservation, CancellationReason.PELO_RESPONSAVEL, userId);
     }
 
     @Transactional
     @Auditable(acao = "RESERVA_CANCELADA", entidadeTipo = "RESERVA")
-    public void cancelReservationByManagement(Long reservationId) {
+    public void cancelReservationByManagement(Long managerId, Long reservationId) {
         Reservation reservation = lockRoomAndFindReservation(reservationId);
         ensureConfirmed(reservation);
         if (hasStarted(reservation, LocalDateTime.now())) {
             throw new IllegalStateException("Não é possível cancelar uma reserva que já começou");
         }
 
-        cancel(reservation, CancellationReason.PELA_GESTAO);
+        cancel(reservation, CancellationReason.PELA_GESTAO, managerId);
+    }
+
+    public List<Long> listUpcomingReservationIdsByResponsible(Long responsibleId) {
+        LocalDateTime now = LocalDateTime.now();
+        return reservationRepository.findUpcomingIdsByResponsible(responsibleId, CASCADE_STATUSES,
+                now.toLocalDate(), now.toLocalTime());
+    }
+
+    public List<Long> listUpcomingReservationIdsByRoom(Long roomId) {
+        LocalDateTime now = LocalDateTime.now();
+        return reservationRepository.findUpcomingIdsByRoom(roomId, CASCADE_STATUSES,
+                now.toLocalDate(), now.toLocalTime());
+    }
+
+    public boolean hasOpenReservations(Long roomId) {
+        LocalDateTime now = LocalDateTime.now();
+        return reservationRepository.existsOpenByRoom(roomId, ReservationStatus.PENDENTE,
+                ReservationStatus.CONFIRMADA, now.toLocalDate(), now.toLocalTime());
+    }
+
+    @Transactional
+    @Auditable(acao = "RESERVA_CANCELADA", entidadeTipo = "RESERVA")
+    public Optional<String> cancelForCascade(Long reservationId, CancellationReason reason) {
+        Reservation reservation = lockRoomAndFindReservation(reservationId);
+        if (!CASCADE_STATUSES.contains(reservation.getStatus()) || hasStarted(reservation, LocalDateTime.now())) {
+            setAuditContext(reservation);
+            AuditContext.setDetalhes("Sem alteração: a reserva mudou antes do cancelamento em cascata");
+            return Optional.empty();
+        }
+
+        cancel(reservation, reason, null);
+        return Optional.of(describe(reservation));
+    }
+
+    private String describe(Reservation reservation) {
+        return roomService.findRoomName(reservation.getRoomId()) + " - " + reservation.getDate().format(DATE_FORMAT)
+                + ", das " + reservation.getStartTime() + " às " + reservation.getEndTime();
     }
 
     @Transactional
@@ -439,7 +485,7 @@ public class ReservationService {
             throw new IllegalStateException("A reserva " + reservationId + " não está sem check-in");
         }
 
-        cancel(reservation, CancellationReason.SEM_CHECKIN);
+        cancel(reservation, CancellationReason.SEM_CHECKIN, null);
     }
 
     private Reservation findReservation(Long reservationId) {
@@ -485,16 +531,19 @@ public class ReservationService {
         }
     }
 
-    private void cancel(Reservation reservation, CancellationReason reason) {
+    private void cancel(Reservation reservation, CancellationReason reason, Long cancelledById) {
         setAuditContext(reservation);
         AuditContext.setDetalhes("Motivo: " + reason.name());
-        markCancelled(reservation, reason);
+        markCancelled(reservation, reason, cancelledById);
     }
 
-    private void markCancelled(Reservation reservation, CancellationReason reason) {
+    private void markCancelled(Reservation reservation, CancellationReason reason, Long cancelledById) {
         reservation.setStatus(ReservationStatus.CANCELADA);
         reservation.setCancellationReason(reason);
+        reservation.setCancelledById(cancelledById);
+        reservation.setCancelledAt(Instant.now());
         reservationRepository.save(reservation);
+        notifier.notifyStatusChange(reservation);
     }
 
     private void setAuditContext(Reservation reservation) {
@@ -533,7 +582,21 @@ public class ReservationService {
                 reservation.getStatus(), reservation.getCancellationReason(),
                 reservation.getRejectionJustification(), evaluatorName, checkedIn,
                 hasStarted(reservation, now), confirmed && hasFinished(reservation, now),
-                confirmed && !checkedIn && isCheckInOpen(reservation, now));
+                confirmed && !checkedIn && isCheckInOpen(reservation, now),
+                toLocalDateTime(reservation.getCreatedAt()), toLocalDateTime(reservation.getEvaluatedAt()),
+                cancelledByName(reservation), toLocalDateTime(reservation.getCancelledAt()));
+    }
+
+    private String cancelledByName(Reservation reservation) {
+        if (reservation.getCancelledAt() == null) {
+            return null;
+        }
+        return reservation.getCancelledById() == null ? SYSTEM_NAME
+                : userService.getUserById(reservation.getCancelledById()).name();
+    }
+
+    private LocalDateTime toLocalDateTime(Instant instant) {
+        return instant == null ? null : LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
     }
 
     private record GroupKey(Long roomId, LocalDate date) {

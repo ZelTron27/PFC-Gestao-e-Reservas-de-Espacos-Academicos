@@ -81,4 +81,10 @@ public class Reservation {
 
     @Column(name = "justificativa_recusa", length = 500)
     private String rejectionJustification;
+
+    @Column(name = "cancelado_por")
+    private Long cancelledById;
+
+    @Column(name = "cancelado_em")
+    private Instant cancelledAt;
 }
