@@ -1,8 +1,15 @@
 package br.com.classholder.classholder.audit.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+
+import org.springframework.data.repository.Repository;
 
 import br.com.classholder.classholder.audit.domain.AuditLog;
 
-public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
+public interface AuditLogRepository extends Repository<AuditLog, Long> {
+
+    AuditLog save(AuditLog auditLog);
+
+    List<AuditLog> findAll();
+
 }
