@@ -2,6 +2,7 @@ package br.com.classholder.classholder.user.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import br.com.classholder.classholder.audit.domain.AuditLog;
 import br.com.classholder.classholder.audit.repository.AuditLogRepository;
 import br.com.classholder.classholder.user.UserRole;
 import br.com.classholder.classholder.user.domain.User;
@@ -139,6 +141,36 @@ class UserServiceTest {
                 && !user.getLockedUntil().isAfter(depois.plusMinutes(15)));
         assertEquals(0, user.getFailedLoginAttempts());
         verify(userRepository).save(user);
+    }
+
+    @Test
+    void shouldAuditPasswordChangeFailureWithOnlyTheUserId() {
+        User user = User.builder().id(1L).name("Ana Souza").email("ana@classholder.com").passwordHash("hash").build();
+        when(userRepository.findByEmail("ana@classholder.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("senha-errada", "hash")).thenReturn(false);
+
+        userService.changePassword("ana@classholder.com", "senha-errada", SENHA_VALIDA);
+
+        ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class);
+        verify(auditLogRepository).save(captor.capture());
+        assertEquals("SENHA_ALTERACAO_FALHA", captor.getValue().getAcao());
+        assertEquals(1L, captor.getValue().getUserId());
+        assertEquals(1L, captor.getValue().getEntidadeId());
+        assertNull(captor.getValue().getEntidadeNome());
+    }
+
+    @Test
+    void shouldAuditTwoFactorFailureForUnknownEmailWithoutAnyIdentification() {
+        when(userRepository.findByEmail("desconhecido@classholder.com")).thenReturn(Optional.empty());
+
+        userService.verifyTwoFactorCode("desconhecido@classholder.com", 123456);
+
+        ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class);
+        verify(auditLogRepository).save(captor.capture());
+        assertEquals("ACESSO_2FA_FALHA", captor.getValue().getAcao());
+        assertNull(captor.getValue().getUserId());
+        assertNull(captor.getValue().getEntidadeId());
+        assertNull(captor.getValue().getEntidadeNome());
     }
 
 }

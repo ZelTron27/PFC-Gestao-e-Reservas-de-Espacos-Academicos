@@ -7,7 +7,6 @@ import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +18,7 @@ import br.com.classholder.classholder.audit.repository.AuditLogRepository;
 public class AuditAspect {
 
     private static final Logger log = LoggerFactory.getLogger(AuditAspect.class);
-    private static final String USUARIO_SISTEMA = "SISTEMA";
+    private static final String ENTIDADE_TIPO_USUARIO = "USUARIO";
 
     private final AuditLogRepository auditLogRepository;
 
@@ -29,15 +28,15 @@ public class AuditAspect {
 
     @AfterReturning(pointcut = "@annotation(auditable)")
     public void audit(Auditable auditable) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication != null ? authentication.getName() : USUARIO_SISTEMA;
+        Long userId = AuditPrincipal.userIdOf(SecurityContextHolder.getContext().getAuthentication());
+        String entidadeNome = AuditContext.consumeNome();
 
         AuditLog auditLog = AuditLog.builder()
-                .usuarioEmail(email)
+                .userId(userId)
                 .acao(auditable.acao())
                 .entidadeTipo(auditable.entidadeTipo())
                 .entidadeId(AuditContext.consumeEntidadeId())
-                .entidadeNome(AuditContext.consumeNome())
+                .entidadeNome(ENTIDADE_TIPO_USUARIO.equals(auditable.entidadeTipo()) ? null : entidadeNome)
                 .detalhes(AuditContext.consumeDetalhes())
                 .timestamp(Instant.now())
                 .build();

@@ -4,6 +4,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Component;
 
+import br.com.classholder.classholder.audit.aop.AuditPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -22,7 +23,7 @@ public class AuditLogoutHandler implements LogoutHandler {
             return;
         }
 
-        accessAuditRecorder.record("ACESSO_LOGOUT", authentication, request.getRemoteAddr());
+        accessAuditRecorder.record("ACESSO_LOGOUT", AuditPrincipal.userIdOf(authentication));
     }
 
 }

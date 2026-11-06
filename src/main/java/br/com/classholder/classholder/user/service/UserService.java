@@ -81,7 +81,6 @@ public class UserService {
 
         User saved = userRepository.save(user);
         AuditContext.setEntidadeId(saved.getId());
-        AuditContext.setNome(saved.getName() + " (" + saved.getEmail() + ")");
         return toResponse(saved);
     }
 
@@ -202,7 +201,6 @@ public class UserService {
         user.setLgpdAcceptedAt(LocalDateTime.now());
         userRepository.save(user);
         AuditContext.setEntidadeId(user.getId());
-        AuditContext.setNome(user.getName() + " (" + user.getEmail() + ")");
     }
 
     public boolean isFirstLogin(String email) {
@@ -222,8 +220,7 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
-            saveAuditLog("SENHA_ALTERACAO_FALHA", "USUARIO", user.getId(), email,
-                    user.getName() + " (" + user.getEmail() + ")");
+            saveAuditLog("SENHA_ALTERACAO_FALHA", "USUARIO", user.getId(), user.getId());
             return false;
         }
 
@@ -236,7 +233,7 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setMustChangePassword(false);
         userRepository.save(user);
-        saveAuditLog("SENHA_ALTERADA", "USUARIO", user.getId(), email, user.getName() + " (" + user.getEmail() + ")");
+        saveAuditLog("SENHA_ALTERADA", "USUARIO", user.getId(), user.getId());
         return true;
     }
 
@@ -334,14 +331,13 @@ public class UserService {
 
         if (user.getTwoFactorSecret() == null
                 || !totpService.verifyCode(totpService.decrypt(user.getTwoFactorSecret()), code)) {
-            saveAuditLog("2FA_CONFIGURACAO_FALHA", "USUARIO", user.getId(), email,
-                    user.getName() + " (" + user.getEmail() + ")");
+            saveAuditLog("2FA_CONFIGURACAO_FALHA", "USUARIO", user.getId(), user.getId());
             return false;
         }
 
         user.setFirstLogin(false);
         userRepository.save(user);
-        saveAuditLog("2FA_CONFIGURADO", "USUARIO", user.getId(), email, user.getName() + " (" + user.getEmail() + ")");
+        saveAuditLog("2FA_CONFIGURADO", "USUARIO", user.getId(), user.getId());
         return true;
     }
 
@@ -349,7 +345,7 @@ public class UserService {
         User user = userRepository.findByEmail(email).orElse(null);
 
         if (user == null) {
-            saveAuditLog("ACESSO_2FA_FALHA", "USUARIO", null, email, null);
+            saveAuditLog("ACESSO_2FA_FALHA", "USUARIO", null, null);
             return false;
         }
 
@@ -357,24 +353,20 @@ public class UserService {
                 && totpService.verifyCode(totpService.decrypt(user.getTwoFactorSecret()), code);
 
         if (!valido) {
-            saveAuditLog("ACESSO_2FA_FALHA", "USUARIO", user.getId(), email,
-                    user.getName() + " (" + user.getEmail() + ")");
+            saveAuditLog("ACESSO_2FA_FALHA", "USUARIO", user.getId(), user.getId());
             return false;
         }
 
-        saveAuditLog("ACESSO_2FA_SUCESSO", "USUARIO", user.getId(), email,
-                user.getName() + " (" + user.getEmail() + ")");
+        saveAuditLog("ACESSO_2FA_SUCESSO", "USUARIO", user.getId(), user.getId());
         return true;
     }
 
-    private void saveAuditLog(String acao, String entidadeTipo, Long entidadeId, String usuarioEmail,
-            String entidadeNome) {
+    private void saveAuditLog(String acao, String entidadeTipo, Long entidadeId, Long userId) {
         AuditLog auditLog = AuditLog.builder()
-                .usuarioEmail(usuarioEmail)
+                .userId(userId)
                 .acao(acao)
                 .entidadeTipo(entidadeTipo)
                 .entidadeId(entidadeId)
-                .entidadeNome(entidadeNome)
                 .timestamp(Instant.now())
                 .build();
 
