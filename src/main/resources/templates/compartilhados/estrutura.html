@@ -21,6 +21,8 @@
             <nav class="ch-nav">
                 <a th:href="@{/reservas/espacos}" th:classappend="${paginaAtiva == 'espacos'} ? 'ativo'">Espaços Acadêmicos</a>
                 <a th:href="@{/reservas}" th:classappend="${paginaAtiva == 'reservas'} ? 'ativo'">Minhas Reservas</a>
+                <a th:href="@{/dashboard}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')"
+                   th:classappend="${paginaAtiva == 'dashboard'} ? 'ativo'">Dashboard</a>
                 <a th:href="@{/reservas/todas}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')"
                    th:classappend="${paginaAtiva == 'todas'} ? 'ativo'">Todas as Reservas</a>
                 <a th:href="@{/solicitacoes}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')"
@@ -33,6 +35,8 @@
                    th:classappend="${paginaAtiva == 'usuarios'} ? 'ativo'">Usuários</a>
                 <a th:href="@{/feriados}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')"
                    th:classappend="${paginaAtiva == 'feriados'} ? 'ativo'">Feriados</a>
+                <a th:href="@{/auditoria}" sec:authorize="hasRole('ADMIN')"
+                   th:classappend="${paginaAtiva == 'auditoria'} ? 'ativo'">Auditoria</a>
                 <a th:href="@{/perfil}" th:classappend="${paginaAtiva == 'perfil'} ? 'ativo'">Meu perfil</a>
             </nav>
 

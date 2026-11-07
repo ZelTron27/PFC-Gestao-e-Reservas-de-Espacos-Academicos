@@ -414,6 +414,14 @@ public class ReservationService {
         cancel(reservation, CancellationReason.PELA_GESTAO, managerId);
     }
 
+    public List<Long> listReservationIdsByRoom(Long roomId) {
+        return reservationRepository.findIdsByRoomId(roomId);
+    }
+
+    public List<Long> listReservedRoomIds() {
+        return reservationRepository.findDistinctRoomIds();
+    }
+
     public List<Long> listUpcomingReservationIdsByResponsible(Long responsibleId) {
         LocalDateTime now = LocalDateTime.now();
         return reservationRepository.findUpcomingIdsByResponsible(responsibleId, CASCADE_STATUSES,

@@ -1,5 +1,6 @@
 package br.com.classholder.classholder.room.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,5 +29,14 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     @Modifying(clearAutomatically = true)
     @Query(value = "delete from sala_equipamentos where equipamento_id = :equipmentId", nativeQuery = true)
     void removeEquipment(@Param("equipmentId") Long equipmentId);
+
+    @Query("select r.id, r.roomName from Room r order by r.roomName")
+    List<Object[]> findAllNames();
+
+    @Query("select r.id, r.roomName from Room r where r.active = true order by r.roomName")
+    List<Object[]> findActiveNames();
+
+    @Query("select r.id, r.roomName from Room r where r.id in :ids")
+    List<Object[]> findNamesByIds(@Param("ids") Collection<Long> ids);
 
 }
