@@ -76,4 +76,11 @@ public class User {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(name = "anonimizado_em")
+    private LocalDateTime anonymizedAt;
+
+    public boolean isAnonymized() {
+        return anonymizedAt != null;
+    }
+
 }

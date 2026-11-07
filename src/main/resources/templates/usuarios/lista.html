@@ -39,12 +39,13 @@
                         </td>
                         <td>
                             <span class="badge rounded-pill text-bg-success" th:if="${cadastrado.active()}">Ativo</span>
+                            <span class="badge rounded-pill text-bg-dark" th:if="${cadastrado.anonymized()}">Excluído</span>
                             <span class="badge rounded-pill text-bg-secondary"
-                                  th:unless="${cadastrado.active()}">Desativado</span>
+                                  th:if="${!cadastrado.active() and !cadastrado.anonymized()}">Desativado</span>
                         </td>
                         <td>
                             <div class="d-flex justify-content-end gap-2"
-                                 th:if="${usuario.role().canManage(cadastrado.role()) and cadastrado.id() != usuario.id()}">
+                                 th:if="${usuario.role().canManage(cadastrado.role()) and cadastrado.id() != usuario.id() and !cadastrado.anonymized()}">
                                 <a class="btn btn-sm btn-outline-primary"
                                    th:href="@{/usuarios/{id}/editar(id=${cadastrado.id()})}">Editar</a>
                                 <form th:if="${cadastrado.active()}"

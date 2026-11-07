@@ -41,6 +41,7 @@ public class AuditViewService {
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
     private static final Map<String, String> ACTION_LABELS = Map.ofEntries(
+            Map.entry("2FA_REDEFINIDO", "Verificação em dois fatores redefinida pela TI"),
             Map.entry("ACESSO_2FA_FALHA", "Falha na verificação em dois fatores"),
             Map.entry("ACESSO_2FA_SUCESSO", "Verificação em dois fatores concluída"),
             Map.entry("ACESSO_LOGIN_FALHA", "Falha de login"),
@@ -64,6 +65,7 @@ public class AuditViewService {
             Map.entry("SOLICITACAO_CRIADA", "Solicitação criada"),
             Map.entry("SOLICITACAO_EXPIRADA", "Solicitação expirada"),
             Map.entry("SOLICITACAO_RECUSADA", "Solicitação recusada"),
+            Map.entry("USUARIO_ANONIMIZADO", "Usuário anonimizado pela TI"),
             Map.entry("USUARIO_ATUALIZADO", "Usuário atualizado"),
             Map.entry("USUARIO_CRIADO", "Usuário criado"),
             Map.entry("USUARIO_DESATIVADO", "Usuário desativado"),
