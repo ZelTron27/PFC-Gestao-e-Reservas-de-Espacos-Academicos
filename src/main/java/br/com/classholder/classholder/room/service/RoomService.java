@@ -3,9 +3,13 @@ package br.com.classholder.classholder.room.service;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -133,6 +137,36 @@ public class RoomService {
         return roomRepository.findById(id)
                 .map(Room::getRoomName)
                 .orElse("Sala excluída (ID " + id + ")");
+    }
+
+    public Map<Long, String> findAllRoomNames() {
+        Map<Long, String> names = new LinkedHashMap<>();
+        for (Object[] row : roomRepository.findAllNames()) {
+            names.put((Long) row[0], (String) row[1]);
+        }
+        return names;
+    }
+
+    public Map<Long, String> findActiveRoomNames() {
+        Map<Long, String> names = new LinkedHashMap<>();
+        for (Object[] row : roomRepository.findActiveNames()) {
+            names.put((Long) row[0], (String) row[1]);
+        }
+        return names;
+    }
+
+    public Map<Long, String> findRoomNames(Collection<Long> ids) {
+        Map<Long, String> names = new HashMap<>();
+        if (ids.isEmpty()) {
+            return names;
+        }
+        for (Object[] row : roomRepository.findNamesByIds(ids)) {
+            names.put((Long) row[0], (String) row[1]);
+        }
+        for (Long id : ids) {
+            names.computeIfAbsent(id, missing -> "Sala excluída (ID " + missing + ")");
+        }
+        return names;
     }
 
     public List<RoomResponse> searchActiveRooms(RoomFilter filter) {

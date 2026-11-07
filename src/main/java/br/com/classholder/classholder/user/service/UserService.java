@@ -2,7 +2,10 @@ package br.com.classholder.classholder.user.service;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -187,6 +190,17 @@ public class UserService {
 
         return new ProfileResponse(user.getName(), user.getEmail(), user.getRole().getLabel(),
                 user.getLgpdAcceptedAt(), user.getTwoFactorSecret() != null);
+    }
+
+    public Map<Long, String> findUserNames(Collection<Long> ids) {
+        Map<Long, String> names = new HashMap<>();
+        if (ids.isEmpty()) {
+            return names;
+        }
+        for (Object[] row : userRepository.findNamesByIds(ids)) {
+            names.put((Long) row[0], (String) row[1]);
+        }
+        return names;
     }
 
     public UserResponse getUserById(Long id) {

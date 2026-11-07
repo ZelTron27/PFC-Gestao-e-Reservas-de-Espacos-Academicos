@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Auditoria - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-auditoria}, 'auditoria', ${usuario})}">
+<div id="conteudo-auditoria">
+    <h1 class="ch-titulo h3 mb-4">Auditoria</h1>
+
+    <div class="alert alert-danger" role="alert" th:if="${auditoria.periodError()}" th:text="${auditoria.periodError()}">Erro</div>
+
+    <form class="ch-cartao p-3 mb-4 d-flex flex-wrap align-items-end gap-3" method="get" th:action="@{/auditoria}" id="filtros-auditoria">
+        <div>
+            <label class="form-label mb-1" for="de">De</label>
+            <input type="date" class="form-control" id="de" name="de" th:value="${auditoria.from()}">
+        </div>
+        <div>
+            <label class="form-label mb-1" for="ate">Até</label>
+            <input type="date" class="form-control" id="ate" name="ate" th:value="${auditoria.to()}">
+        </div>
+        <div>
+            <label class="form-label mb-1" for="usuario">Usuário</label>
+            <select class="form-select" id="usuario" name="usuario">
+                <option value="">Todos</option>
+                <option th:each="opcao : ${auditoria.users()}" th:value="${opcao.value()}" th:text="${opcao.label()}"
+                        th:selected="${opcao.value() == auditoria.selectedUser()}">Usuário</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label mb-1" for="sala">Sala</label>
+            <select class="form-select" id="sala" name="sala">
+                <option value="">Todas</option>
+                <option th:each="opcao : ${auditoria.rooms()}" th:value="${opcao.value()}" th:text="${opcao.label()}"
+                        th:selected="${auditoria.selectedRoom() != null and opcao.value() == auditoria.selectedRoom().toString()}">Sala</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label mb-1" for="acao">Ação</label>
+            <select class="form-select" id="acao" name="acao">
+                <option value="">Todas</option>
+                <option th:each="opcao : ${auditoria.actions()}" th:value="${opcao.value()}" th:text="${opcao.label()}"
+                        th:selected="${opcao.value() == auditoria.selectedAction()}">Ação</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+    </form>
+
+    <div class="ch-cartao p-4">
+        <p class="mb-3" id="total-registros" th:text="${auditoria.total()} + ' registro(s) encontrado(s)'">0 registro(s) encontrado(s)</p>
+        <p class="ch-vazio" th:if="${#lists.isEmpty(auditoria.rows())}">Nenhum registro encontrado para os filtros informados.</p>
+
+        <div class="table-responsive" th:unless="${#lists.isEmpty(auditoria.rows())}">
+            <table class="table align-middle ch-tabela mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Data e hora</th>
+                        <th scope="col">Autor</th>
+                        <th scope="col">Ação</th>
+                        <th scope="col">Item afetado</th>
+                        <th scope="col">Detalhes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="registro : ${auditoria.rows()}">
+                        <td class="text-nowrap" th:text="${registro.timestamp()}">01/01/2026 10:00:00</td>
+                        <td th:text="${registro.author()}">Autor</td>
+                        <td th:text="${registro.action()}">Ação</td>
+                        <td th:text="${registro.item()}">Item</td>
+                        <td class="ch-texto-longo" th:text="${registro.details()}">Detalhes</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <nav class="mt-3" th:if="${auditoria.totalPages() > 1}" aria-label="Paginação da auditoria">
+            <ul class="pagination mb-0 flex-wrap">
+                <li class="page-item" th:classappend="${auditoria.page() == 1} ? 'disabled'">
+                    <a class="page-link" th:href="@{'/auditoria?' + ${auditoria.baseQuery()} + 'pagina=' + ${auditoria.page() - 1}}">Anterior</a>
+                </li>
+                <li class="page-item" th:each="numero : ${#numbers.sequence(1, auditoria.totalPages())}"
+                    th:classappend="${numero == auditoria.page()} ? 'active'">
+                    <a class="page-link" th:href="@{'/auditoria?' + ${auditoria.baseQuery()} + 'pagina=' + ${numero}}" th:text="${numero}">1</a>
+                </li>
+                <li class="page-item" th:classappend="${auditoria.page() == auditoria.totalPages()} ? 'disabled'">
+                    <a class="page-link" th:href="@{'/auditoria?' + ${auditoria.baseQuery()} + 'pagina=' + ${auditoria.page() + 1}}">Próxima</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+</div>
+</body>
+</html>
