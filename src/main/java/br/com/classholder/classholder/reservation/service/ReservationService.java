@@ -434,6 +434,12 @@ public class ReservationService {
                 now.toLocalDate(), now.toLocalTime());
     }
 
+    public List<Long> listUpcomingReservationIdsByDate(LocalDate date) {
+        LocalDateTime now = LocalDateTime.now();
+        return reservationRepository.findUpcomingIdsByDate(date, CASCADE_STATUSES,
+                now.toLocalDate(), now.toLocalTime());
+    }
+
     public boolean hasOpenReservations(Long roomId) {
         LocalDateTime now = LocalDateTime.now();
         return reservationRepository.existsOpenByRoom(roomId, ReservationStatus.PENDENTE,

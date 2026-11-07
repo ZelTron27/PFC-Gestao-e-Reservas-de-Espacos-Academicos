@@ -1,8 +1,11 @@
 package br.com.classholder.classholder.reservation.listener;
 
+import java.time.LocalDate;
+
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import br.com.classholder.classholder.holiday.HolidaysRegisteredEvent;
 import br.com.classholder.classholder.reservation.CancellationReason;
 import br.com.classholder.classholder.reservation.service.ReservationService;
 import br.com.classholder.classholder.room.RoomDeletionRequestedEvent;
@@ -30,6 +33,15 @@ public class ReservationCascadeListener {
     public void onRoomInactivated(RoomInactivatedEvent event) {
         for (Long reservationId : reservationService.listUpcomingReservationIdsByRoom(event.roomId())) {
             reservationService.cancelForCascade(reservationId, CancellationReason.SALA_INATIVADA);
+        }
+    }
+
+    @EventListener
+    public void onHolidaysRegistered(HolidaysRegisteredEvent event) {
+        for (LocalDate date : event.dates()) {
+            for (Long reservationId : reservationService.listUpcomingReservationIdsByDate(date)) {
+                reservationService.cancelForCascade(reservationId, CancellationReason.DIA_BLOQUEADO);
+            }
         }
     }
 
