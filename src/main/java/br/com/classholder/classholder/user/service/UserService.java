@@ -113,6 +113,10 @@ public class UserService {
         if (!user.isActive()) {
             throw new IllegalStateException("Esse usuário já está desativado");
         }
+        if (user.getRole() == UserRole.COORDENACAO
+                && userRepository.countByRoleAndActiveTrue(UserRole.COORDENACAO) <= 1) {
+            throw new IllegalStateException("É preciso manter ao menos um Coordenador ativo");
+        }
 
         user.setActive(false);
         userRepository.save(user);
@@ -164,11 +168,15 @@ public class UserService {
         if (!actorRole.canManage(user.getRole())) {
             throw new IllegalArgumentException("Você não tem permissão para alterar esse usuário");
         }
+        if (user.isAnonymized()) {
+            throw new IllegalStateException("Uma conta anonimizada não pode ser alterada nem reativada");
+        }
         return user;
     }
 
     private UserResponse toResponse(User user) {
-        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole(), user.isActive());
+        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole(), user.isActive(),
+                user.isAnonymized());
     }
 
     public List<UserResponse> listUsers() {
