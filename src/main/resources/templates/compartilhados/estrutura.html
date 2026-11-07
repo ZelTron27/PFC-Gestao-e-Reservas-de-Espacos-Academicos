@@ -33,6 +33,7 @@
                    th:classappend="${paginaAtiva == 'usuarios'} ? 'ativo'">Usuários</a>
                 <a th:href="@{/feriados}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')"
                    th:classappend="${paginaAtiva == 'feriados'} ? 'ativo'">Feriados</a>
+                <a th:href="@{/perfil}" th:classappend="${paginaAtiva == 'perfil'} ? 'ativo'">Meu perfil</a>
             </nav>
 
             <div class="ch-rodape-menu">
