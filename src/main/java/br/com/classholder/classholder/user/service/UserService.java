@@ -21,6 +21,7 @@ import br.com.classholder.classholder.shared.RecursoNaoEncontradoException;
 import br.com.classholder.classholder.user.UserDeactivatedEvent;
 import br.com.classholder.classholder.user.UserRole;
 import br.com.classholder.classholder.user.domain.User;
+import br.com.classholder.classholder.user.dto.ProfileResponse;
 import br.com.classholder.classholder.user.dto.UserEditRequest;
 import br.com.classholder.classholder.user.dto.UserRequest;
 import br.com.classholder.classholder.user.dto.UserResponse;
@@ -178,6 +179,14 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         return toResponse(user);
+    }
+
+    public ProfileResponse getProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
+        return new ProfileResponse(user.getName(), user.getEmail(), user.getRole().getLabel(),
+                user.getLgpdAcceptedAt(), user.getTwoFactorSecret() != null);
     }
 
     public UserResponse getUserById(Long id) {

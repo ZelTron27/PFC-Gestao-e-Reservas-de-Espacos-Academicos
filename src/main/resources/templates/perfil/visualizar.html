@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Meu perfil - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-perfil}, 'perfil', ${usuario})}">
+<div id="conteudo-perfil">
+    <h1 class="ch-titulo h3 mb-4">Meu perfil</h1>
+
+    <div class="ch-cartao p-4 mb-4">
+        <h2 class="h5 mb-3">Dados da conta</h2>
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Nome</dt>
+            <dd class="col-sm-8" th:text="${perfil.name()}">Nome</dd>
+            <dt class="col-sm-4">E-mail</dt>
+            <dd class="col-sm-8" th:text="${perfil.email()}">email@classholder.com</dd>
+            <dt class="col-sm-4">Perfil</dt>
+            <dd class="col-sm-8" th:text="${perfil.roleLabel()}">Professor</dd>
+            <dt class="col-sm-4">Aceite da Política de Privacidade e dos Termos de Uso</dt>
+            <dd class="col-sm-8 mb-0"
+                th:text="${#temporals.format(perfil.lgpdAcceptedAt(), 'dd/MM/yyyy HH:mm')}">01/01/2026 10:00</dd>
+        </dl>
+    </div>
+
+    <div class="ch-cartao p-4 mb-4">
+        <h2 class="h5 mb-3">Dados de segurança</h2>
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Senha</dt>
+            <dd class="col-sm-8">
+                Armazenada apenas de forma cifrada (hash). Ninguém, nem a administração, consegue visualizá-la.
+                <a th:href="@{/senha/trocar}">Trocar senha</a>
+            </dd>
+            <dt class="col-sm-4">Autenticação em dois fatores</dt>
+            <dd class="col-sm-8 mb-0"
+                th:text="${perfil.twoFactorConfigured()} ? 'Configurada' : 'Não configurada'">Configurada</dd>
+        </dl>
+    </div>
+
+    <div class="ch-cartao p-4 mb-4">
+        <h2 class="h5 mb-3">Outros dados tratados pelo sistema</h2>
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Reservas e solicitações</dt>
+            <dd class="col-sm-8">
+                As reservas e solicitações que você fez ficam registradas no sistema.
+                Consulte-as em <a th:href="@{/reservas}">Minhas reservas</a>.
+            </dd>
+            <dt class="col-sm-4">Registros de auditoria</dt>
+            <dd class="col-sm-8 mb-0">
+                As ações realizadas no sistema são registradas apenas com o seu identificador numérico,
+                sem nome, e-mail ou endereço IP, conforme a Política de Privacidade.
+            </dd>
+        </dl>
+    </div>
+
+    <p class="text-secondary small">
+        Para corrigir dados incorretos, procure a Coordenação ou a Administração.
+        <br>
+        <a th:href="@{/lgpd/privacidade}">Política de Privacidade</a> ·
+        <a th:href="@{/lgpd/termos}">Termos de Uso</a>
+    </p>
+</div>
+</div>
+</body>
+</html>
