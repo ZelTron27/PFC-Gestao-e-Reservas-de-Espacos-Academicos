@@ -23,6 +23,7 @@ public class SecurityConfig {
                         .requestMatchers("/salas", "/salas/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/equipamentos", "/equipamentos/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/usuarios", "/usuarios/**").hasAnyRole("ADMIN", "COORDENACAO")
+                        .requestMatchers("/feriados/sincronizar").hasRole("ADMIN")
                         .requestMatchers("/feriados", "/feriados/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/auditoria", "/auditoria/**").hasRole("ADMIN")
                         .requestMatchers("/dashboard", "/dashboard/**").hasAnyRole("ADMIN", "COORDENACAO")
