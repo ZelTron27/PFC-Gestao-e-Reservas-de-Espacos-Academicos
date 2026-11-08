@@ -22,4 +22,12 @@ public enum UserRole {
     public boolean canManage(UserRole target) {
         return this != PROFESSOR && target != ADMIN;
     }
+
+    public boolean canChangeStatusOf(UserRole target) {
+        return canManage(target) || (this == ADMIN && target == ADMIN);
+    }
+
+    public boolean canAnonymize(UserRole target) {
+        return this == ADMIN;
+    }
 }

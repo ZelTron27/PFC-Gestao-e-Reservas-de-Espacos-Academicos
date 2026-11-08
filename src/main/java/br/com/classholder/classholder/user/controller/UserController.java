@@ -105,6 +105,19 @@ public class UserController {
         return "redirect:/usuarios";
     }
 
+    @PostMapping("/{id}/anonimizar")
+    public String anonymize(Authentication authentication, @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
+        UserResponse actor = currentUser(authentication);
+        try {
+            userService.anonymizeUser(actor.id(), actor.role(), id);
+            redirectAttributes.addFlashAttribute("sucesso", "Usuário anonimizado");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("erro", e.getMessage());
+        }
+        return "redirect:/usuarios";
+    }
+
     @PostMapping("/{id}/desativar")
     public String deactivate(Authentication authentication, @PathVariable Long id,
             RedirectAttributes redirectAttributes) {
