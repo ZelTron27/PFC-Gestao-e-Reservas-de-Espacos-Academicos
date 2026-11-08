@@ -154,7 +154,7 @@ class AnonymizationIntegrationTest {
     }
 
     @Test
-    void refusesToAnonymizeTheLastActiveCoordinator() {
+    void anonymizesTheLastActiveCoordinator() {
         userRepository.findAll().stream()
                 .filter(user -> user.getRole() == UserRole.COORDENACAO)
                 .forEach(user -> {
@@ -163,11 +163,9 @@ class AnonymizationIntegrationTest {
                 });
         User onlyCoordinator = save(UserRole.COORDENACAO);
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> userService.anonymizeUser(admin.getId(), UserRole.ADMIN, onlyCoordinator.getId()));
+        userService.anonymizeUser(admin.getId(), UserRole.ADMIN, onlyCoordinator.getId());
 
-        assertThat(exception.getMessage()).isEqualTo("É preciso manter ao menos um Coordenador ativo");
-        assertThat(userRepository.findById(onlyCoordinator.getId()).orElseThrow().isAnonymized()).isFalse();
+        assertThat(userRepository.findById(onlyCoordinator.getId()).orElseThrow().isAnonymized()).isTrue();
     }
 
     @Test

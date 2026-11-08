@@ -209,13 +209,11 @@ public class UserService {
     }
 
     private void ensureAnotherActiveUserRemains(UserRole role) {
-        if (role == UserRole.PROFESSOR) {
+        if (role != UserRole.ADMIN) {
             return;
         }
         if (userRepository.findActiveByRoleForUpdate(role).size() <= 1) {
-            throw new IllegalStateException(role == UserRole.ADMIN
-                    ? "É preciso manter ao menos um Administrador ativo"
-                    : "É preciso manter ao menos um Coordenador ativo");
+            throw new IllegalStateException("É preciso manter ao menos um Administrador ativo");
         }
     }
 
