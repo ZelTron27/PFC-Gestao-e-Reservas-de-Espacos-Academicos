@@ -225,6 +225,17 @@ A partir daí, o cadastro segue a hierarquia do sistema:
 
 O ADMIN também tem acesso a todas as telas da coordenação. O sistema mantém sempre ao menos um ADMIN ativo.
 
+### Redefinição do 2FA
+
+Se um usuário perder o aplicativo autenticador, ele não consegue mais entrar, e a aplicação não tem tela para isso. A redefinição é feita no banco de dados pelo responsável técnico designado pela instituição, com o script [`scripts/redefinir-2fa.sql`](scripts/redefinir-2fa.sql).
+
+Abra o Query Tool do pgAdmin 4, acesse o banco `classholder`, cole o conteúdo do script e siga os dois passos:
+
+1. Em `v_email`, troque `email@exemplo.com` pelo e-mail do usuário, mantendo as aspas simples, e execute. Nada é alterado: a aba **Messages** mostra o nome, o perfil e o ID da pessoa.
+2. Confira se é a pessoa certa, preencha `v_confirmar` com o ID mostrado, também entre aspas simples (por exemplo `'12'`), e execute de novo. O 2FA só é redefinido se o ID informado for igual ao do usuário. Se não for, o script recusa e não altera nada.
+
+No próximo login, o usuário configura um novo QR Code. A senha não é alterada, o bloqueio por tentativas de login é removido e a operação fica registrada na auditoria como `2FA_REDEFINIDO`. Contas anonimizadas não podem ser redefinidas.
+
 ## Licença
 
 Projeto de caráter acadêmico, desenvolvido para o Projeto Final de Curso (PFC).
