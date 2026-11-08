@@ -89,6 +89,7 @@ FERIADOS_CODIGO_IBGE=3550308
 | `FERIADOS_API_URL` | Não | `https://feriadosapi.com/api/v1` | Endereço base da FeriadosAPI |
 | `FERIADOS_CODIGO_IBGE` | Não | `3550308` (São Paulo/SP) | Código IBGE da cidade usada para buscar feriados municipais |
 | `PORT` | Não | `8080` | Porta HTTP da aplicação |
+| `SESSION_COOKIE_SECURE` | Não | `false` | Em produção, com HTTPS, use `true` para o cookie de sessão só trafegar por conexão segura |
 
 > Se alguma variável obrigatória estiver faltando, a aplicação não sobe e o Spring mostra um erro do tipo `Could not resolve placeholder 'NOME_DA_VARIAVEL'`.
 
@@ -220,9 +221,9 @@ Nos logins seguintes, o código do app autenticador é pedido sempre após a sen
 A partir daí, o cadastro segue a hierarquia do sistema:
 
 1. O **ADMIN** cadastra os usuários da **coordenação**.
-2. A **coordenação** cadastra professores, salas e equipamentos.
+2. A **coordenação** cadastra outros coordenadores, professores, salas e equipamentos.
 
-O ADMIN também tem acesso a todas as telas da coordenação.
+O ADMIN também tem acesso a todas as telas da coordenação. O sistema mantém sempre ao menos um ADMIN ativo.
 
 ## Licença
 
