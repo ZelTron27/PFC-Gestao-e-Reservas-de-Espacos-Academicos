@@ -10,6 +10,7 @@ import br.com.classholder.classholder.reservation.CancellationReason;
 import br.com.classholder.classholder.reservation.service.ReservationService;
 import br.com.classholder.classholder.room.RoomDeletionRequestedEvent;
 import br.com.classholder.classholder.room.RoomInactivatedEvent;
+import br.com.classholder.classholder.user.UserAnonymizedEvent;
 import br.com.classholder.classholder.user.UserDeactivatedEvent;
 
 @Component
@@ -25,6 +26,14 @@ public class ReservationCascadeListener {
     public void onUserDeactivated(UserDeactivatedEvent event) {
         for (Long reservationId : reservationService.listUpcomingReservationIdsByResponsible(event.userId())) {
             reservationService.cancelForCascade(reservationId, CancellationReason.USUARIO_DESATIVADO)
+                    .ifPresent(event::addCancelledReservation);
+        }
+    }
+
+    @EventListener
+    public void onUserAnonymized(UserAnonymizedEvent event) {
+        for (Long reservationId : reservationService.listUpcomingReservationIdsByResponsible(event.userId())) {
+            reservationService.cancelForCascade(reservationId, CancellationReason.USUARIO_EXCLUIDO)
                     .ifPresent(event::addCancelledReservation);
         }
     }

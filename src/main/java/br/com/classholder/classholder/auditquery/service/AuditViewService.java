@@ -64,6 +64,7 @@ public class AuditViewService {
             Map.entry("SOLICITACAO_CRIADA", "Solicitação criada"),
             Map.entry("SOLICITACAO_EXPIRADA", "Solicitação expirada"),
             Map.entry("SOLICITACAO_RECUSADA", "Solicitação recusada"),
+            Map.entry("USUARIO_ANONIMIZADO", "Usuário anonimizado"),
             Map.entry("USUARIO_ATUALIZADO", "Usuário atualizado"),
             Map.entry("USUARIO_CRIADO", "Usuário criado"),
             Map.entry("USUARIO_DESATIVADO", "Usuário desativado"),

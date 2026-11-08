@@ -22,6 +22,7 @@ public class SecurityConfig {
                         .requestMatchers("/senha/esqueci", "/senha/redefinir").permitAll()
                         .requestMatchers("/salas", "/salas/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/equipamentos", "/equipamentos/**").hasAnyRole("ADMIN", "COORDENACAO")
+                        .requestMatchers("/usuarios/*/anonimizar").hasRole("ADMIN")
                         .requestMatchers("/usuarios", "/usuarios/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/feriados/sincronizar").hasRole("ADMIN")
                         .requestMatchers("/feriados", "/feriados/**").hasAnyRole("ADMIN", "COORDENACAO")

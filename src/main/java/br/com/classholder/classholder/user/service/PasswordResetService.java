@@ -60,6 +60,10 @@ public class PasswordResetService {
                 .map(PasswordResetToken::getUserId);
     }
 
+    public void deleteTokensOf(Long userId) {
+        tokenRepository.deleteByUserId(userId);
+    }
+
     public void consumeToken(String plainToken) {
         tokenRepository.findByTokenHash(hash(plainToken))
                 .ifPresent(token -> {
