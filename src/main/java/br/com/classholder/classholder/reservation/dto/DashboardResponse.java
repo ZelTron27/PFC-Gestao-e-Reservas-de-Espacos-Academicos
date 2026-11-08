@@ -25,10 +25,19 @@ public record DashboardResponse(
     public record RoomOption(Long roomId, String name, boolean selected) {
     }
 
-    public record RoomComparison(List<RoomBar> bars, List<RoomOption> options, String error, boolean all) {
+    public record RoomComparison(List<RoomBar> bars, List<RoomOption> options, String error, boolean all,
+            String summary) {
 
         public boolean empty() {
             return bars.isEmpty();
+        }
+
+        public List<Long> selectedIds() {
+            return options.stream().filter(RoomOption::selected).map(RoomOption::roomId).toList();
+        }
+
+        public boolean expanded() {
+            return all || error != null || options.stream().anyMatch(RoomOption::selected);
         }
 
     }

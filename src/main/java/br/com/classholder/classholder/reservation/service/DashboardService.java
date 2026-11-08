@@ -35,6 +35,7 @@ public class DashboardService {
     private static final int CHECK_IN_WINDOW_MINUTES = 15;
     private static final int TOP_ROOMS = 3;
     private static final int MAX_COMPARED_ROOMS = 5;
+    public static final int MAX_CHART_ROOMS = 10;
     private static final List<ReservationStatus> APPROVED_STATUSES = List.of(ReservationStatus.CONFIRMADA,
             ReservationStatus.CANCELADA);
 
@@ -189,6 +190,7 @@ public class DashboardService {
                 .map(entry -> new RoomBar(entry.getKey(), optionNames.get(entry.getKey()), entry.getValue(),
                         DashboardFormat.duration(entry.getValue())))
                 .sorted(Comparator.comparingLong(RoomBar::minutes).reversed().thenComparing(RoomBar::label))
+                .limit(MAX_CHART_ROOMS)
                 .toList();
 
         List<RoomOption> options = optionNames.entrySet().stream()
@@ -196,7 +198,24 @@ public class DashboardService {
                 .sorted(Comparator.comparing(RoomOption::name))
                 .toList();
 
-        return new RoomComparison(bars, options, error, allRooms);
+        return new RoomComparison(bars, options, error, allRooms,
+                comparisonSummary(bars.size(), optionNames.size(), allRooms, selected.size()));
+    }
+
+    private String comparisonSummary(int shown, int available, boolean allRooms, int selectedCount) {
+        if (shown == 0) {
+            return "Nenhuma sala para exibir";
+        }
+        if (allRooms) {
+            if (available > MAX_CHART_ROOMS) {
+                return "Exibindo as " + MAX_CHART_ROOMS + " salas com mais horas (todas)";
+            }
+            return shown == 1 ? "Exibindo a única sala" : "Exibindo todas as " + shown + " salas";
+        }
+        if (selectedCount > 0) {
+            return "Exibindo " + selectedCount + (selectedCount == 1 ? " sala selecionada" : " salas selecionadas");
+        }
+        return shown == 1 ? "Exibindo a sala com mais horas" : "Exibindo as " + shown + " salas com mais horas";
     }
 
 }

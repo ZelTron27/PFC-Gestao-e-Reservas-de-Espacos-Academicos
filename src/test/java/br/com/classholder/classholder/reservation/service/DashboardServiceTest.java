@@ -350,6 +350,52 @@ class DashboardServiceTest {
     }
 
     @Test
+    void roomComparison_withAllRoomsAndMoreThanTenRooms_shouldShowTheTenWithMostHoursInDescendingOrder() {
+        for (int index = 1; index <= 12; index++) {
+            Long room = createRoom("Sala " + String.format("%02d", index)).getId();
+            reservation(room, IN_PERIOD, "06:00", LocalTime.of(6, 0).plusMinutes(index * 30L).toString(),
+                    ReservationStatus.CONFIRMADA);
+        }
+
+        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null, null, true)
+                .roomComparison();
+
+        assertThat(comparison.bars()).hasSize(DashboardService.MAX_CHART_ROOMS);
+        assertThat(comparison.bars()).extracting("label").containsExactly("Sala 12", "Sala 11", "Sala 10",
+                "Sala 09", "Sala 08", "Sala 07", "Sala 06", "Sala 05", "Sala 04", "Sala 03");
+        assertThat(comparison.summary()).isEqualTo("Exibindo as 10 salas com mais horas (todas)");
+        assertThat(service.buildDashboard(null, null).roomUsage()).hasSize(12);
+    }
+
+    @Test
+    void roomComparison_withAllRoomsAndFewerThanTenRooms_shouldShowAllOfThem() {
+        for (int index = 1; index <= 4; index++) {
+            createRoom("Sala " + index);
+        }
+
+        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null, null, true)
+                .roomComparison();
+
+        assertThat(comparison.bars()).hasSize(4);
+        assertThat(comparison.summary()).isEqualTo("Exibindo todas as 4 salas");
+    }
+
+    @Test
+    void roomComparison_summary_shouldDescribeDefaultAndSelection() {
+        Long roomA = createRoom("Sala A").getId();
+        Long roomB = createRoom("Sala B").getId();
+        reservation(roomA, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
+        reservation(roomB, IN_PERIOD, "08:00", "10:00", ReservationStatus.CONFIRMADA);
+
+        assertThat(service.buildDashboard(null, null).roomComparison().summary())
+                .isEqualTo("Exibindo as 2 salas com mais horas");
+        assertThat(service.buildDashboard(null, null, List.of(roomA, roomB)).roomComparison().summary())
+                .isEqualTo("Exibindo 2 salas selecionadas");
+        assertThat(service.buildDashboard(null, null, List.of(roomA)).roomComparison().summary())
+                .isEqualTo("Exibindo 1 sala selecionada");
+    }
+
+    @Test
     void roomComparison_withAllRoomsAndSelectedIds_shouldIgnoreTheSelectionAndTheFiveRoomLimit() {
         List<Long> ids = new ArrayList<>();
         for (int index = 1; index <= 6; index++) {
