@@ -190,6 +190,116 @@ class DashboardControllerIntegrationTest {
         assertThat(html).contains("Sem dados no período").contains("Sala Seletor").contains("seletor-salas");
     }
 
+    @Test
+    void dashboard_periodFormShouldNotContainRoomCheckboxes() throws Exception {
+        User admin = createUser(UserRole.ADMIN);
+        createRoom("Sala Fora do Topo");
+
+        String html = page("/dashboard", admin);
+        String periodForm = dashboardForms(html).get(0);
+
+        assertThat(periodForm).contains("name=\"de\"").contains("name=\"ate\"").contains("Aplicar")
+                .doesNotContain("type=\"checkbox\"").doesNotContain("Sala Fora do Topo")
+                .doesNotContain("Todas as salas");
+    }
+
+    @Test
+    void dashboard_comparisonCardShouldContainCollapsibleRoomFilter() throws Exception {
+        User admin = createUser(UserRole.ADMIN);
+        createRoom("Sala No Card");
+
+        String html = page("/dashboard", admin);
+        String card = html.substring(html.indexOf("id=\"card-comparativo\""));
+
+        assertThat(card).contains("<details").contains("<summary").contains("Filtrar salas")
+                .contains("Sala No Card").contains("Limpar seleção").contains("id=\"resumo-comparativo\"");
+    }
+
+    @Test
+    void dashboard_detailsShouldBeClosedByDefault() throws Exception {
+        String html = page("/dashboard", createUser(UserRole.ADMIN));
+
+        assertThat(html).doesNotContainPattern("<details[^>]*\\sopen");
+    }
+
+    @Test
+    void dashboard_detailsShouldBeOpenWithSelectedRooms() throws Exception {
+        User admin = createUser(UserRole.ADMIN);
+        Room room = createRoom("Sala Aberta");
+
+        String html = mockMvc.perform(request("/dashboard", admin).param("salas", room.getId().toString()))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(html).containsPattern("<details[^>]*\\sopen");
+    }
+
+    @Test
+    void dashboard_detailsShouldBeOpenWithAllRooms() throws Exception {
+        String html = mockMvc.perform(request("/dashboard", createUser(UserRole.ADMIN)).param("todas", "true"))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(html).containsPattern("<details[^>]*\\sopen");
+    }
+
+    @Test
+    void dashboard_detailsShouldBeOpenWithSelectionError() throws Exception {
+        var builder = request("/dashboard", createUser(UserRole.ADMIN));
+        for (int index = 1; index <= 6; index++) {
+            builder.param("salas", String.valueOf(index));
+        }
+
+        String html = mockMvc.perform(builder).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(html).containsPattern("<details[^>]*\\sopen").contains("Selecione no máximo 5 salas");
+    }
+
+    @Test
+    void dashboard_formsShouldPreserveEachOthersParameters() throws Exception {
+        User admin = createUser(UserRole.ADMIN);
+        Room room = createRoom("Sala Preservada");
+
+        String html = mockMvc.perform(request("/dashboard", admin)
+                .param("de", "2026-03-01").param("ate", "2026-03-31")
+                .param("salas", room.getId().toString()))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        String periodForm = dashboardForms(html).get(0);
+        String roomForm = dashboardForms(html).get(1);
+
+        assertThat(periodForm).containsPattern("type=\"hidden\"[^>]*name=\"salas\"[^>]*value=\"" + room.getId() + "\"")
+                .doesNotContain("name=\"todas\"");
+        assertThat(roomForm).containsPattern("type=\"hidden\"[^>]*name=\"de\"[^>]*value=\"2026-03-01\"")
+                .containsPattern("type=\"hidden\"[^>]*name=\"ate\"[^>]*value=\"2026-03-31\"");
+    }
+
+    @Test
+    void dashboard_periodFormShouldCarryAllRoomsFlag() throws Exception {
+        String html = mockMvc.perform(request("/dashboard", createUser(UserRole.ADMIN)).param("todas", "true"))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        String periodForm = dashboardForms(html).get(0);
+
+        assertThat(periodForm).containsPattern("type=\"hidden\"[^>]*name=\"todas\"[^>]*value=\"true\"");
+    }
+
+    @Test
+    void dashboard_clearSelectionLinkShouldKeepPeriod() throws Exception {
+        String html = mockMvc.perform(request("/dashboard", createUser(UserRole.ADMIN))
+                .param("de", "2026-03-01").param("ate", "2026-03-31").param("todas", "true"))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(html).containsPattern("href=\"/dashboard\\?de=2026-03-01&amp;ate=2026-03-31\"[^>]*>Limpar seleção");
+    }
+
+    private java.util.List<String> dashboardForms(String html) {
+        java.util.List<String> forms = new java.util.ArrayList<>();
+        var matcher = java.util.regex.Pattern.compile("(?s)<form[^>]*action=\"/dashboard\".*?</form>").matcher(html);
+        while (matcher.find()) {
+            forms.add(matcher.group());
+        }
+        return forms;
+    }
+
     private Room createRoom(String name) {
         return roomRepository.save(Room.builder().roomName(name).roomType("Lab").localization("Prédio 1")
                 .roomCapacity(10).description("Teste").active(true).build());
