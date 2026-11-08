@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -21,6 +22,7 @@ import br.com.classholder.classholder.audit.domain.AuditLog;
 import br.com.classholder.classholder.audit.repository.AuditLogRepository;
 import br.com.classholder.classholder.shared.WhenChangesSaved;
 import br.com.classholder.classholder.shared.RecursoNaoEncontradoException;
+import br.com.classholder.classholder.user.UserAnonymizedEvent;
 import br.com.classholder.classholder.user.UserDeactivatedEvent;
 import br.com.classholder.classholder.user.UserRole;
 import br.com.classholder.classholder.user.domain.User;
@@ -43,6 +45,7 @@ public class UserService {
 
     private static final int MAX_FAILED_LOGIN_ATTEMPTS = 5;
     private static final long LOCK_DURATION_MINUTES = 15;
+    private static final String ANONYMIZED_PASSWORD_HASH = "!";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -109,10 +112,11 @@ public class UserService {
     @Transactional
     @Auditable(acao = "USUARIO_DESATIVADO", entidadeTipo = "USUARIO")
     public void deactivateUser(Long actorId, UserRole actorRole, Long id) {
-        User user = findManageableUser(actorId, actorRole, id);
+        User user = findUserForStatusChange(actorId, actorRole, id);
         if (!user.isActive()) {
             throw new IllegalStateException("Esse usuário já está desativado");
         }
+        ensureAnotherActiveUserRemains(user.getRole());
 
         user.setActive(false);
         userRepository.save(user);
@@ -128,9 +132,35 @@ public class UserService {
         AuditContext.setDetalhes("Reservas e solicitações canceladas: " + cancelledReservations.size());
     }
 
+    @Transactional
+    @Auditable(acao = "USUARIO_ANONIMIZADO", entidadeTipo = "USUARIO")
+    public void anonymizeUser(Long actorId, UserRole actorRole, Long id) {
+        User user = findUserAllowedFor(actorId, id, actorRole::canAnonymize);
+        if (user.isActive()) {
+            ensureAnotherActiveUserRemains(user.getRole());
+        }
+
+        UserAnonymizedEvent event = new UserAnonymizedEvent(id);
+        eventPublisher.publishEvent(event);
+        passwordResetService.deleteTokensOf(id);
+
+        user.setName("Usuário excluído (ID " + id + ")");
+        user.setEmail("excluido-" + id + "@anonimizado.invalid");
+        user.setPasswordHash(ANONYMIZED_PASSWORD_HASH);
+        user.setTwoFactorSecret(null);
+        user.setFailedLoginAttempts(0);
+        user.setLockedUntil(null);
+        user.setActive(false);
+        user.setAnonymizedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        AuditContext.setEntidadeId(id);
+        AuditContext.setDetalhes("Reservas e solicitações canceladas: " + event.cancelledReservations().size());
+    }
+
     @Auditable(acao = "USUARIO_REATIVADO", entidadeTipo = "USUARIO")
     public void reactivateUser(Long actorId, UserRole actorRole, Long id) {
-        User user = findManageableUser(actorId, actorRole, id);
+        User user = findUserForStatusChange(actorId, actorRole, id);
         if (user.isActive()) {
             throw new IllegalStateException("Esse usuário já está ativo");
         }
@@ -155,20 +185,41 @@ public class UserService {
     }
 
     private User findManageableUser(Long actorId, UserRole actorRole, Long id) {
+        return findUserAllowedFor(actorId, id, actorRole::canManage);
+    }
+
+    private User findUserForStatusChange(Long actorId, UserRole actorRole, Long id) {
+        return findUserAllowedFor(actorId, id, actorRole::canChangeStatusOf);
+    }
+
+    private User findUserAllowedFor(Long actorId, Long id, Predicate<UserRole> allowed) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
 
         if (id.equals(actorId)) {
             throw new IllegalArgumentException("Você não pode alterar a própria conta por aqui");
         }
-        if (!actorRole.canManage(user.getRole())) {
+        if (!allowed.test(user.getRole())) {
             throw new IllegalArgumentException("Você não tem permissão para alterar esse usuário");
+        }
+        if (user.isAnonymized()) {
+            throw new IllegalStateException("Uma conta anonimizada não pode ser alterada nem reativada");
         }
         return user;
     }
 
+    private void ensureAnotherActiveUserRemains(UserRole role) {
+        if (role != UserRole.ADMIN) {
+            return;
+        }
+        if (userRepository.findActiveByRoleForUpdate(role).size() <= 1) {
+            throw new IllegalStateException("É preciso manter ao menos um Administrador ativo");
+        }
+    }
+
     private UserResponse toResponse(User user) {
-        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole(), user.isActive());
+        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole(), user.isActive(),
+                user.isAnonymized());
     }
 
     public List<UserResponse> listUsers() {

@@ -71,7 +71,7 @@ public class UserController {
         UserResponse user;
         try {
             user = userService.getManageableUser(actor.id(), actor.role(), id);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             redirectAttributes.addFlashAttribute("erro", e.getMessage());
             return "redirect:/usuarios";
         }
@@ -96,12 +96,25 @@ public class UserController {
         UserResponse actor = currentUser(authentication);
         try {
             userService.updateUser(actor.id(), actor.role(), id, new UserEditRequest(form.getName(), form.getEmail()));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             model.addAttribute("erro", e.getMessage());
             return "usuarios/editar";
         }
 
         redirectAttributes.addFlashAttribute("sucesso", "Usuário atualizado");
+        return "redirect:/usuarios";
+    }
+
+    @PostMapping("/{id}/anonimizar")
+    public String anonymize(Authentication authentication, @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
+        UserResponse actor = currentUser(authentication);
+        try {
+            userService.anonymizeUser(actor.id(), actor.role(), id);
+            redirectAttributes.addFlashAttribute("sucesso", "Usuário anonimizado");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("erro", e.getMessage());
+        }
         return "redirect:/usuarios";
     }
 

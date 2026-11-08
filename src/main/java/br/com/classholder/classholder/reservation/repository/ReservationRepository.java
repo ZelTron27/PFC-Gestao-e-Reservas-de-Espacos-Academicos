@@ -101,6 +101,17 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("now") LocalTime now);
 
     @Query("""
+            select r.id from Reservation r
+            where r.date = :date
+              and r.status in :statuses
+              and (r.date > :today or (r.date = :today and r.startTime > :now))
+            order by r.id
+            """)
+    List<Long> findUpcomingIdsByDate(@Param("date") LocalDate date,
+            @Param("statuses") List<ReservationStatus> statuses, @Param("today") LocalDate today,
+            @Param("now") LocalTime now);
+
+    @Query("""
             select count(r) > 0 from Reservation r
             where r.roomId = :roomId
               and (r.status = :pending

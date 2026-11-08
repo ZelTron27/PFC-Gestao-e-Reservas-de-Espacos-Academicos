@@ -89,6 +89,7 @@ FERIADOS_CODIGO_IBGE=3550308
 | `FERIADOS_API_URL` | Não | `https://feriadosapi.com/api/v1` | Endereço base da FeriadosAPI |
 | `FERIADOS_CODIGO_IBGE` | Não | `3550308` (São Paulo/SP) | Código IBGE da cidade usada para buscar feriados municipais |
 | `PORT` | Não | `8080` | Porta HTTP da aplicação |
+| `SESSION_COOKIE_SECURE` | Não | `false` | Em produção, com HTTPS, use `true` para o cookie de sessão só trafegar por conexão segura |
 
 > Se alguma variável obrigatória estiver faltando, a aplicação não sobe e o Spring mostra um erro do tipo `Could not resolve placeholder 'NOME_DA_VARIAVEL'`.
 
@@ -220,9 +221,20 @@ Nos logins seguintes, o código do app autenticador é pedido sempre após a sen
 A partir daí, o cadastro segue a hierarquia do sistema:
 
 1. O **ADMIN** cadastra os usuários da **coordenação**.
-2. A **coordenação** cadastra professores, salas e equipamentos.
+2. A **coordenação** cadastra outros coordenadores, professores, salas e equipamentos.
 
-O ADMIN também tem acesso a todas as telas da coordenação.
+O ADMIN também tem acesso a todas as telas da coordenação. O sistema mantém sempre ao menos um ADMIN ativo.
+
+### Redefinição do 2FA
+
+Se um usuário perder o aplicativo autenticador, ele não consegue mais entrar, e a aplicação não tem tela para isso. A redefinição é feita no banco de dados pelo responsável técnico designado pela instituição, com o script [`scripts/redefinir-2fa.sql`](scripts/redefinir-2fa.sql).
+
+Abra o Query Tool do pgAdmin 4, acesse o banco `classholder`, cole o conteúdo do script e siga os dois passos:
+
+1. Em `v_email`, troque `email@exemplo.com` pelo e-mail do usuário, mantendo as aspas simples, e execute. Nada é alterado: a aba **Messages** mostra o nome, o perfil e o ID da pessoa.
+2. Confira se é a pessoa certa, preencha `v_confirmar` com o ID mostrado, também entre aspas simples (por exemplo `'12'`), e execute de novo. O 2FA só é redefinido se o ID informado for igual ao do usuário. Se não for, o script recusa e não altera nada.
+
+No próximo login, o usuário configura um novo QR Code. A senha não é alterada, o bloqueio por tentativas de login é removido e a operação fica registrada na auditoria como `2FA_REDEFINIDO`. Contas anonimizadas não podem ser redefinidas.
 
 ## Licença
 

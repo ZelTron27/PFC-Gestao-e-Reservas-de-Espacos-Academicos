@@ -15,10 +15,14 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.client.ResourceAccessException;
 
+import br.com.classholder.classholder.holiday.HolidaysRegisteredEvent;
 import br.com.classholder.classholder.holiday.client.FeriadosApiClient;
+import br.com.classholder.classholder.holiday.domain.Holiday;
 import br.com.classholder.classholder.holiday.client.FetchedHoliday;
 import br.com.classholder.classholder.holiday.domain.HolidaySync;
 import br.com.classholder.classholder.holiday.domain.HolidaySyncTrigger;
@@ -31,8 +35,9 @@ class HolidaySyncServiceTest {
     private final FeriadosApiClient client = mock(FeriadosApiClient.class);
     private final HolidayRepository holidayRepository = mock(HolidayRepository.class);
     private final HolidaySyncRepository syncRepository = mock(HolidaySyncRepository.class);
+    private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
     private final HolidaySyncService service = new HolidaySyncService(client, holidayRepository, syncRepository,
-            mock(PlatformTransactionManager.class), 3, 0);
+            mock(PlatformTransactionManager.class), eventPublisher, 3, 0);
 
     @BeforeEach
     void setUp() {
@@ -90,6 +95,39 @@ class HolidaySyncServiceTest {
         service.synchronize(HolidaySyncTrigger.AGENDADA);
 
         verify(holidayRepository, never()).deleteAllInPeriod(LocalDate.of(year + 1, 1, 1), LocalDate.of(year + 1, 12, 31));
+    }
+
+    @Test
+    void publishesOnlyTheDatesThatWereNotInTheLocalCopy() {
+        int year = LocalDate.now().getYear();
+        LocalDate christmas = LocalDate.of(year, 12, 25);
+        LocalDate newHoliday = LocalDate.of(year, 11, 20);
+        when(holidayRepository.findAllByDateBetweenOrderByDateAsc(LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)))
+                .thenReturn(List.of(Holiday.builder().date(christmas).name("Natal").type(HolidayType.NACIONAL).build()));
+        when(client.fetchHolidays(year)).thenReturn(List.of(
+                new FetchedHoliday(christmas, "Natal", HolidayType.NACIONAL),
+                new FetchedHoliday(newHoliday, "Consciência Negra", HolidayType.NACIONAL)));
+        when(client.fetchHolidays(year + 1)).thenReturn(List.of());
+
+        service.synchronize(HolidaySyncTrigger.MANUAL);
+
+        ArgumentCaptor<HolidaysRegisteredEvent> captor = ArgumentCaptor.forClass(HolidaysRegisteredEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().dates()).containsExactly(newHoliday);
+    }
+
+    @Test
+    void doesNotPublishWhenNoDateIsNew() {
+        int year = LocalDate.now().getYear();
+        LocalDate christmas = LocalDate.of(year, 12, 25);
+        when(holidayRepository.findAllByDateBetweenOrderByDateAsc(LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)))
+                .thenReturn(List.of(Holiday.builder().date(christmas).name("Natal").type(HolidayType.NACIONAL).build()));
+        when(client.fetchHolidays(year)).thenReturn(christmasOf(year));
+        when(client.fetchHolidays(year + 1)).thenReturn(List.of());
+
+        service.synchronize(HolidaySyncTrigger.MANUAL);
+
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test

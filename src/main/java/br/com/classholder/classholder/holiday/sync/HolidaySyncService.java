@@ -2,16 +2,19 @@ package br.com.classholder.classholder.holiday.sync;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -19,6 +22,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 
+import br.com.classholder.classholder.holiday.HolidaysRegisteredEvent;
 import br.com.classholder.classholder.holiday.client.FeriadosApiClient;
 import br.com.classholder.classholder.holiday.client.FetchedHoliday;
 import br.com.classholder.classholder.holiday.domain.Holiday;
@@ -36,17 +40,20 @@ public class HolidaySyncService {
     private final HolidayRepository holidayRepository;
     private final HolidaySyncRepository syncRepository;
     private final TransactionTemplate transactionTemplate;
+    private final ApplicationEventPublisher eventPublisher;
     private final int maxAttempts;
     private final long retryIntervalMs;
 
     public HolidaySyncService(FeriadosApiClient client, HolidayRepository holidayRepository,
             HolidaySyncRepository syncRepository, PlatformTransactionManager transactionManager,
+            ApplicationEventPublisher eventPublisher,
             @Value("${app.feriados.retry.tentativas}") int maxAttempts,
             @Value("${app.feriados.retry.intervalo-ms}") long retryIntervalMs) {
         this.client = client;
         this.holidayRepository = holidayRepository;
         this.syncRepository = syncRepository;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.eventPublisher = eventPublisher;
         this.maxAttempts = Math.max(1, maxAttempts);
         this.retryIntervalMs = retryIntervalMs;
     }
@@ -116,13 +123,20 @@ public class HolidaySyncService {
     private int replaceHolidays(Map<Integer, List<FetchedHoliday>> fetchedByYear) {
         LocalDateTime syncedAt = LocalDateTime.now();
         int total = 0;
+        List<LocalDate> newDates = new ArrayList<>();
 
         for (Map.Entry<Integer, List<FetchedHoliday>> entry : fetchedByYear.entrySet()) {
             if (entry.getValue().isEmpty()) {
                 continue;
             }
             int year = entry.getKey();
-            holidayRepository.deleteAllInPeriod(LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
+            LocalDate yearStart = LocalDate.of(year, 1, 1);
+            LocalDate yearEnd = LocalDate.of(year, 12, 31);
+            Set<LocalDate> previousDates = holidayRepository.findAllByDateBetweenOrderByDateAsc(yearStart, yearEnd)
+                    .stream()
+                    .map(Holiday::getDate)
+                    .collect(Collectors.toSet());
+            holidayRepository.deleteAllInPeriod(yearStart, yearEnd);
 
             List<Holiday> holidays = mergeByDate(entry.getValue()).stream()
                     .map(fetched -> Holiday.builder()
@@ -134,8 +148,15 @@ public class HolidaySyncService {
                     .toList();
             holidayRepository.saveAll(holidays);
             total += holidays.size();
+            holidays.stream()
+                    .map(Holiday::getDate)
+                    .filter(date -> !previousDates.contains(date))
+                    .forEach(newDates::add);
         }
 
+        if (!newDates.isEmpty()) {
+            eventPublisher.publishEvent(new HolidaysRegisteredEvent(newDates));
+        }
         return total;
     }
 

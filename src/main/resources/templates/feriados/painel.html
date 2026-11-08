@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Feriados - Class Holder</title>
@@ -9,7 +10,7 @@
 <div id="conteudo-feriados">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
         <h1 class="ch-titulo h3 m-0">Feriados</h1>
-        <form th:action="@{/feriados/sincronizar}" method="post" class="m-0">
+        <form th:action="@{/feriados/sincronizar}" method="post" class="m-0" sec:authorize="hasRole('ADMIN')">
             <button type="submit" class="btn btn-primary">Sincronizar agora</button>
         </form>
     </div>
@@ -53,7 +54,7 @@
     <p class="text-secondary small">
         Todas as datas abaixo bloqueiam reservas, inclusive pontos facultativos.
         A sincronização roda automaticamente uma vez por mês (dia 1, às 3h) e sempre que o sistema é iniciado.
-        Use "Sincronizar agora" para atualizar antes disso.
+        <span sec:authorize="hasRole('ADMIN')">Use "Sincronizar agora" para atualizar antes disso.</span>
     </p>
 
     <div class="ch-cartao p-4">
