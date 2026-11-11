@@ -150,6 +150,19 @@ class AuditViewServiceTest {
     }
 
     @Test
+    void holidaySync_shouldTranslateActionTypeAndActionOption() {
+        User admin = createUser("Admin Feriados");
+        log(admin.getId(), "FERIADOS_SINCRONIZADOS", "FERIADO", 7L, "2026, 2027", NOON);
+
+        AuditView view = view(admin.getId().toString(), null, null);
+
+        assertThat(view.rows()).extracting("action", "item")
+                .containsExactly(tuple("Sincronização de feriados", "Feriados: 2026, 2027"));
+        assertThat(view.actions()).extracting("value", "label")
+                .contains(tuple("FERIADOS_SINCRONIZADOS", "Sincronização de feriados"));
+    }
+
+    @Test
     void details_shouldBeShownAsStored() {
         User user = createUser("Autor Detalhes");
         auditLogRepository.save(AuditLog.builder().userId(user.getId()).acao("RESERVA_CANCELADA")

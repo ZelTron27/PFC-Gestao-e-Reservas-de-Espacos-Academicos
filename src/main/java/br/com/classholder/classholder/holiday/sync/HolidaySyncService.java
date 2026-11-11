@@ -22,6 +22,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 
+import br.com.classholder.classholder.audit.aop.AuditContext;
+import br.com.classholder.classholder.audit.aop.Auditable;
 import br.com.classholder.classholder.holiday.HolidaysRegisteredEvent;
 import br.com.classholder.classholder.holiday.client.FeriadosApiClient;
 import br.com.classholder.classholder.holiday.client.FetchedHoliday;
@@ -87,6 +89,17 @@ public class HolidaySyncService {
         }
 
         return syncRepository.save(sync);
+    }
+
+    @Auditable(acao = "FERIADOS_SINCRONIZADOS", entidadeTipo = "FERIADO")
+    public HolidaySync synchronizeManually() {
+        HolidaySync result = synchronize(HolidaySyncTrigger.MANUAL);
+        AuditContext.setEntidadeId(result.getId());
+        AuditContext.setNome(result.getYears());
+        AuditContext.setDetalhes(result.isSuccess()
+                ? "Sucesso: " + result.getTotalHolidays() + " datas carregadas"
+                : "Falha: " + result.getMessage());
+        return result;
     }
 
     public Optional<HolidaySync> lastSync() {

@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -20,6 +21,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.client.ResourceAccessException;
 
+import br.com.classholder.classholder.audit.aop.AuditContext;
 import br.com.classholder.classholder.holiday.HolidaysRegisteredEvent;
 import br.com.classholder.classholder.holiday.client.FeriadosApiClient;
 import br.com.classholder.classholder.holiday.domain.Holiday;
@@ -42,6 +44,13 @@ class HolidaySyncServiceTest {
     @BeforeEach
     void setUp() {
         when(syncRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    @AfterEach
+    void clearAuditContext() {
+        AuditContext.setEntidadeId(null);
+        AuditContext.setNome(null);
+        AuditContext.setDetalhes(null);
     }
 
     @Test
@@ -128,6 +137,17 @@ class HolidaySyncServiceTest {
         service.synchronize(HolidaySyncTrigger.MANUAL);
 
         verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void synchronizeManuallyRunsWithTheManualTriggerAndReturnsTheResult() {
+        when(client.fetchHolidays(anyInt())).thenAnswer(invocation -> christmasOf(invocation.getArgument(0)));
+
+        HolidaySync result = service.synchronizeManually();
+
+        assertThat(result.getTrigger()).isEqualTo(HolidaySyncTrigger.MANUAL);
+        assertThat(result.isSuccess()).isTrue();
+        verify(syncRepository).save(result);
     }
 
     @Test
