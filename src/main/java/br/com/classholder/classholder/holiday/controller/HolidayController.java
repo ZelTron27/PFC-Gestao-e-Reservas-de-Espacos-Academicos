@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import br.com.classholder.classholder.holiday.domain.HolidaySync;
-import br.com.classholder.classholder.holiday.domain.HolidaySyncTrigger;
 import br.com.classholder.classholder.holiday.sync.HolidaySyncService;
 
 @Controller
@@ -36,7 +35,7 @@ public class HolidayController {
 
     @PostMapping("/sincronizar")
     public String synchronize(RedirectAttributes redirectAttributes) {
-        HolidaySync result = syncService.synchronize(HolidaySyncTrigger.MANUAL);
+        HolidaySync result = syncService.synchronizeManually();
         if (result.isSuccess()) {
             redirectAttributes.addFlashAttribute("sucesso",
                     "Sincronização concluída: " + result.getTotalHolidays() + " datas carregadas.");

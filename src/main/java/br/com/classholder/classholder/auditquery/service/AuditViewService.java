@@ -49,6 +49,7 @@ public class AuditViewService {
             Map.entry("EQUIPAMENTO_ATUALIZADO", "Equipamento atualizado"),
             Map.entry("EQUIPAMENTO_CRIADO", "Equipamento criado"),
             Map.entry("EQUIPAMENTO_EXCLUIDO", "Equipamento excluído"),
+            Map.entry("FERIADOS_SINCRONIZADOS", "Sincronização de feriados"),
             Map.entry("LGPD_ACEITO", "Aceite da LGPD"),
             Map.entry("RESERVA_CANCELADA", "Reserva cancelada"),
             Map.entry("RESERVA_CHECKIN", "Check-in realizado"),
@@ -73,6 +74,7 @@ public class AuditViewService {
     private static final Map<String, String> TYPE_LABELS = Map.of(
             "ACESSO", "Acesso",
             "EQUIPAMENTO", "Equipamento",
+            "FERIADO", "Feriados",
             RESERVATION_TYPE, "Reserva",
             ROOM_TYPE, "Sala",
             "USUARIO", "Usuário");
