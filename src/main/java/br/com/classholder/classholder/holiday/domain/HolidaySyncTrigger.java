@@ -4,7 +4,7 @@ public enum HolidaySyncTrigger {
 
     INICIALIZACAO("Inicialização do sistema"),
     AGENDADA("Agendada (mensal)"),
-    MANUAL("Manual (coordenação)");
+    MANUAL("Manual (administrador)");
 
     private final String label;
 
