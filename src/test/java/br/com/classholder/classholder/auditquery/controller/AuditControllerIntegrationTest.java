@@ -78,8 +78,10 @@ class AuditControllerIntegrationTest {
     @Test
     void menu_shouldShowAuditLinkOnlyForAdmin() throws Exception {
         assertThat(page("/reservas", createUser(UserRole.ADMIN, "Admin Menu"))).contains("href=\"/auditoria\"");
-        assertThat(page("/reservas", createUser(UserRole.COORDENACAO, "Coord Menu"))).doesNotContain("href=\"/auditoria\"");
-        assertThat(page("/reservas", createUser(UserRole.PROFESSOR, "Prof Menu"))).doesNotContain("href=\"/auditoria\"");
+        assertThat(page("/reservas", createUser(UserRole.COORDENACAO, "Coord Menu")))
+                .doesNotContain("href=\"/auditoria\"");
+        assertThat(page("/reservas", createUser(UserRole.PROFESSOR, "Prof Menu")))
+                .doesNotContain("href=\"/auditoria\"");
     }
 
     @Test

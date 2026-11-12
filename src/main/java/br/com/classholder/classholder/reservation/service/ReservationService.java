@@ -94,7 +94,8 @@ public class ReservationService {
         RoomResponse room = findActiveRoom(request.roomId());
         if (room.salaEspecial()) {
             throw new IllegalStateException(
-                    "Salas especiais exigem solicitação e aprovação da coordenação, não podem ser reservadas diretamente");
+                    "Salas especiais exigem solicitação e aprovação da coordenação, "
+                            + "não podem ser reservadas diretamente");
         }
         ensureWithinOperatingHours(room, request);
         ensureNoConfirmedConflict(reservationRepository.findConflicting(request.roomId(), request.date(),

@@ -34,7 +34,8 @@ class FeriadosApiClientTest {
                 .andExpect(header("Authorization", "Bearer token-teste"))
                 .andRespond(withSuccess("""
                         {"feriados":[
-                          {"data":"25/01/2026","nome":"Aniversário da Cidade de São Paulo","tipo":"MUNICIPAL","uf":"SP"},
+                          {"data":"25/01/2026","nome":"Aniversário da Cidade de São Paulo",\
+                          "tipo":"MUNICIPAL","uf":"SP"},
                           {"data":"17/02/2026","nome":"Carnaval","tipo":"FACULTATIVO","bancario":true}
                         ],"meta":{"total":2,"page":1,"per_page":100,"total_pages":1}}
                         """, MediaType.APPLICATION_JSON));
