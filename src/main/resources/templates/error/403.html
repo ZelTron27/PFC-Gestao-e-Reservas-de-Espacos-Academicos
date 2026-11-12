@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Acesso negado - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/publico :: cartao(~{::#conteudo-erro}, '26rem')}">
+<div id="conteudo-erro" class="text-center">
+    <p class="ch-titulo display-4 mb-1">403</p>
+    <h1 class="ch-titulo h5 mb-2">Acesso negado</h1>
+    <p class="text-secondary mb-4">Acesso negado. Você não tem permissão para acessar esta página.</p>
+    <a class="btn btn-primary w-100" th:href="@{/}">Voltar ao início</a>
+</div>
+</div>
+</body>
+</html>
