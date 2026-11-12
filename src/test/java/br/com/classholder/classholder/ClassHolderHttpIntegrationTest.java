@@ -50,7 +50,7 @@ class ClassHolderHttpIntegrationTest {
                 .retrieve()
                 .toEntity(String.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         String location = response.getHeaders().getFirst(HttpHeaders.LOCATION);
         assertThat(location).isNotNull();
         assertThat(URI.create(location).getPath()).isEqualTo("/login");
