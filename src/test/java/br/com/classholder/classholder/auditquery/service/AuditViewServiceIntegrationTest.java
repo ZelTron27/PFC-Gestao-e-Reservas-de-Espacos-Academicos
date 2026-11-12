@@ -12,6 +12,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,10 +35,11 @@ import br.com.classholder.classholder.user.domain.User;
 import br.com.classholder.classholder.user.repository.UserRepository;
 import br.com.classholder.classholder.user.service.UserService;
 
+@Tag("integration")
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class AuditViewServiceTest {
+class AuditViewServiceIntegrationTest {
 
     private static final ZoneId ZONE = ZoneId.of("America/Sao_Paulo");
     private static final LocalDate DAY = LocalDate.of(2026, 3, 10);

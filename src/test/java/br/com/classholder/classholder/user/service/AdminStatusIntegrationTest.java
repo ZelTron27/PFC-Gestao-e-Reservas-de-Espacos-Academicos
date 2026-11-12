@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,6 +16,7 @@ import br.com.classholder.classholder.user.domain.User;
 import br.com.classholder.classholder.user.dto.UserEditRequest;
 import br.com.classholder.classholder.user.repository.UserRepository;
 
+@Tag("integration")
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
