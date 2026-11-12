@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Configurar autenticação em dois fatores - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/publico :: cartao(~{::#conteudo-totp}, '30rem')}">
+<div id="conteudo-totp">
+    <h1 class="ch-titulo h5 mb-1">Configure sua autenticação em dois fatores</h1>
+    <p class="text-secondary small mb-3">
+        Escaneie o código abaixo com o Google Authenticator (ou app compatível).
+    </p>
+
+    <div class="alert alert-warning small" role="alert">
+        Depois de confirmar, este QR Code não poderá ser visualizado novamente. Se perder o acesso,
+        será necessário reconfigurar a autenticação em dois fatores.
+    </div>
+
+    <div class="my-4">
+        <img class="d-block mx-auto img-fluid border rounded p-2 bg-white"
+             th:src="'data:image/png;base64,' + ${qrCodeBase64}"
+             alt="QR Code de autenticação em dois fatores">
+    </div>
+
+    <p class="text-secondary small mb-2">Não consegue escanear? Digite manualmente no app:</p>
+    <div class="bg-light border rounded p-2 mb-4 text-center font-monospace small text-break"
+         th:text="${segredo}">SEGREDO</div>
+
+    <form th:action="@{/totp/configurar}" method="post">
+        <div class="alert alert-danger py-2 small" role="alert" th:if="${erro}" th:text="${erro}">
+            Código inválido.
+        </div>
+
+        <input type="text" class="form-control form-control-lg text-center mb-4" name="codigo"
+               inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000"
+               autocomplete="one-time-code" autofocus required>
+
+        <button type="submit" class="btn btn-primary w-100">Confirmar</button>
+    </form>
+</div>
+</div>
+</body>
+</html>

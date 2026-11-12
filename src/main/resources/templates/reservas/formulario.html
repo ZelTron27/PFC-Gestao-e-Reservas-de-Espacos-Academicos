@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Reservar sala - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-reserva}, 'espacos', ${usuario})}">
+<div id="conteudo-reserva">
+    <div class="mb-4">
+        <a class="ch-voltar" th:href="@{/reservas/espacos}">&larr; Espaços</a>
+        <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
+            <h1 class="ch-titulo h3 m-0" th:text="${salaEscolhida.roomName()}">Reservar sala</h1>
+            <span class="badge rounded-pill text-bg-danger" th:if="${salaEscolhida.salaEspecial()}">Sala especial</span>
+        </div>
+    </div>
+
+    <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
+    <div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('${form.date}')}"
+         th:errors="${form.date}">Data inválida</div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <div class="ch-cartao p-4">
+                <h2 class="ch-titulo h6 mb-3">Sobre este espaço</h2>
+
+                <dl class="row mb-3">
+                    <dt class="col-sm-4 small text-secondary fw-normal">Tipo</dt>
+                    <dd class="col-sm-8" th:text="${salaEscolhida.roomType()}">Tipo</dd>
+
+                    <dt class="col-sm-4 small text-secondary fw-normal">Localização</dt>
+                    <dd class="col-sm-8" th:text="${salaEscolhida.localization()}">Localização</dd>
+
+                    <dt class="col-sm-4 small text-secondary fw-normal">Capacidade máxima</dt>
+                    <dd class="col-sm-8" th:text="${salaEscolhida.roomCapacity()} + ' pessoas'">0 pessoas</dd>
+                </dl>
+
+                <p th:text="${salaEscolhida.description()}">Descrição</p>
+
+                <h3 class="small text-secondary text-uppercase mt-4 mb-2">Equipamentos disponíveis</h3>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge rounded-pill text-bg-light border"
+                          th:each="equip : ${equipamentos}"
+                          th:if="${salaEscolhida.equipmentIds().contains(equip.id())}"
+                          th:text="${equip.name()}">Equipamento</span>
+                    <span class="ch-vazio"
+                          th:if="${#lists.isEmpty(equipamentos) or salaEscolhida.equipmentIds().isEmpty()}">
+                        Nenhum equipamento cadastrado para esta sala.
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="ch-cartao p-4">
+                <h2 class="ch-titulo h6 mb-3"
+                    th:text="${salaEscolhida.salaEspecial()} ? 'Solicitar sala especial' : 'Fazer reserva'">Fazer reserva</h2>
+
+                <div class="alert alert-info small" role="note" th:if="${salaEscolhida.salaEspecial()}">
+                    <span sec:authorize="hasRole('PROFESSOR')">
+                        Esta sala exige aprovação da coordenação. A solicitação expira em 72 horas ou no horário
+                        pedido, o que ocorrer primeiro.
+                    </span>
+                    <span sec:authorize="hasAnyRole('ADMIN','COORDENACAO')">
+                        Como gestão, sua solicitação é aprovada automaticamente e cancela as solicitações
+                        pendentes no mesmo horário.
+                    </span>
+                </div>
+
+                <form id="filtroHorarios" th:action="@{/reservas/nova}" method="get">
+                    <input type="hidden" name="roomId" th:value="${form.roomId}">
+
+                    <div class="mb-3">
+                        <label class="form-label" for="date">Data</label>
+                        <input type="date" class="form-control" id="date" name="date" th:value="${form.date}"
+                               th:max="${#temporals.createToday().plusYears(2)}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="durationBlocks">Tempo de permanência</label>
+                        <select class="form-select" id="durationBlocks" name="durationBlocks">
+                            <option value="1" th:selected="${form.durationBlocks == 1}">30 min</option>
+                            <option value="2" th:selected="${form.durationBlocks == 2}">1h</option>
+                            <option value="3" th:selected="${form.durationBlocks == 3}">1h30</option>
+                            <option value="4" th:selected="${form.durationBlocks == 4}">2h</option>
+                            <option value="5" th:selected="${form.durationBlocks == 5}">2h30</option>
+                            <option value="6" th:selected="${form.durationBlocks == 6}">3h</option>
+                        </select>
+                    </div>
+
+                    <noscript>
+                        <button type="submit" class="btn btn-outline-primary w-100">Ver horários disponíveis</button>
+                    </noscript>
+                </form>
+
+                <div th:if="${horarios != null}">
+                    <hr class="my-4">
+
+                    <div class="alert alert-warning mb-0" role="alert"
+                         th:if="${diaIndisponivel}" th:text="${diaIndisponivel}">
+                        Não é possível reservar nesse dia.
+                    </div>
+
+                    <p class="ch-vazio" th:if="${diaIndisponivel == null and #lists.isEmpty(horarios)}">
+                        Nenhum horário disponível para essa sala, nessa data e com essa duração.
+                    </p>
+
+                    <form th:unless="${#lists.isEmpty(horarios)}" th:action="@{/reservas}" th:object="${form}"
+                          method="post">
+                        <input type="hidden" th:field="*{roomId}">
+                        <input type="hidden" th:field="*{date}">
+                        <input type="hidden" th:field="*{durationBlocks}">
+
+                        <div class="mb-3">
+                            <span class="form-label d-block">Horário de início</span>
+                            <div class="d-flex flex-wrap gap-2">
+                                <div th:each="horario : ${horarios}">
+                                    <input type="radio" class="btn-check" th:field="*{startTime}"
+                                           th:value="${horario}" th:id="'horario-' + ${horario}">
+                                    <label class="btn btn-sm btn-outline-primary" th:for="'horario-' + ${horario}"
+                                           th:text="${#temporals.format(horario, 'HH:mm')}">00:00</label>
+                                </div>
+                            </div>
+                            <div class="text-danger small mt-1" th:if="${#fields.hasErrors('startTime')}"
+                                 th:errors="*{startTime}"></div>
+                        </div>
+
+                        <div class="text-danger small mb-2" th:if="${#fields.hasErrors('durationBlocks')}"
+                             th:errors="*{durationBlocks}"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="purpose">Finalidade</label>
+                            <textarea class="form-control" id="purpose" rows="3" maxlength="500" th:field="*{purpose}"
+                                      placeholder="Ex: Aula de reposição, reunião de departamento"></textarea>
+                            <div class="text-danger small mt-1" th:if="${#fields.hasErrors('purpose')}"
+                                 th:errors="*{purpose}"></div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100"
+                                th:text="${salaEscolhida.salaEspecial()} ? 'Enviar solicitação' : 'Confirmar reserva'">Confirmar reserva</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const filtro = document.getElementById('filtroHorarios');
+            const data = document.getElementById('date');
+            const duracao = document.getElementById('durationBlocks');
+
+            function dataCompleta() {
+                return /^\d{4}-\d{2}-\d{2}$/.test(data.value)
+                    && Number(data.value.slice(0, 4)) >= new Date().getFullYear();
+            }
+
+            data.addEventListener('change', () => {
+                if (dataCompleta()) {
+                    filtro.submit();
+                }
+            });
+            duracao.addEventListener('change', () => filtro.submit());
+        })();
+    </script>
+</div>
+</div>
+</body>
+</html>

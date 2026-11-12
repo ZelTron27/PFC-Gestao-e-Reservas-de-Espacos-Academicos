@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Usuários - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-usuarios}, 'usuarios', ${usuario})}">
+<div id="conteudo-usuarios">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <h1 class="ch-titulo h3 m-0">Usuários cadastrados</h1>
+        <a class="btn btn-primary" th:href="@{/usuarios/novo}">Novo usuário</a>
+    </div>
+
+    <div class="alert alert-success" role="alert" th:if="${sucesso}" th:text="${sucesso}">Sucesso</div>
+    <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
+
+    <div class="ch-cartao p-4">
+        <p class="ch-vazio" th:if="${#lists.isEmpty(usuarios)}">Nenhum usuário cadastrado ainda.</p>
+
+        <div class="table-responsive" th:unless="${#lists.isEmpty(usuarios)}">
+            <table class="table align-middle ch-tabela mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Nome</th>
+                        <th scope="col">E-mail</th>
+                        <th scope="col">Perfil</th>
+                        <th scope="col">Situação</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="cadastrado : ${usuarios}">
+                        <td th:text="${cadastrado.name()}">Nome</td>
+                        <td th:text="${cadastrado.email()}">email@exemplo.com</td>
+                        <td>
+                            <span class="badge rounded-pill text-bg-light border"
+                                  th:text="${cadastrado.role()}">PERFIL</span>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill text-bg-success" th:if="${cadastrado.active()}">Ativo</span>
+                            <span class="badge rounded-pill text-bg-dark" th:if="${cadastrado.anonymized()}">Excluído</span>
+                            <span class="badge rounded-pill text-bg-secondary"
+                                  th:if="${!cadastrado.active() and !cadastrado.anonymized()}">Desativado</span>
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-end gap-2"
+                                 th:if="${usuario.role().canChangeStatusOf(cadastrado.role()) and cadastrado.id() != usuario.id() and !cadastrado.anonymized()}">
+                                <a class="btn btn-sm btn-outline-primary" th:if="${usuario.role().canManage(cadastrado.role())}"
+                                   th:href="@{/usuarios/{id}/editar(id=${cadastrado.id()})}">Editar</a>
+                                <form th:if="${cadastrado.active()}"
+                                      th:action="@{/usuarios/{id}/desativar(id=${cadastrado.id()})}" method="post"
+                                      onsubmit="return confirm('Desativar esse usuário? As reservas futuras e as solicitações pendentes dele serão canceladas.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Desativar</button>
+                                </form>
+                                <form th:unless="${cadastrado.active()}"
+                                      th:action="@{/usuarios/{id}/reativar(id=${cadastrado.id()})}" method="post"
+                                      onsubmit="return confirm('Reativar esse usuário? As reservas canceladas não serão restauradas.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Reativar</button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-danger"
+                                        th:if="${usuario.role().canAnonymize(cadastrado.role())}"
+                                        data-bs-toggle="modal" data-bs-target="#modal-anonimizar"
+                                        th:data-acao="@{/usuarios/{id}/anonimizar(id=${cadastrado.id()})}"
+                                        th:data-nome="${cadastrado.name()}"
+                                        th:data-email="${cadastrado.email()}">Anonimizar</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-anonimizar" tabindex="-1" aria-labelledby="titulo-anonimizar" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h2 class="modal-title h5" id="titulo-anonimizar">Anonimizar usuário</h2>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">
+                        Você está prestes a anonimizar <strong id="anonimizar-nome">Nome</strong>
+                        (<span id="anonimizar-email">e-mail</span>).
+                    </p>
+                    <div class="alert alert-danger mb-3" role="alert">
+                        <strong>Esta operação não pode ser desfeita.</strong> A conta não poderá ser reativada.
+                    </div>
+                    <ul class="small mb-0">
+                        <li>O nome e o e-mail serão substituídos por valores anônimos.</li>
+                        <li>A senha e a autenticação em dois fatores serão apagadas, e a conta será desativada.</li>
+                        <li>As reservas futuras e as solicitações pendentes serão canceladas.</li>
+                        <li>O histórico de reservas e da auditoria será mantido como "Usuário excluído".</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form id="form-anonimizar" th:action="@{/usuarios}" method="post" class="m-0">
+                        <button type="submit" class="btn btn-danger">Confirmar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('modal-anonimizar').addEventListener('show.bs.modal', function (event) {
+            const botao = event.relatedTarget;
+            document.getElementById('anonimizar-nome').textContent = botao.dataset.nome;
+            document.getElementById('anonimizar-email').textContent = botao.dataset.email;
+            document.getElementById('form-anonimizar').action = botao.dataset.acao;
+        });
+    </script>
+</div>
+</div>
+</body>
+</html>

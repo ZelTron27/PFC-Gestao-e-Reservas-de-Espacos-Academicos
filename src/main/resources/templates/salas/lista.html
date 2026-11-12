@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Salas - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-salas}, 'salas', ${usuario})}">
+<div id="conteudo-salas">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <h1 class="ch-titulo h3 m-0">Salas cadastradas</h1>
+        <a class="btn btn-primary" th:href="@{/salas/nova}">Nova sala</a>
+    </div>
+
+    <div class="alert alert-success" role="alert" th:if="${sucesso}" th:text="${sucesso}">Sucesso</div>
+    <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
+
+    <div class="ch-cartao p-4">
+        <p class="ch-vazio" th:if="${#lists.isEmpty(salas)}">Nenhuma sala cadastrada ainda.</p>
+
+        <div class="table-responsive" th:unless="${#lists.isEmpty(salas)}">
+            <table class="table align-middle ch-tabela mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Nome</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Localização</th>
+                        <th scope="col">Capacidade</th>
+                        <th scope="col">Situação</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="sala : ${salas}">
+                        <td th:text="${sala.roomName()}">Nome</td>
+                        <td th:text="${sala.roomType()}">Tipo</td>
+                        <td th:text="${sala.localization()}">Localização</td>
+                        <td th:text="${sala.roomCapacity()}">0</td>
+                        <td>
+                            <span class="badge rounded-pill text-bg-danger"
+                                  th:if="${sala.salaEspecial()}">Especial</span>
+                            <span class="badge rounded-pill text-bg-success" th:if="${sala.active()}">Ativa</span>
+                            <span class="badge rounded-pill text-bg-secondary"
+                                  th:unless="${sala.active()}">Inativa</span>
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-end gap-2">
+                                <a class="btn btn-sm btn-outline-primary"
+                                   th:href="@{/salas/{id}/editar(id=${sala.id()})}">Editar</a>
+                                <form th:if="${sala.active()}"
+                                      th:action="@{/salas/{id}/inativar(id=${sala.id()})}" method="post"
+                                      onsubmit="return confirm('Inativar essa sala? As reservas futuras e as solicitações pendentes serão canceladas.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Inativar</button>
+                                </form>
+                                <form th:unless="${sala.active()}"
+                                      th:action="@{/salas/{id}/reativar(id=${sala.id()})}" method="post"
+                                      onsubmit="return confirm('Reativar essa sala? As reservas canceladas não serão restauradas.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Reativar</button>
+                                </form>
+                                <form th:unless="${sala.active()}"
+                                      th:action="@{/salas/{id}/excluir(id=${sala.id()})}" method="post"
+                                      onsubmit="return confirm('Excluir essa sala definitivamente?');">
+                                    <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+</body>
+</html>

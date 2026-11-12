@@ -1,15 +1,20 @@
 package br.com.classholder.classholder.user.service;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import br.com.classholder.classholder.audit.listener.LoginUserIdResolver;
 import br.com.classholder.classholder.user.domain.User;
 import br.com.classholder.classholder.user.repository.UserRepository;
 
 @Service
-public class UserDetailsServiceImpl implements UserDetailsService {
+public class UserDetailsServiceImpl implements UserDetailsService, LoginUserIdResolver {
 
     private final UserRepository userRepository;
 
@@ -22,11 +27,16 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getEmail())
-                .password(user.getPasswordHash())
-                .authorities(user.getRole().getAuthority())
-                .build();
+        boolean locked = user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now());
+
+        return new AuthenticatedUser(user.getId(), user.getEmail(), user.getPasswordHash(), user.isActive(),
+                locked,
+                AuthorityUtils.createAuthorityList(user.getRole().getAuthority()));
+    }
+
+    @Override
+    public Optional<Long> findUserIdByLogin(String login) {
+        return userRepository.findByEmail(login).map(User::getId);
     }
 
 }

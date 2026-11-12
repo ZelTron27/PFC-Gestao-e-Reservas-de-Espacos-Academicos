@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Antes de continuar - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/publico :: cartao(~{::#conteudo-termo}, '30rem')}">
+<div id="conteudo-termo">
+    <h1 class="ch-titulo h5 mb-1">Antes de continuar</h1>
+    <p class="text-secondary small mb-3">
+        Consulte nossa Política de Privacidade e os Termos de Uso antes de continuar.
+    </p>
+
+    <div class="d-flex flex-column gap-1 mb-4">
+        <a class="text-decoration-none" th:href="@{/lgpd/privacidade}" target="_blank" rel="noopener">
+            Política de Privacidade
+        </a>
+        <a class="text-decoration-none" th:href="@{/lgpd/termos}" target="_blank" rel="noopener">
+            Termos de Uso
+        </a>
+    </div>
+
+    <form th:action="@{/lgpd/aceitar}" method="post">
+        <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" id="ciencia" required>
+            <label class="form-check-label" for="ciencia">Declaro que li a Política de Privacidade.</label>
+        </div>
+
+        <div class="form-check mb-4">
+            <input type="checkbox" class="form-check-input" id="aceite" required>
+            <label class="form-check-label" for="aceite">Li e aceito os Termos de Uso.</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100" id="btnContinuar" disabled>Continuar</button>
+    </form>
+</div>
+</div>
+
+<script>
+    const caixas = [document.getElementById('ciencia'), document.getElementById('aceite')];
+    const botao = document.getElementById('btnContinuar');
+    caixas.forEach(c => c.addEventListener('change', () => {
+        botao.disabled = !caixas.every(x => x.checked);
+    }));
+</script>
+</body>
+</html>

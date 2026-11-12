@@ -1,4 +1,4 @@
-package br.com.classholder.classholder.user.config;
+package br.com.classholder.classholder.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

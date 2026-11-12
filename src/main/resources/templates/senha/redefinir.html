@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Redefinir senha - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/publico :: cartao(~{::#conteudo-redefinir}, '26rem')}">
+<div id="conteudo-redefinir">
+    <div th:if="${sucesso}">
+        <h1 class="ch-titulo h5 mb-3">Senha redefinida</h1>
+        <div class="alert alert-success small" role="alert">
+            Sua senha foi redefinida com sucesso. Você já pode entrar com a nova senha.
+        </div>
+        <a class="btn btn-primary w-100" th:href="@{/login}">Ir para o login</a>
+    </div>
+
+    <div th:if="${tokenInvalido}">
+        <h1 class="ch-titulo h5 mb-3">Link inválido ou expirado</h1>
+        <p class="text-secondary small mb-4">
+            Este link de redefinição de senha não é mais válido. Solicite um novo link para continuar.
+        </p>
+        <a class="btn btn-primary w-100" th:href="@{/senha/esqueci}">Solicitar novo link</a>
+    </div>
+
+    <div th:unless="${sucesso} or ${tokenInvalido}">
+        <h1 class="ch-titulo h5 mb-1">Redefinir senha</h1>
+        <p class="text-secondary small mb-4">Escolha uma nova senha para sua conta.</p>
+
+        <form th:action="@{/senha/redefinir}" method="post">
+            <input type="hidden" name="token" th:value="${token}">
+
+            <div class="mb-3">
+                <label class="form-label" for="novaSenha">Nova senha</label>
+                <input type="password" class="form-control" id="novaSenha" name="novaSenha" required autofocus>
+                <div class="form-text">Mínimo 14 caracteres, com maiúscula, minúscula, número e símbolo.</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="confirmarSenha">Confirmar nova senha</label>
+                <input type="password" class="form-control" id="confirmarSenha" name="confirmarSenha" required>
+            </div>
+
+            <div class="alert alert-danger py-2 small" role="alert" th:if="${erro}" th:text="${erro}"></div>
+
+            <button type="submit" class="btn btn-primary w-100">Redefinir senha</button>
+        </form>
+
+        <div class="text-center mt-4">
+            <a class="small text-decoration-none" th:href="@{/login}">Voltar para o login</a>
+        </div>
+    </div>
+</div>
+</div>
+</body>
+</html>

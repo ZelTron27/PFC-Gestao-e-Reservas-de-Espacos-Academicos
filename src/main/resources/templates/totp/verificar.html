@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Verificação em duas etapas - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/publico :: cartao(~{::#conteudo-verificar}, '24rem')}">
+<div id="conteudo-verificar">
+    <h1 class="ch-titulo h5 mb-1">Verificação em duas etapas</h1>
+    <p class="text-secondary small mb-4">
+        Digite o código de 6 dígitos gerado pelo seu aplicativo autenticador.
+    </p>
+
+    <form th:action="@{/totp/verificar}" method="post">
+        <div class="alert alert-danger py-2 small" role="alert" th:if="${erro}" th:text="${erro}">
+            Código inválido.
+        </div>
+
+        <input type="text" class="form-control form-control-lg text-center mb-4" name="codigo"
+               inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000"
+               autocomplete="one-time-code" autofocus required>
+
+        <button type="submit" class="btn btn-primary w-100">Confirmar</button>
+    </form>
+</div>
+</div>
+</body>
+</html>

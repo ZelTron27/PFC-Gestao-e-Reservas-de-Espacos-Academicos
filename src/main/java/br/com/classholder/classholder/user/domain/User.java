@@ -1,5 +1,7 @@
 package br.com.classholder.classholder.user.domain;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -48,5 +50,37 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private UserRole role;
+
+    @Builder.Default
+    @Column(name = "first_login", nullable = false)
+    private boolean firstLogin = true;
+
+    @Column(name = "lgpd_accepted_at")
+    private LocalDateTime lgpdAcceptedAt;
+
+    @Column(name = "two_factor_secret", length = 255)
+    private String twoFactorSecret;
+
+    @Builder.Default
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword = true;
+
+    @Builder.Default
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts = 0;
+
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean active = true;
+
+    @Column(name = "anonimizado_em")
+    private LocalDateTime anonymizedAt;
+
+    public boolean isAnonymized() {
+        return anonymizedAt != null;
+    }
 
 }

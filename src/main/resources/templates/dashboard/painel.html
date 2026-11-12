@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Class Holder</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.2/dist/css/adminlte.min.css">
+</head>
+<body>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-painel}, 'dashboard', ${usuario})}">
+<div id="conteudo-painel">
+    <h1 class="ch-titulo h3 mb-4">Dashboard de uso dos espaços</h1>
+
+    <div class="alert alert-danger" role="alert" th:if="${painel.periodError()}" th:text="${painel.periodError()}">Erro</div>
+
+    <form class="ch-cartao p-3 mb-4 d-flex flex-wrap align-items-end gap-3" method="get" th:action="@{/dashboard}">
+        <div>
+            <label class="form-label mb-1" for="de">De</label>
+            <input type="date" class="form-control" id="de" name="de" th:value="${painel.from()}">
+        </div>
+        <div>
+            <label class="form-label mb-1" for="ate">Até</label>
+            <input type="date" class="form-control" id="ate" name="ate" th:value="${painel.to()}">
+        </div>
+        <input type="hidden" name="todas" value="true" th:if="${painel.roomComparison().all()}">
+        <input type="hidden" name="salas" th:each="id : ${painel.roomComparison().selectedIds()}" th:value="${id}">
+        <button type="submit" class="btn btn-primary">Aplicar</button>
+    </form>
+
+    <div class="row">
+        <div class="col-12 col-md-6 col-xl-3 d-flex">
+            <div class="small-box w-100 text-bg-success" id="card-confirmadas">
+                <div class="inner">
+                    <h3 th:text="${painel.confirmedCount()}">0</h3>
+                    <p class="mb-1">Reservas confirmadas no período</p>
+                    <small th:text="${painel.finishedCount()} + ' finalizadas'">0 finalizadas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3 d-flex">
+            <div class="small-box w-100 text-bg-warning" id="card-pendentes">
+                <div class="inner">
+                    <h3 th:text="${painel.pendingNowCount()}">0</h3>
+                    <p class="mb-1">Solicitações pendentes agora</p>
+                    <small>Independe do período</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3 d-flex">
+            <div class="small-box w-100 text-bg-info" id="card-ausencia"
+                 title="Reservas canceladas por falta de check-in, divididas pelas reservas cuja janela de check-in já encerrou no período.">
+                <div class="inner">
+                    <h3 th:text="${painel.noCheckInRate()}">Sem dados</h3>
+                    <p class="mb-1">Taxa de ausência de check-in</p>
+                    <small>Sobre reservas já iniciadas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3 d-flex">
+            <div class="small-box w-100 text-bg-secondary" id="card-cancelamento">
+                <div class="inner">
+                    <h3 th:text="${painel.cancellationRate()}">Sem dados</h3>
+                    <p class="mb-1">Taxa de cancelamento</p>
+                    <small>Canceladas sobre canceladas mais confirmadas</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-5 d-flex">
+            <div class="card w-100 mb-4" id="card-motivos">
+                <div class="card-header"><h2 class="card-title h5 m-0">Cancelamentos por motivo</h2></div>
+                <div class="card-body">
+                    <p class="ch-vazio" th:if="${#lists.isEmpty(painel.cancellationsByReason())}">Nenhum cancelamento no período.</p>
+                    <div th:unless="${#lists.isEmpty(painel.cancellationsByReason())}">
+                        <canvas id="grafico-motivos" style="max-height: 260px;"></canvas>
+                        <ul class="list-unstyled small mt-3 mb-0">
+                            <li th:each="motivo : ${painel.cancellationsByReason()}"
+                                th:text="${motivo.label()} + ': ' + ${motivo.count()} + ' (' + ${motivo.percent()} + ')'">Motivo</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-7 d-flex">
+            <div class="card w-100 mb-4" id="card-salas">
+                <div class="card-header"><h2 class="card-title h5 m-0">Uso por sala</h2></div>
+                <div class="card-body">
+                    <p class="ch-vazio" th:if="${#lists.isEmpty(painel.roomUsage())}">Nenhuma reserva confirmada no período.</p>
+                    <div class="table-responsive" th:unless="${#lists.isEmpty(painel.roomUsage())}">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Sala</th>
+                                    <th scope="col">Reservas</th>
+                                    <th scope="col">Horas reservadas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="sala : ${painel.roomUsage()}" th:classappend="${sala.top()} ? 'table-success'">
+                                    <td>
+                                        <span th:text="${sala.roomName()}">Sala</span>
+                                        <span class="badge text-bg-success ms-1" th:if="${sala.top()}">Top 3 em horas reservadas</span>
+                                    </td>
+                                    <td th:text="${sala.reservationCount()}">0</td>
+                                    <td th:text="${sala.duration()}">0h 0min</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4" id="card-comparativo">
+                <div class="card-header"><h2 class="card-title h5 m-0">Comparativo de salas</h2></div>
+                <div class="card-body">
+                    <style>
+                        #card-comparativo summary { cursor: pointer; list-style: none; }
+                        #card-comparativo summary::-webkit-details-marker { display: none; }
+                        #card-comparativo summary::before { content: "\25B8"; display: inline-block; margin-right: .4rem; }
+                        #card-comparativo details[open] > summary::before { content: "\25BE"; }
+                    </style>
+                    <div class="mb-3">
+                        <div class="d-flex flex-wrap align-items-center gap-3">
+                            <details id="seletor-salas" class="flex-grow-1" th:attr="open=${painel.roomComparison().expanded()} ? 'open'">
+                                <summary class="btn btn-outline-secondary btn-sm">Filtrar salas</summary>
+                                <form class="mt-3" method="get" th:action="@{/dashboard}">
+                                    <input type="hidden" name="de" th:value="${painel.from()}">
+                                    <input type="hidden" name="ate" th:value="${painel.to()}">
+                                    <div class="small text-body-secondary mb-2">Selecione até 5 salas</div>
+                                    <div class="d-flex flex-wrap gap-3 mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="todas" id="sala-todas" value="true"
+                                                   th:checked="${painel.roomComparison().all()}">
+                                            <label class="form-check-label fw-semibold" for="sala-todas">Todas as salas</label>
+                                        </div>
+                                        <div class="form-check" th:each="opcao : ${painel.roomComparison().options()}">
+                                            <input class="form-check-input" type="checkbox" name="salas" th:id="'sala-' + ${opcao.roomId()}"
+                                                   th:value="${opcao.roomId()}" th:checked="${opcao.selected()}">
+                                            <label class="form-check-label" th:for="'sala-' + ${opcao.roomId()}" th:text="${opcao.name()}">Sala</label>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm">Aplicar</button>
+                                    <a class="btn btn-link btn-sm" id="limpar-selecao"
+                                       th:href="@{/dashboard(de=${painel.from()},ate=${painel.to()})}">Limpar seleção</a>
+                                </form>
+                            </details>
+                            <span class="small text-body-secondary" id="resumo-comparativo"
+                                  th:text="${painel.roomComparison().summary()}">Exibindo as 5 salas com mais horas</span>
+                        </div>
+                    </div>
+                    <div class="alert alert-danger py-2" role="alert" th:if="${painel.roomComparison().error()}"
+                         th:text="${painel.roomComparison().error()}">Erro</div>
+                    <p class="ch-vazio" th:if="${painel.roomComparison().empty()}">Sem dados no período</p>
+                    <div th:unless="${painel.roomComparison().empty()}" style="height: 320px;">
+                        <canvas id="grafico-salas"></canvas>
+                    </div>
+                    <p class="small text-body-secondary mt-3 mb-0">O gráfico exibe no máximo 10 salas. Sem salas marcadas, são exibidas as 5 com mais horas reservadas no período. "Todas as salas" mostra as 10 com mais horas; as demais aparecem na tabela "Uso por sala".</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-8 d-flex">
+            <div class="card w-100 mb-4" id="card-solicitacoes">
+                <div class="card-header"><h2 class="card-title h5 m-0">Solicitações de sala especial no período</h2></div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="h4 mb-0" th:text="${painel.requests().approvedCount()}">0</div>
+                            <div>Aprovadas</div>
+                            <div class="small text-body-secondary" th:text="${painel.requests().approvedPercent()}">Sem dados</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="h4 mb-0" th:text="${painel.requests().rejectedCount()}">0</div>
+                            <div>Recusadas</div>
+                            <div class="small text-body-secondary" th:text="${painel.requests().rejectedPercent()}">Sem dados</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="h4 mb-0" th:text="${painel.requests().expiredCount()}">0</div>
+                            <div>Expiradas</div>
+                            <div class="small text-body-secondary" th:text="${painel.requests().expiredPercent()}">Sem dados</div>
+                        </div>
+                    </div>
+                    <p class="small text-body-secondary mt-3 mb-0"
+                       th:text="'Autoaprovações da gestão no período (fora dos percentuais): ' + ${painel.requests().selfApprovedCount()}">Autoaprovações</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4 d-flex">
+            <div class="small-box w-100 text-bg-primary" id="card-tempo-aprovacao">
+                <div class="inner">
+                    <h3 th:text="${painel.averageApprovalTime()}">Sem dados</h3>
+                    <p class="mb-0">Tempo médio de aprovação</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+    const motivos = /*[[${painel.cancellationsByReason()}]]*/ [];
+    const canvas = document.getElementById('grafico-motivos');
+    if (canvas && motivos.length > 0) {
+        new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: motivos.map(function (m) { return m.label + ' (' + m.percent + ')'; }),
+                datasets: [{
+                    data: motivos.map(function (m) { return m.count; }),
+                    backgroundColor: ['#1E5AA8', '#2FAE60', '#F59E0B', '#DC2626', '#7C3AED', '#0891B2', '#64748B', '#DB2777']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    const salas = /*[[${painel.roomComparison().bars()}]]*/ [];
+    const canvasSalas = document.getElementById('grafico-salas');
+    if (canvasSalas && salas.length > 0) {
+        new Chart(canvasSalas, {
+            type: 'bar',
+            data: {
+                labels: salas.map(function (s) { return s.label; }),
+                datasets: [{
+                    label: 'Horas reservadas',
+                    data: salas.map(function (s) { return Math.round(s.minutes / 60 * 100) / 100; }),
+                    backgroundColor: '#1E5AA8'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: function (ctx) { return salas[ctx.dataIndex].duration; } } }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Horas' } },
+                    x: { ticks: { autoSkip: false } }
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>

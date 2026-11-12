@@ -1,9 +1,42 @@
 package br.com.classholder.classholder.room.repository;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+import jakarta.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import br.com.classholder.classholder.room.domain.Room;
 
 public interface RoomRepository extends JpaRepository<Room, Long> {
+
+    List<Room> findAllByOrderByRoomNameAsc();
+
+    List<Room> findAllByActiveTrueOrderByRoomNameAsc();
+
+    List<Room> findAllByActiveTrueAndSalaEspecialFalseOrderByRoomNameAsc();
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from Room r where r.id = :id")
+    Optional<Room> findByIdForUpdate(@Param("id") Long id);
+
+    @Modifying(clearAutomatically = true)
+    @Query(value = "delete from sala_equipamentos where equipamento_id = :equipmentId", nativeQuery = true)
+    void removeEquipment(@Param("equipmentId") Long equipmentId);
+
+    @Query("select r.id, r.roomName from Room r order by r.roomName")
+    List<Object[]> findAllNames();
+
+    @Query("select r.id, r.roomName from Room r where r.active = true order by r.roomName")
+    List<Object[]> findActiveNames();
+
+    @Query("select r.id, r.roomName from Room r where r.id in :ids")
+    List<Object[]> findNamesByIds(@Param("ids") Collection<Long> ids);
 
 }

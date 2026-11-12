@@ -1,5 +1,12 @@
 package br.com.classholder.classholder.room.domain;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import br.com.classholder.classholder.room.dto.TimeRange;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -43,4 +50,30 @@ public class Room {
     @Min(value = 1, message = "A capacidade da sala não pode ser menor que 1")
     @Column(nullable = false)
     private Integer roomCapacity;
+
+    //Descrição geral das salas / espaços. (texto livre com detalhes adicionais)
+    @NotBlank (message = "A descrição da sala de aula é obrigatória")
+    @Column(nullable = false, length = 500)
+    private String description;
+
+    // Booleano para saber se a sala está ativa ou não.
+    @NotNull (message = "É necessário definir se a sala está ativa ou não")
+    @Column(nullable = false)
+    private Boolean active;
+
+    @NotNull(message = "É necessário definir se a sala é especial")
+    @Builder.Default
+    @Column(name = "sala_especial", nullable = false)
+    private Boolean salaEspecial = false;
+
+    @Builder.Default
+    @ElementCollection
+    @CollectionTable(name = "sala_equipamentos", joinColumns = @JoinColumn(name = "sala_id"))
+    @Column(name = "equipamento_id")
+    private Set<Long> equipmentIds = new HashSet<>();
+
+    @Builder.Default
+    @Convert(converter = TimeRangeListConverter.class)
+    @Column(name = "operating_hours", nullable = false, columnDefinition = "TEXT")
+    private List<TimeRange> operatingHours = new ArrayList<>();
 }

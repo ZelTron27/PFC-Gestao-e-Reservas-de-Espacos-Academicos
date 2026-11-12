@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Espaços Acadêmicos - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-espacos}, 'espacos', ${usuario})}">
+<div id="conteudo-espacos">
+    <h1 class="ch-titulo h3 mb-1">Espaços Acadêmicos</h1>
+    <p class="text-secondary mb-4">Espaços físicos disponíveis para reserva na instituição.</p>
+
+    <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
+
+    <div class="ch-cartao p-4 mb-4">
+        <form th:action="@{/reservas/espacos}" method="get">
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="tipo">Tipo</label>
+                    <input type="text" class="form-control" id="tipo" name="tipo" maxlength="250"
+                           placeholder="Ex: Laboratório" th:value="${filtro.tipo}">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="capacidadeMinima">Capacidade mínima</label>
+                    <input type="number" class="form-control" id="capacidadeMinima" name="capacidadeMinima" min="1"
+                           th:value="${filtro.capacidadeMinima}">
+                </div>
+                <div class="col-12" th:unless="${#lists.isEmpty(equipamentos)}">
+                    <span class="form-label d-block">Equipamentos</span>
+                    <div class="form-check form-check-inline" th:each="equipamento : ${equipamentos}">
+                        <input class="form-check-input" type="checkbox" name="equipamentos"
+                               th:id="'equipamento-' + ${equipamento.id()}" th:value="${equipamento.id()}"
+                               th:checked="${filtro.equipamentos.contains(equipamento.id())}">
+                        <label class="form-check-label" th:for="'equipamento-' + ${equipamento.id()}"
+                               th:text="${equipamento.name()}">Equipamento</label>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a class="btn btn-outline-secondary" th:href="@{/reservas/espacos}">Limpar</a>
+            </div>
+        </form>
+    </div>
+
+    <p class="ch-vazio" th:if="${#lists.isEmpty(salas)}">Nenhuma sala ativa encontrada.</p>
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6 col-xl-4" th:each="sala : ${salas}">
+            <a class="ch-cartao p-4 h-100 d-block text-decoration-none text-reset"
+               th:href="@{/reservas/nova(roomId=${sala.id()})}">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                    <h2 class="ch-titulo h6 m-0" th:text="${sala.roomName()}">Nome da sala</h2>
+                    <span class="badge rounded-pill text-bg-danger" th:if="${sala.salaEspecial()}">Especial</span>
+                </div>
+                <p class="text-secondary small mb-1" th:text="${sala.roomType()}">Tipo</p>
+                <p class="text-secondary small mb-1" th:text="${sala.localization()}">Localização</p>
+                <p class="text-secondary small mb-0"
+                   th:text="'Capacidade máxima: ' + ${sala.roomCapacity()} + ' pessoas'">Capacidade</p>
+            </a>
+        </div>
+    </div>
+</div>
+</div>
+</body>
+</html>

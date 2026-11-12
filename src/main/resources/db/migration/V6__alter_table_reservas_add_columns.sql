@@ -1,0 +1,6 @@
+ALTER TABLE reservas
+    ADD COLUMN room_id BIGINT NOT NULL,
+    ADD COLUMN date DATE NOT NULL,
+    ADD COLUMN start_time TIME NOT NULL,
+    ADD COLUMN end_time TIME NOT NULL,
+    ADD COLUMN purpose VARCHAR(500) NOT NULL;

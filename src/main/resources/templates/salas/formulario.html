@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sala - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-sala}, 'salas', ${usuario})}">
+<div id="conteudo-sala">
+    <div class="mb-4">
+        <a class="ch-voltar" th:href="@{/salas}">&larr; Salas</a>
+        <h1 class="ch-titulo h3 mt-2 mb-0" th:text="${modoEdicao} ? 'Editar sala' : 'Nova sala'">Sala</h1>
+    </div>
+
+    <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
+
+    <div class="ch-cartao p-4" style="max-width: 760px">
+        <form th:action="${modoEdicao} ? @{/salas/{id}(id=${salaId})} : @{/salas}" th:object="${sala}" method="post">
+
+            <div class="mb-3">
+                <label class="form-label" for="roomName">Nome / identificação</label>
+                <input type="text" class="form-control" id="roomName" th:field="*{roomName}">
+                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('roomName')}"
+                     th:errors="*{roomName}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="roomType">Tipo</label>
+                <input type="text" class="form-control" id="roomType" th:field="*{roomType}"
+                       placeholder="Ex: Laboratório de química, Sala comum">
+                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('roomType')}"
+                     th:errors="*{roomType}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="localization">Localização</label>
+                <input type="text" class="form-control" id="localization" th:field="*{localization}"
+                       placeholder="Ex: Prédio 1, 2º andar">
+                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('localization')}"
+                     th:errors="*{localization}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="roomCapacity">Capacidade máxima</label>
+                <input type="number" class="form-control" id="roomCapacity" min="1" th:field="*{roomCapacity}">
+                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('roomCapacity')}"
+                     th:errors="*{roomCapacity}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="description">Descrição</label>
+                <textarea class="form-control" id="description" rows="3" th:field="*{description}"></textarea>
+                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('description')}"
+                     th:errors="*{description}"></div>
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <label class="form-label mb-0" for="equipamentoAdicionar">Equipamentos disponíveis</label>
+                    <a class="small text-decoration-none" th:href="@{/equipamentos/novo}">+ cadastrar novo equipamento</a>
+                </div>
+
+                <!-- Select real que vai no submit (Set<Long> equipmentIds). Fica escondido:
+                     quem a pessoa usa é o combo "equipamentoAdicionar" logo abaixo, que só
+                     marca/desmarca as opções daqui via JS. Um <select multiple> comum exige
+                     Ctrl+clique pra escolher mais de um item, o que não é nada óbvio. -->
+                <select id="equipmentIds" th:field="*{equipmentIds}" multiple style="display: none;">
+                    <option th:each="equipamento : ${equipamentos}" th:value="${equipamento.id()}"
+                            th:text="${equipamento.name()}">
+                        Equipamento
+                    </option>
+                </select>
+
+                <select class="form-select mt-2" id="equipamentoAdicionar">
+                    <option value="">+ adicionar equipamento</option>
+                </select>
+                <div class="d-flex flex-wrap gap-2 mt-2" id="equipamentosEscolhidos"></div>
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="form-label mb-0">Horários de funcionamento</span>
+                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0"
+                            id="adicionarHorario">+ adicionar intervalo</button>
+                </div>
+                <div class="mt-2" id="horariosContainer"></div>
+                <input type="hidden" id="operatingHoursJson" th:field="*{operatingHoursJson}">
+            </div>
+
+            <div class="form-check mb-2">
+                <input type="checkbox" class="form-check-input" id="salaEspecial" th:field="*{salaEspecial}">
+                <label class="form-check-label" for="salaEspecial">
+                    Sala especial (exige aprovação da coordenação para reservar)
+                </label>
+            </div>
+
+            <div class="form-check mb-4" th:if="${modoEdicao}">
+                <input type="checkbox" class="form-check-input" id="active" th:field="*{active}">
+                <label class="form-check-label" for="active">Sala ativa</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+    </div>
+</div>
+</div>
+
+<script th:inline="javascript">
+    // Combo box de equipamentos: o <select multiple> real fica escondido e é ele que
+    // vai no submit; a pessoa interage com o combo "adicionar", que só marca a opção
+    // correspondente no select escondido e mostra um "chip" removível pra cada item
+    // já escolhido. Assim dá pra escolher vários com clique simples, sem precisar
+    // saber que <select multiple> exige Ctrl+clique.
+    const selectEquipamentos = document.getElementById('equipmentIds');
+    const comboAdicionar = document.getElementById('equipamentoAdicionar');
+    const chipsContainer = document.getElementById('equipamentosEscolhidos');
+
+    function renderizarEquipamentos() {
+        comboAdicionar.innerHTML = '<option value="">+ adicionar equipamento</option>';
+        chipsContainer.innerHTML = '';
+
+        Array.from(selectEquipamentos.options).forEach(function (opcao) {
+            if (opcao.selected) {
+                const chip = document.createElement('span');
+                chip.className = 'badge rounded-pill text-bg-light border d-inline-flex align-items-center gap-2';
+                chip.append(document.createTextNode(opcao.text));
+
+                const remover = document.createElement('button');
+                remover.type = 'button';
+                remover.className = 'btn-close';
+                remover.style.fontSize = '0.55rem';
+                remover.setAttribute('aria-label', 'Remover ' + opcao.text);
+                remover.addEventListener('click', function () {
+                    opcao.selected = false;
+                    renderizarEquipamentos();
+                });
+
+                chip.appendChild(remover);
+                chipsContainer.appendChild(chip);
+            } else {
+                const opcaoCombo = document.createElement('option');
+                opcaoCombo.value = opcao.value;
+                opcaoCombo.text = opcao.text;
+                comboAdicionar.appendChild(opcaoCombo);
+            }
+        });
+    }
+
+    comboAdicionar.addEventListener('change', function () {
+        if (!comboAdicionar.value) {
+            return;
+        }
+        const opcao = Array.from(selectEquipamentos.options)
+            .find(function (o) { return o.value === comboAdicionar.value; });
+        if (opcao) {
+            opcao.selected = true;
+        }
+        renderizarEquipamentos();
+    });
+
+    renderizarEquipamentos();
+
+    const horariosContainer = document.getElementById('horariosContainer');
+    const operatingHoursInput = document.getElementById('operatingHoursJson');
+
+    const HORARIOS = [];
+    for (let minutos = 0; minutos < 24 * 60; minutos += 30) {
+        HORARIOS.push(String(Math.floor(minutos / 60)).padStart(2, '0') + ':' + String(minutos % 60).padStart(2, '0'));
+    }
+
+    function criarSelectHorario(classe, valor) {
+        const select = document.createElement('select');
+        select.className = classe + ' form-select form-select-sm';
+        select.style.maxWidth = '9rem';
+        select.add(new Option('--:--', ''));
+        if (valor && !HORARIOS.includes(valor)) {
+            select.add(new Option(valor, valor));
+        }
+        HORARIOS.forEach(function (horario) {
+            select.add(new Option(horario, horario));
+        });
+        select.value = valor || '';
+        select.addEventListener('change', sincronizarHorarios);
+        return select;
+    }
+
+    function adicionarLinhaHorario(intervalo) {
+        const linha = document.createElement('div');
+        linha.className = 'horario-linha d-flex align-items-center gap-2 mb-2';
+
+        const inicio = criarSelectHorario('horario-inicio', intervalo.start);
+
+        const ate = document.createElement('span');
+        ate.className = 'text-secondary small';
+        ate.textContent = 'até';
+
+        const fim = criarSelectHorario('horario-fim', intervalo.end);
+
+        const remover = document.createElement('button');
+        remover.type = 'button';
+        remover.className = 'btn-close';
+        remover.setAttribute('aria-label', 'Remover intervalo');
+        remover.addEventListener('click', function () {
+            linha.remove();
+            sincronizarHorarios();
+        });
+
+        linha.appendChild(inicio);
+        linha.appendChild(ate);
+        linha.appendChild(fim);
+        linha.appendChild(remover);
+        horariosContainer.appendChild(linha);
+    }
+
+    function sincronizarHorarios() {
+        const intervalos = Array.from(horariosContainer.querySelectorAll('.horario-linha')).map(function (linha) {
+            const inicio = linha.querySelector('.horario-inicio');
+            const fim = linha.querySelector('.horario-fim');
+            Array.from(fim.options).forEach(function (opcao) {
+                opcao.disabled = opcao.value !== '' && inicio.value !== '' && opcao.value <= inicio.value;
+            });
+            if (fim.value && inicio.value && fim.value <= inicio.value) {
+                fim.value = '';
+            }
+            return {
+                start: inicio.value,
+                end: fim.value
+            };
+        });
+        operatingHoursInput.value = JSON.stringify(intervalos);
+    }
+
+    document.getElementById('adicionarHorario').addEventListener('click', function () {
+        adicionarLinhaHorario({ start: '', end: '' });
+        sincronizarHorarios();
+    });
+
+    try {
+        JSON.parse(operatingHoursInput.value || '[]').forEach(adicionarLinhaHorario);
+        sincronizarHorarios();
+    } catch (e) {
+        // valor inválido, começa vazio
+    }
+</script>
+</body>
+</html>

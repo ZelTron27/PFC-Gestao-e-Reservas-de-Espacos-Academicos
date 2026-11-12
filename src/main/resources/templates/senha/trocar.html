@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Trocar senha - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/publico :: cartao(~{::#conteudo-trocar}, '26rem')}">
+<div id="conteudo-trocar">
+    <h1 class="ch-titulo h5 mb-1">Troque sua senha</h1>
+    <p class="text-secondary small mb-4">
+        Sua conta foi criada com uma senha provisória. Escolha uma nova senha para continuar.
+    </p>
+
+    <form th:action="@{/senha/trocar}" method="post">
+        <div class="mb-3">
+            <label class="form-label" for="senhaAtual">Senha atual</label>
+            <input type="password" class="form-control" id="senhaAtual" name="senhaAtual" required autofocus>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="novaSenha">Nova senha</label>
+            <input type="password" class="form-control" id="novaSenha" name="novaSenha" required>
+            <div class="form-text">Mínimo 14 caracteres, com maiúscula, minúscula, número e símbolo.</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="confirmarSenha">Confirmar nova senha</label>
+            <input type="password" class="form-control" id="confirmarSenha" name="confirmarSenha" required>
+        </div>
+
+        <div class="alert alert-danger py-2 small" role="alert" th:if="${erro}" th:text="${erro}"></div>
+
+        <button type="submit" class="btn btn-primary w-100">Salvar nova senha</button>
+    </form>
+</div>
+</div>
+</body>
+</html>

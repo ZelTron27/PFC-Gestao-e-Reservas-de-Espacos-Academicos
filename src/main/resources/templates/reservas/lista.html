@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Minhas reservas - Class Holder</title>
+</head>
+<body>
+<div th:replace="~{compartilhados/estrutura :: estrutura(~{::#conteudo-lista}, 'reservas', ${usuario})}">
+<div id="conteudo-lista">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <h1 class="ch-titulo h3 m-0">Minhas reservas</h1>
+        <a class="btn btn-primary" th:href="@{/reservas/espacos}">Nova reserva</a>
+    </div>
+
+    <div class="alert alert-success" role="alert" th:if="${sucesso}" th:text="${sucesso}">Sucesso</div>
+    <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
+
+    <div class="ch-cartao p-4">
+        <p class="ch-vazio" th:if="${#lists.isEmpty(reservas)}">Você ainda não tem reservas.</p>
+
+        <div class="table-responsive" th:unless="${#lists.isEmpty(reservas)}">
+            <table class="table align-middle ch-tabela mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Sala</th>
+                        <th scope="col">Data</th>
+                        <th scope="col">Início</th>
+                        <th scope="col">Término</th>
+                        <th scope="col">Finalidade</th>
+                        <th scope="col">Status</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="reserva : ${reservas}">
+                        <td th:text="${reserva.roomName()}">Sala</td>
+                        <td th:text="${#temporals.format(reserva.date(), 'dd/MM/yyyy')}">Data</td>
+                        <td th:text="${#temporals.format(reserva.startTime(), 'HH:mm')}">Início</td>
+                        <td th:text="${#temporals.format(reserva.endTime(), 'HH:mm')}">Término</td>
+                        <td class="ch-texto-longo" th:text="${reserva.purpose()}">Finalidade</td>
+                        <td>
+                            <span class="badge rounded-pill text-bg-success"
+                                  th:if="${reserva.status().name() == 'CONFIRMADA' and !reserva.finished()}">Confirmada</span>
+                            <span class="badge rounded-pill text-bg-secondary"
+                                  th:if="${reserva.finished()}">Finalizada</span>
+                            <span class="badge rounded-pill text-bg-danger"
+                                  th:if="${reserva.status().name() == 'CANCELADA'}">Cancelada</span>
+                            <span class="badge rounded-pill text-bg-warning"
+                                  th:if="${reserva.status().name() == 'PENDENTE'}">Aguardando avaliação</span>
+                            <span class="badge rounded-pill text-bg-danger"
+                                  th:if="${reserva.status().name() == 'RECUSADA'}">Recusada</span>
+                            <span class="badge rounded-pill text-bg-secondary"
+                                  th:if="${reserva.status().name() == 'EXPIRADA'}">Expirada</span>
+                            <div class="small text-body-secondary mt-1" th:if="${reserva.cancellationReason() != null}"
+                                 th:text="${reserva.cancellationReason().label()}">Motivo</div>
+                            <div class="small text-body-secondary mt-1 ch-texto-longo" th:if="${reserva.rejectionJustification() != null}"
+                                 th:text="'Justificativa: ' + ${reserva.rejectionJustification()}">Justificativa</div>
+                            <div class="small text-body-secondary mt-1"
+                                 th:if="${reserva.evaluatorName() != null and reserva.status().name() != 'CANCELADA'}"
+                                 th:text="'Avaliada por ' + ${reserva.evaluatorName()}">Avaliador</div>
+                            <div class="small text-body-secondary mt-1"
+                                 th:if="${reserva.checkedIn() and reserva.status().name() == 'CONFIRMADA'}">Check-in feito</div>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-2">
+                                <form th:if="${reserva.checkInOpen()}"
+                                      th:action="@{/reservas/{id}/check-in(id=${reserva.id()})}" method="post">
+                                    <button type="submit" class="btn btn-sm btn-primary">Check-in</button>
+                                </form>
+                                <form th:if="${(reserva.status().name() == 'CONFIRMADA' or reserva.status().name() == 'PENDENTE') and !reserva.started()}"
+                                      th:action="@{/reservas/{id}/cancelar(id=${reserva.id()})}" method="post"
+                                      th:data-confirmacao="${reserva.status().name() == 'PENDENTE'}
+                                              ? 'Cancelar essa solicitação?' : 'Cancelar essa reserva?'"
+                                      onsubmit="return confirm(this.dataset.confirmacao);">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+</body>
+</html>
