@@ -95,7 +95,8 @@ class RoomServiceTest {
     void createRoom_shouldAcceptAdjacentRanges() {
         saveReturnsArgumentWithId(1L);
 
-        roomService.createRoom(request(true, List.of(new TimeRange("08:00", "10:00"), new TimeRange("10:00", "12:00"))));
+        roomService.createRoom(request(true,
+                List.of(new TimeRange("08:00", "10:00"), new TimeRange("10:00", "12:00"))));
 
         verify(roomRepository).save(any(Room.class));
     }
@@ -416,7 +417,8 @@ class RoomServiceTest {
 
     @Test
     void listRooms_shouldMapAllRooms() {
-        when(roomRepository.findAllByOrderByRoomNameAsc()).thenReturn(List.of(room(1L, "A", true), room(2L, "B", false)));
+        when(roomRepository.findAllByOrderByRoomNameAsc())
+                .thenReturn(List.of(room(1L, "A", true), room(2L, "B", false)));
 
         assertThat(roomService.listRooms()).extracting(RoomResponse::active).containsExactly(true, false);
     }
