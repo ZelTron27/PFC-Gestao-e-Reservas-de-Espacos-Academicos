@@ -78,7 +78,8 @@ class ReservationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ReservationService(reservationRepository, roomService, userService, holidayService, notifier, true);
+        service = new ReservationService(reservationRepository, roomService, userService, holidayService, notifier,
+                true);
         nextMonday = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
         lenient().when(roomService.findRoomForReservation(anyLong()))
                 .thenAnswer(invocation -> roomService.findRoomById(invocation.getArgument(0)));
@@ -430,7 +431,8 @@ class ReservationServiceTest {
         assertEquals(50L, response.id());
         assertEquals(ReservationStatus.PENDENTE, response.status());
         assertNull(response.evaluatorName());
-        verify(reservationRepository, never()).findConflicting(any(), any(), any(), any(), eq(ReservationStatus.PENDENTE));
+        verify(reservationRepository, never())
+                .findConflicting(any(), any(), any(), any(), eq(ReservationStatus.PENDENTE));
     }
 
     @Test

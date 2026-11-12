@@ -55,8 +55,10 @@ class DashboardControllerIntegrationTest {
     }
 
     @Test
-    void dashboard_asCoordenacao_shouldShowCards() throws Exception {
-        assertShowsCards(createUser(UserRole.COORDENACAO));
+    void dashboard_asCoordenacao_shouldReturn403() throws Exception {
+        User coordination = createUser(UserRole.COORDENACAO);
+
+        mockMvc.perform(request("/dashboard", coordination)).andExpect(status().isForbidden());
     }
 
     @Test
@@ -85,9 +87,9 @@ class DashboardControllerIntegrationTest {
     }
 
     @Test
-    void menu_shouldShowDashboardLinkForAdminAndCoordenacaoButNotProfessor() throws Exception {
+    void menu_shouldShowDashboardLinkOnlyForAdmin() throws Exception {
         assertThat(page("/reservas", createUser(UserRole.ADMIN))).contains("href=\"/dashboard\"");
-        assertThat(page("/reservas", createUser(UserRole.COORDENACAO))).contains("href=\"/dashboard\"");
+        assertThat(page("/reservas", createUser(UserRole.COORDENACAO))).doesNotContain("href=\"/dashboard\"");
         assertThat(page("/reservas", createUser(UserRole.PROFESSOR))).doesNotContain("href=\"/dashboard\"");
     }
 
