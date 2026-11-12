@@ -8,6 +8,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -16,6 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import br.com.classholder.classholder.reservation.ReservationStatus;
 import br.com.classholder.classholder.reservation.domain.Reservation;
 
+@Tag("integration")
 @DataJpaTest
 @ActiveProfiles("test")
 class ReservationRepositoryIntegrationTest {
