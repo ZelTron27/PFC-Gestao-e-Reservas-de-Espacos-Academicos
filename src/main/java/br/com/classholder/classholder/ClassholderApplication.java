@@ -1,5 +1,6 @@
 package br.com.classholder.classholder;
 
+import java.util.List;
 import java.util.TimeZone;
 
 import org.springframework.boot.SpringApplication;
