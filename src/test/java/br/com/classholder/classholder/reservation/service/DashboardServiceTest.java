@@ -1,507 +1,399 @@
 package br.com.classholder.classholder.reservation.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.com.classholder.classholder.reservation.CancellationReason;
 import br.com.classholder.classholder.reservation.ReservationStatus;
-import br.com.classholder.classholder.reservation.domain.Reservation;
+import br.com.classholder.classholder.reservation.dto.DashboardFormat;
 import br.com.classholder.classholder.reservation.dto.DashboardResponse;
+import br.com.classholder.classholder.reservation.dto.DashboardResponse.RoomBar;
+import br.com.classholder.classholder.reservation.dto.DashboardResponse.RoomOption;
+import br.com.classholder.classholder.reservation.dto.DashboardResponse.RoomUsage;
 import br.com.classholder.classholder.reservation.repository.ReservationRepository;
-import br.com.classholder.classholder.room.domain.Room;
-import br.com.classholder.classholder.room.repository.RoomRepository;
 import br.com.classholder.classholder.room.service.RoomService;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@Transactional
+@ExtendWith(MockitoExtension.class)
 class DashboardServiceTest {
 
-    private static final ZoneId ZONE = ZoneId.of("America/Sao_Paulo");
-    private static final LocalDate TODAY = LocalDate.of(2026, 6, 15);
-    private static final LocalDate IN_PERIOD = LocalDate.of(2026, 6, 10);
-    private static final LocalDate OUT_OF_PERIOD = LocalDate.of(2026, 7, 10);
-    private static final Long RESPONSIBLE = 1L;
-    private static final Long EVALUATOR = 99L;
-    private static final Long DELETED_ROOM_ID = 987654L;
+    private static final LocalDate TODAY = LocalDate.of(2026, 3, 15);
+    private static final LocalDate MONTH_START = LocalDate.of(2026, 3, 1);
+    private static final LocalDate MONTH_END = LocalDate.of(2026, 3, 31);
+    private static final List<ReservationStatus> APPROVED = List.of(ReservationStatus.CONFIRMADA,
+            ReservationStatus.CANCELADA);
 
-    @Autowired
+    @Mock
     private ReservationRepository reservationRepository;
-    @Autowired
-    private RoomRepository roomRepository;
-    @Autowired
+    @Mock
     private RoomService roomService;
 
     private DashboardService service;
 
     @BeforeEach
     void setUp() {
-        Clock clock = Clock.fixed(ZonedDateTime.of(TODAY, LocalTime.of(10, 0), ZONE).toInstant(), ZONE);
+        Clock clock = Clock.fixed(Instant.parse("2026-03-15T10:00:00Z"), ZoneOffset.UTC);
         service = new DashboardService(reservationRepository, roomService, clock);
     }
 
-    @Test
-    void confirmedCount_shouldCountOnlyConfirmedInPeriodAndReportFinishedOnes() {
-        Long room = createRoom("Sala A").getId();
-        reservation(room, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
-        reservation(room, TODAY, "08:00", "09:30", ReservationStatus.CONFIRMADA);
-        reservation(room, TODAY, "11:00", "12:00", ReservationStatus.CONFIRMADA);
-        reservation(room, OUT_OF_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
-        reservation(room, IN_PERIOD, "13:00", "14:00", ReservationStatus.CANCELADA);
+    private static List<Object[]> rows(Object[]... rows) {
+        return new ArrayList<>(List.of(rows));
+    }
 
+    private static Object[] usage(long roomId, long reservations, long minutes) {
+        return new Object[] { roomId, reservations, minutes };
+    }
+
+    private void usageRows(LocalDate from, LocalDate to, List<Object[]> rows) {
+        when(reservationRepository.summarizeUsageByRoom(ReservationStatus.CONFIRMADA, from, to)).thenReturn(rows);
+    }
+
+    private static Map<Long, String> names(Object... pairs) {
+        Map<Long, String> names = new LinkedHashMap<>();
+        for (int i = 0; i < pairs.length; i += 2) {
+            names.put(((Number) pairs[i]).longValue(), (String) pairs[i + 1]);
+        }
+        return names;
+    }
+
+    @Test
+    void shouldUseCurrentMonthWhenPeriodIsNotInformed() {
         DashboardResponse dashboard = service.buildDashboard(null, null);
 
-        assertThat(dashboard.confirmedCount()).isEqualTo(3);
-        assertThat(dashboard.finishedCount()).isEqualTo(2);
-    }
-
-    @Test
-    void pendingNowCount_shouldIgnoreThePeriod() {
-        Long room = createRoom("Sala A").getId();
-        reservation(room, IN_PERIOD, "08:00", "09:00", ReservationStatus.PENDENTE);
-        reservation(room, OUT_OF_PERIOD, "08:00", "09:00", ReservationStatus.PENDENTE);
-        reservation(room, IN_PERIOD, "10:00", "11:00", ReservationStatus.CONFIRMADA);
-
-        DashboardResponse dashboard = service.buildDashboard(null, null);
-
-        assertThat(dashboard.pendingNowCount()).isEqualTo(2);
-    }
-
-    @Test
-    void noCheckInRate_shouldCountOnlyReservationsWhoseCheckInWindowIsClosed() {
-        Long room = createRoom("Sala A").getId();
-        reservation(room, TODAY, "09:50", "10:50", ReservationStatus.CONFIRMADA);
-        reservation(room, TODAY, "09:40", "10:40", ReservationStatus.CONFIRMADA);
-        cancelled(room, IN_PERIOD, "08:00", "09:00", CancellationReason.SEM_CHECKIN);
-        cancelled(room, OUT_OF_PERIOD, "08:00", "09:00", CancellationReason.SEM_CHECKIN);
-        cancelled(room, IN_PERIOD, "11:00", "12:00", CancellationReason.PELO_RESPONSAVEL);
-
-        DashboardResponse dashboard = service.buildDashboard(null, null);
-
-        assertThat(dashboard.noCheckInRate()).isEqualTo("50,0%");
-    }
-
-    @Test
-    void noCheckInRate_withReservationStartedTenMinutesAgoOnly_shouldReportNoData() {
-        Long room = createRoom("Sala A").getId();
-        reservation(room, TODAY, "09:50", "10:50", ReservationStatus.CONFIRMADA);
-
-        assertThat(service.buildDashboard(null, null).noCheckInRate()).isEqualTo("Sem dados");
-    }
-
-    @Test
-    void cancellationRate_shouldDivideCancelledByCancelledPlusConfirmed() {
-        Long room = createRoom("Sala A").getId();
-        reservation(room, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
-        reservation(room, IN_PERIOD, "09:00", "10:00", ReservationStatus.CONFIRMADA);
-        reservation(room, IN_PERIOD, "10:00", "11:00", ReservationStatus.CONFIRMADA);
-        cancelled(room, IN_PERIOD, "11:00", "12:00", CancellationReason.PELA_GESTAO);
-        cancelled(room, OUT_OF_PERIOD, "11:00", "12:00", CancellationReason.PELA_GESTAO);
-
-        assertThat(service.buildDashboard(null, null).cancellationRate()).isEqualTo("25,0%");
-    }
-
-    @Test
-    void rates_withEmptyDenominators_shouldReportNoData() {
-        DashboardResponse dashboard = service.buildDashboard(null, null);
-
-        assertThat(dashboard.noCheckInRate()).isEqualTo("Sem dados");
-        assertThat(dashboard.cancellationRate()).isEqualTo("Sem dados");
-        assertThat(dashboard.averageApprovalTime()).isEqualTo("Sem dados");
-    }
-
-    @Test
-    void cancellationsByReason_shouldGroupWithLabelCountAndPercent() {
-        Long room = createRoom("Sala A").getId();
-        cancelled(room, IN_PERIOD, "08:00", "09:00", CancellationReason.PELA_GESTAO);
-        cancelled(room, IN_PERIOD, "09:00", "10:00", CancellationReason.PELA_GESTAO);
-        cancelled(room, IN_PERIOD, "10:00", "11:00", CancellationReason.PELA_GESTAO);
-        cancelled(room, IN_PERIOD, "11:00", "12:00", CancellationReason.SEM_CHECKIN);
-        cancelled(room, OUT_OF_PERIOD, "11:00", "12:00", CancellationReason.SEM_CHECKIN);
-
-        DashboardResponse dashboard = service.buildDashboard(null, null);
-
-        assertThat(dashboard.cancellationsByReason()).extracting("label", "count", "percent")
-                .containsExactly(
-                        tuple(CancellationReason.PELA_GESTAO.label(), 3L, "75,0%"),
-                        tuple(CancellationReason.SEM_CHECKIN.label(), 1L, "25,0%"));
-    }
-
-    @Test
-    void roomUsage_shouldSumDurationsOrderByHoursAndNameDeletedRooms() {
-        Long roomA = createRoom("Sala A").getId();
-        Long roomB = createRoom("Sala B").getId();
-        Long roomC = createRoom("Sala C").getId();
-        Long roomD = createRoom("Sala D").getId();
-        reservation(roomA, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
-        reservation(roomA, IN_PERIOD, "09:00", "09:30", ReservationStatus.CONFIRMADA);
-        reservation(roomB, IN_PERIOD, "08:00", "11:00", ReservationStatus.CONFIRMADA);
-        reservation(DELETED_ROOM_ID, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
-        reservation(roomC, IN_PERIOD, "08:00", "08:30", ReservationStatus.CONFIRMADA);
-        reservation(roomD, IN_PERIOD, "08:00", "12:00", ReservationStatus.CANCELADA);
-        reservation(roomD, OUT_OF_PERIOD, "08:00", "12:00", ReservationStatus.CONFIRMADA);
-
-        DashboardResponse dashboard = service.buildDashboard(null, null);
-
-        assertThat(dashboard.roomUsage()).extracting("roomName", "reservationCount", "duration", "top")
-                .containsExactly(
-                        tuple("Sala B", 1L, "3h 0min", true),
-                        tuple("Sala A", 2L, "1h 30min", true),
-                        tuple("Sala excluída (ID " + DELETED_ROOM_ID + ")", 1L,
-                                "1h 0min", true),
-                        tuple("Sala C", 1L, "0h 30min", false));
-    }
-
-    @Test
-    void requests_shouldExcludeSelfApprovalsFromPercentagesAndCountThemSeparately() {
-        Long room = createRoom("Sala Especial").getId();
-        approved(room, IN_PERIOD, "08:00", "09:00", EVALUATOR, 60);
-        approved(room, IN_PERIOD, "09:00", "10:00", EVALUATOR, 120);
-        approved(room, IN_PERIOD, "10:00", "11:00", RESPONSIBLE, 500);
-        approved(room, OUT_OF_PERIOD, "10:00", "11:00", EVALUATOR, 10);
-        reservation(room, IN_PERIOD, "11:00", "12:00", ReservationStatus.RECUSADA, EVALUATOR);
-        reservation(room, IN_PERIOD, "12:00", "13:00", ReservationStatus.EXPIRADA, null);
-        reservation(room, IN_PERIOD, "13:00", "14:00", ReservationStatus.EXPIRADA, null);
-
-        DashboardResponse.RequestSummary requests = service.buildDashboard(null, null).requests();
-
-        assertThat(requests.total()).isEqualTo(5);
-        assertThat(requests.approvedCount()).isEqualTo(2);
-        assertThat(requests.approvedPercent()).isEqualTo("40,0%");
-        assertThat(requests.rejectedCount()).isEqualTo(1);
-        assertThat(requests.rejectedPercent()).isEqualTo("20,0%");
-        assertThat(requests.expiredCount()).isEqualTo(2);
-        assertThat(requests.expiredPercent()).isEqualTo("40,0%");
-        assertThat(requests.selfApprovedCount()).isEqualTo(1);
-    }
-
-    @Test
-    void requests_withoutData_shouldReportNoDataPercentages() {
-        DashboardResponse.RequestSummary requests = service.buildDashboard(null, null).requests();
-
-        assertThat(requests.total()).isZero();
-        assertThat(requests.approvedPercent()).isEqualTo("Sem dados");
-    }
-
-    @Test
-    void averageApprovalTime_shouldIgnoreSelfApprovalsAndOutOfPeriod() {
-        Long room = createRoom("Sala Especial").getId();
-        approved(room, IN_PERIOD, "08:00", "09:00", EVALUATOR, 60);
-        approved(room, IN_PERIOD, "09:00", "10:00", EVALUATOR, 120);
-        approved(room, IN_PERIOD, "10:00", "11:00", RESPONSIBLE, 5000);
-        approved(room, OUT_OF_PERIOD, "10:00", "11:00", EVALUATOR, 1000);
-
-        assertThat(service.buildDashboard(null, null).averageApprovalTime()).isEqualTo("1h 30min");
-    }
-
-    @Test
-    void period_withoutParameters_shouldDefaultToCurrentMonth() {
-        DashboardResponse dashboard = service.buildDashboard(null, null);
-
-        assertThat(dashboard.from()).isEqualTo(LocalDate.of(2026, 6, 1));
-        assertThat(dashboard.to()).isEqualTo(LocalDate.of(2026, 6, 30));
+        assertThat(dashboard.from()).isEqualTo(MONTH_START);
+        assertThat(dashboard.to()).isEqualTo(MONTH_END);
         assertThat(dashboard.periodError()).isNull();
     }
 
     @Test
-    void period_withValidRange_shouldUseRequestedDates() {
-        DashboardResponse dashboard = service.buildDashboard(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+    void shouldUseRequestedPeriod() {
+        LocalDate from = LocalDate.of(2026, 1, 10);
+        LocalDate to = LocalDate.of(2026, 2, 5);
+        when(reservationRepository.countByStatusAndDateBetween(ReservationStatus.CONFIRMADA, from, to)).thenReturn(7L);
 
-        assertThat(dashboard.from()).isEqualTo(LocalDate.of(2026, 1, 1));
-        assertThat(dashboard.to()).isEqualTo(LocalDate.of(2026, 12, 31));
-        assertThat(dashboard.periodError()).isNull();
+        DashboardResponse dashboard = service.buildDashboard(from, to);
+
+        assertThat(dashboard.from()).isEqualTo(from);
+        assertThat(dashboard.to()).isEqualTo(to);
+        assertThat(dashboard.confirmedCount()).isEqualTo(7L);
     }
 
     @Test
-    void period_withEndBeforeStart_shouldReturnMessageAndDefaultPeriod() {
-        DashboardResponse dashboard = service.buildDashboard(LocalDate.of(2026, 6, 10), LocalDate.of(2026, 6, 9));
+    void shouldFallBackToCurrentMonthWhenEndIsBeforeStart() {
+        DashboardResponse dashboard = service.buildDashboard(LocalDate.of(2026, 3, 10), LocalDate.of(2026, 3, 9));
 
         assertThat(dashboard.periodError()).isEqualTo("A data final não pode ser anterior à data inicial.");
-        assertThat(dashboard.from()).isEqualTo(LocalDate.of(2026, 6, 1));
-        assertThat(dashboard.to()).isEqualTo(LocalDate.of(2026, 6, 30));
+        assertThat(dashboard.from()).isEqualTo(MONTH_START);
+        assertThat(dashboard.to()).isEqualTo(MONTH_END);
     }
 
     @Test
-    void period_longerThan366Days_shouldReturnMessageAndDefaultPeriod() {
-        DashboardResponse dashboard = service.buildDashboard(LocalDate.of(2026, 1, 1), LocalDate.of(2027, 1, 2));
-
-        assertThat(dashboard.periodError()).isEqualTo("O período deve ter no máximo 366 dias.");
-        assertThat(dashboard.from()).isEqualTo(LocalDate.of(2026, 6, 1));
-        assertThat(dashboard.to()).isEqualTo(LocalDate.of(2026, 6, 30));
-    }
-
-    @Test
-    void period_ofExactly366Days_shouldBeAccepted() {
-        DashboardResponse dashboard = service.buildDashboard(LocalDate.of(2026, 1, 1), LocalDate.of(2027, 1, 1));
+    void shouldAcceptSingleDayPeriod() {
+        DashboardResponse dashboard = service.buildDashboard(TODAY, TODAY);
 
         assertThat(dashboard.periodError()).isNull();
-        assertThat(dashboard.to()).isEqualTo(LocalDate.of(2027, 1, 1));
+        assertThat(dashboard.from()).isEqualTo(TODAY);
     }
 
     @Test
-    void roomComparison_withoutSelection_shouldShowTopFiveRoomsByHours() {
-        for (int hours = 1; hours <= 6; hours++) {
-            Long room = createRoom("Sala " + hours).getId();
-            reservation(room, IN_PERIOD, "06:00", LocalTime.of(6 + hours, 0).toString(),
-                    ReservationStatus.CONFIRMADA);
-        }
+    void shouldAcceptPeriodOfExactlyMaxDays() {
+        LocalDate from = LocalDate.of(2026, 1, 1);
+        LocalDate to = from.plusDays(DashboardService.MAX_PERIOD_DAYS - 1);
 
-        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null).roomComparison();
+        DashboardResponse dashboard = service.buildDashboard(from, to);
 
-        assertThat(comparison.bars()).extracting("label")
-                .containsExactly("Sala 6", "Sala 5", "Sala 4", "Sala 3", "Sala 2");
-        assertThat(comparison.error()).isNull();
+        assertThat(dashboard.periodError()).isNull();
+        assertThat(dashboard.to()).isEqualTo(to);
     }
 
     @Test
-    void roomComparison_withOnlyThreeRoomsReserved_shouldShowThoseThree() {
-        Long roomA = createRoom("Sala A").getId();
-        Long roomB = createRoom("Sala B").getId();
-        Long roomC = createRoom("Sala C").getId();
-        createRoom("Sala D");
-        createRoom("Sala E");
-        reservation(roomA, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
-        reservation(roomB, IN_PERIOD, "08:00", "10:00", ReservationStatus.CONFIRMADA);
-        reservation(roomC, IN_PERIOD, "08:00", "11:00", ReservationStatus.CONFIRMADA);
+    void shouldRejectPeriodLongerThanMaxDays() {
+        LocalDate from = LocalDate.of(2026, 1, 1);
 
-        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null).roomComparison();
+        DashboardResponse dashboard = service.buildDashboard(from, from.plusDays(DashboardService.MAX_PERIOD_DAYS));
 
-        assertThat(comparison.bars()).extracting("label").containsExactly("Sala C", "Sala B", "Sala A");
+        assertThat(dashboard.periodError()).isEqualTo("O período deve ter no máximo 366 dias.");
+        assertThat(dashboard.from()).isEqualTo(MONTH_START);
     }
 
     @Test
-    void roomComparison_withoutReservations_shouldBeEmptyAndKeepActiveRoomOptions() {
-        createRoom("Sala A");
-        createRoom("Sala B");
+    void shouldCountPendingNowRegardlessOfPeriod() {
+        when(reservationRepository.countByStatus(ReservationStatus.PENDENTE)).thenReturn(4L);
 
+        assertThat(service.buildDashboard(null, null).pendingNowCount()).isEqualTo(4L);
+    }
+
+    @Test
+    void shouldCountFinishedUntilCurrentMoment() {
+        when(reservationRepository.countFinished(ReservationStatus.CONFIRMADA, MONTH_START, MONTH_END, TODAY,
+                LocalTime.of(10, 0))).thenReturn(3L);
+
+        assertThat(service.buildDashboard(null, null).finishedCount()).isEqualTo(3L);
+    }
+
+    @Test
+    void shouldComputeNoCheckInRateUsingFifteenMinuteWindow() {
+        when(reservationRepository.countByStatusAndCancellationReasonAndDateBetween(ReservationStatus.CANCELADA,
+                CancellationReason.SEM_CHECKIN, MONTH_START, MONTH_END)).thenReturn(1L);
+        when(reservationRepository.countStartedUntil(ReservationStatus.CONFIRMADA, MONTH_START, MONTH_END, TODAY,
+                LocalTime.of(9, 45))).thenReturn(3L);
+
+        assertThat(service.buildDashboard(null, null).noCheckInRate()).isEqualTo("25,0%");
+    }
+
+    @Test
+    void shouldShowNoDataWhenThereIsNothingToMeasure() {
+        DashboardResponse dashboard = service.buildDashboard(null, null);
+
+        assertThat(dashboard.noCheckInRate()).isEqualTo(DashboardFormat.NO_DATA);
+        assertThat(dashboard.cancellationRate()).isEqualTo(DashboardFormat.NO_DATA);
+        assertThat(dashboard.requests().approvedPercent()).isEqualTo(DashboardFormat.NO_DATA);
+    }
+
+    @Test
+    void shouldComputeCancellationRateOverConfirmedAndCancelled() {
+        when(reservationRepository.countByStatusAndDateBetween(ReservationStatus.CONFIRMADA, MONTH_START, MONTH_END))
+                .thenReturn(2L);
+        when(reservationRepository.countByStatusAndDateBetween(ReservationStatus.CANCELADA, MONTH_START, MONTH_END))
+                .thenReturn(1L);
+
+        DashboardResponse dashboard = service.buildDashboard(null, null);
+
+        assertThat(dashboard.cancellationRate()).isEqualTo("33,3%");
+        assertThat(dashboard.cancelledTotal()).isEqualTo(1L);
+    }
+
+    @Test
+    void shouldSplitCancellationsByReason() {
+        when(reservationRepository.countCancelledByReason(ReservationStatus.CANCELADA, MONTH_START, MONTH_END))
+                .thenReturn(rows(new Object[] { CancellationReason.SEM_CHECKIN, 3L },
+                        new Object[] { CancellationReason.PELO_RESPONSAVEL, 1L }));
+
+        DashboardResponse dashboard = service.buildDashboard(null, null);
+
+        assertThat(dashboard.cancellationsByReason())
+                .extracting(share -> share.label() + "|" + share.count() + "|" + share.percent())
+                .containsExactly("Cancelada por falta de check-in|3|75,0%", "Cancelada pelo responsável|1|25,0%");
+    }
+
+    @Test
+    void shouldMarkOnlyTheFirstThreeRoomsAsTop() {
+        usageRows(MONTH_START, MONTH_END,
+                rows(usage(1, 5, 300), usage(2, 4, 90), usage(3, 2, 60), usage(4, 1, 30)));
+        when(roomService.findRoomNames(List.of(1L, 2L, 3L, 4L))).thenReturn(names(1, "A", 2, "B", 3, "C", 4, "D"));
+
+        List<RoomUsage> usage = service.buildDashboard(null, null).roomUsage();
+
+        assertThat(usage).extracting(RoomUsage::top).containsExactly(true, true, true, false);
+        assertThat(usage.get(1).roomName()).isEqualTo("B");
+        assertThat(usage.get(1).duration()).isEqualTo("1h 30min");
+        assertThat(usage.get(0).reservationCount()).isEqualTo(5L);
+    }
+
+    @Test
+    void shouldSummarizeRequestsByOutcome() {
+        when(reservationRepository.countApprovedRequests(APPROVED, MONTH_START, MONTH_END)).thenReturn(2L);
+        when(reservationRepository.countEndedRequests(ReservationStatus.RECUSADA, MONTH_START, MONTH_END))
+                .thenReturn(1L);
+        when(reservationRepository.countEndedRequests(ReservationStatus.EXPIRADA, MONTH_START, MONTH_END))
+                .thenReturn(1L);
+        when(reservationRepository.countSelfApprovedRequests(APPROVED, MONTH_START, MONTH_END)).thenReturn(1L);
+
+        DashboardResponse.RequestSummary requests = service.buildDashboard(null, null).requests();
+
+        assertThat(requests.total()).isEqualTo(4L);
+        assertThat(requests.approvedPercent()).isEqualTo("50,0%");
+        assertThat(requests.rejectedPercent()).isEqualTo("25,0%");
+        assertThat(requests.expiredPercent()).isEqualTo("25,0%");
+        assertThat(requests.selfApprovedCount()).isEqualTo(1L);
+    }
+
+    @Test
+    void shouldShowNoDataWhenThereIsNoApprovalTime() {
+        when(reservationRepository.averageApprovalSeconds(APPROVED, MONTH_START, MONTH_END)).thenReturn(null);
+
+        assertThat(service.buildDashboard(null, null).averageApprovalTime()).isEqualTo(DashboardFormat.NO_DATA);
+    }
+
+    @Test
+    void shouldRoundAverageApprovalTimeToMinutes() {
+        when(reservationRepository.averageApprovalSeconds(APPROVED, MONTH_START, MONTH_END)).thenReturn(5_430.0);
+
+        assertThat(service.buildDashboard(null, null).averageApprovalTime()).isEqualTo("1h 31min");
+    }
+
+    @Test
+    void comparisonShouldBeEmptyWhenNoRoomWasUsed() {
         DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null).roomComparison();
 
         assertThat(comparison.empty()).isTrue();
-        assertThat(comparison.options()).extracting("name").contains("Sala A", "Sala B");
+        assertThat(comparison.summary()).isEqualTo("Nenhuma sala para exibir");
     }
 
     @Test
-    void roomComparison_withTwoSelectedRooms_shouldShowOnlyThemOrderedByHours() {
-        Long roomA = createRoom("Sala A").getId();
-        Long roomB = createRoom("Sala B").getId();
-        Long roomC = createRoom("Sala C").getId();
-        reservation(roomA, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
-        reservation(roomB, IN_PERIOD, "08:00", "11:00", ReservationStatus.CONFIRMADA);
-        reservation(roomC, IN_PERIOD, "08:00", "12:00", ReservationStatus.CONFIRMADA);
+    void comparisonShouldShowMostUsedRoomsByDefault() {
+        usageRows(MONTH_START, MONTH_END, rows(usage(1, 2, 120), usage(2, 1, 60)));
+        when(roomService.findRoomNames(List.of(1L, 2L))).thenReturn(names(1, "A", 2, "B"));
+        when(roomService.findActiveRoomNames()).thenReturn(names(1, "A", 2, "B", 3, "C"));
 
-        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null, List.of(roomA, roomB))
-                .roomComparison();
+        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null).roomComparison();
 
-        assertThat(comparison.bars()).extracting("label", "duration")
-                .containsExactly(tuple("Sala B", "3h 0min"), tuple("Sala A", "1h 0min"));
-        assertThat(comparison.options()).filteredOn(option -> option.selected()).extracting("roomId")
-                .containsExactlyInAnyOrder(roomA, roomB);
+        assertThat(comparison.bars()).extracting(RoomBar::label).containsExactly("A", "B");
+        assertThat(comparison.summary()).isEqualTo("Exibindo as 2 salas com mais horas");
+        assertThat(comparison.options()).extracting(RoomOption::name).containsExactly("A", "B", "C");
+        assertThat(comparison.selectedIds()).isEmpty();
     }
 
     @Test
-    void roomComparison_withSelectedRoomWithoutReservations_shouldShowZeroHours() {
-        Long roomA = createRoom("Sala A").getId();
-        Long roomB = createRoom("Sala B").getId();
-        reservation(roomA, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
+    void comparisonShouldLimitDefaultViewToFiveRooms() {
+        usageRows(MONTH_START, MONTH_END, rows(usage(1, 1, 600), usage(2, 1, 500), usage(3, 1, 400),
+                usage(4, 1, 300), usage(5, 1, 200), usage(6, 1, 100)));
+        when(roomService.findRoomNames(any())).thenReturn(names(1, "A", 2, "B", 3, "C", 4, "D", 5, "E", 6, "F"));
 
-        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null, List.of(roomA, roomB))
-                .roomComparison();
+        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null).roomComparison();
 
-        assertThat(comparison.bars()).extracting("label", "minutes")
-                .containsExactly(tuple("Sala A", 60L), tuple("Sala B", 0L));
+        assertThat(comparison.bars()).hasSize(5).extracting(RoomBar::roomId).doesNotContain(6L);
     }
 
     @Test
-    void roomComparison_withAllRooms_shouldShowEveryRoomWithoutLimitIncludingZeroHoursAndDeletedRooms() {
-        for (int index = 1; index <= 6; index++) {
-            Long room = createRoom("Sala " + index).getId();
-            reservation(room, IN_PERIOD, "08:00", LocalTime.of(8 + index, 0).toString(),
-                    ReservationStatus.CONFIRMADA);
-        }
-        createRoom("Sala Vazia");
-        reservation(DELETED_ROOM_ID, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
-        String deletedName = "Sala excluída (ID " + DELETED_ROOM_ID + ")";
-
-        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null, null, true)
-                .roomComparison();
-
-        assertThat(comparison.all()).isTrue();
-        assertThat(comparison.error()).isNull();
-        assertThat(comparison.bars()).extracting("label").containsExactly("Sala 6", "Sala 5", "Sala 4", "Sala 3",
-                "Sala 2", "Sala 1", deletedName, "Sala Vazia");
-        assertThat(comparison.bars()).filteredOn(bar -> bar.label().equals("Sala Vazia")).extracting("minutes")
-                .containsExactly(0L);
-    }
-
-    @Test
-    void roomComparison_withAllRoomsAndMoreThanTenRooms_shouldShowTheTenWithMostHoursInDescendingOrder() {
-        for (int index = 1; index <= 12; index++) {
-            Long room = createRoom("Sala " + String.format("%02d", index)).getId();
-            reservation(room, IN_PERIOD, "06:00", LocalTime.of(6, 0).plusMinutes(index * 30L).toString(),
-                    ReservationStatus.CONFIRMADA);
-        }
-
-        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null, null, true)
-                .roomComparison();
-
-        assertThat(comparison.bars()).hasSize(DashboardService.MAX_CHART_ROOMS);
-        assertThat(comparison.bars()).extracting("label").containsExactly("Sala 12", "Sala 11", "Sala 10",
-                "Sala 09", "Sala 08", "Sala 07", "Sala 06", "Sala 05", "Sala 04", "Sala 03");
-        assertThat(comparison.summary()).isEqualTo("Exibindo as 10 salas com mais horas (todas)");
-        assertThat(service.buildDashboard(null, null).roomUsage()).hasSize(12);
-    }
-
-    @Test
-    void roomComparison_withAllRoomsAndFewerThanTenRooms_shouldShowAllOfThem() {
-        for (int index = 1; index <= 4; index++) {
-            createRoom("Sala " + index);
-        }
-
-        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null, null, true)
-                .roomComparison();
-
-        assertThat(comparison.bars()).hasSize(4);
-        assertThat(comparison.summary()).isEqualTo("Exibindo todas as 4 salas");
-    }
-
-    @Test
-    void roomComparison_summary_shouldDescribeDefaultAndSelection() {
-        Long roomA = createRoom("Sala A").getId();
-        Long roomB = createRoom("Sala B").getId();
-        reservation(roomA, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
-        reservation(roomB, IN_PERIOD, "08:00", "10:00", ReservationStatus.CONFIRMADA);
+    void comparisonShouldUseSingularSummaryForOneRoom() {
+        usageRows(MONTH_START, MONTH_END, rows(usage(1, 1, 30)));
+        when(roomService.findRoomNames(List.of(1L))).thenReturn(names(1, "A"));
 
         assertThat(service.buildDashboard(null, null).roomComparison().summary())
-                .isEqualTo("Exibindo as 2 salas com mais horas");
-        assertThat(service.buildDashboard(null, null, List.of(roomA, roomB)).roomComparison().summary())
-                .isEqualTo("Exibindo 2 salas selecionadas");
-        assertThat(service.buildDashboard(null, null, List.of(roomA)).roomComparison().summary())
-                .isEqualTo("Exibindo 1 sala selecionada");
+                .isEqualTo("Exibindo a sala com mais horas");
     }
 
     @Test
-    void roomComparison_withAllRoomsAndSelectedIds_shouldIgnoreTheSelectionAndTheFiveRoomLimit() {
-        List<Long> ids = new ArrayList<>();
-        for (int index = 1; index <= 6; index++) {
-            ids.add(createRoom("Sala " + index).getId());
-        }
+    void comparisonShouldIncludeInactiveRoomThatWasUsedAmongOptions() {
+        usageRows(MONTH_START, MONTH_END, rows(usage(9, 1, 60)));
+        when(roomService.findRoomNames(List.of(9L))).thenReturn(names(9, "Sala antiga"));
+        when(roomService.findActiveRoomNames()).thenReturn(names(1, "A"));
 
-        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null, ids, true).roomComparison();
+        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null).roomComparison();
 
-        assertThat(comparison.error()).isNull();
-        assertThat(comparison.bars()).hasSize(6);
+        assertThat(comparison.options()).extracting(RoomOption::roomId).containsExactly(1L, 9L);
     }
 
     @Test
-    void roomComparison_withoutAllRooms_shouldReportAllAsFalse() {
-        assertThat(service.buildDashboard(null, null).roomComparison().all()).isFalse();
+    void comparisonShouldShowSelectedRoomsIncludingOnesWithoutUsage() {
+        when(roomService.findActiveRoomNames()).thenReturn(names(1, "A", 2, "B", 3, "C"));
+        when(reservationRepository.summarizeUsageForRooms(ReservationStatus.CONFIRMADA, MONTH_START, MONTH_END,
+                List.of(2L, 3L))).thenReturn(rows(new Object[] { 3L, 90L }));
+
+        DashboardResponse.RoomComparison comparison = service
+                .buildDashboard(null, null, List.of(2L, 3L, 2L)).roomComparison();
+
+        assertThat(comparison.bars()).extracting(bar -> bar.label() + "=" + bar.minutes())
+                .containsExactly("C=90", "B=0");
+        assertThat(comparison.selectedIds()).containsExactly(2L, 3L);
+        assertThat(comparison.summary()).isEqualTo("Exibindo 2 salas selecionadas");
+        assertThat(comparison.expanded()).isTrue();
     }
 
     @Test
-    void roomComparison_withSixRooms_shouldReportErrorAndFallBackToDefault() {
-        List<Long> ids = new ArrayList<>();
-        for (int index = 1; index <= 6; index++) {
-            Long room = createRoom("Sala " + index).getId();
-            ids.add(room);
-            reservation(room, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
-        }
+    void comparisonShouldIgnoreUnknownSelectedRooms() {
+        when(roomService.findActiveRoomNames()).thenReturn(names(1, "A"));
+        when(reservationRepository.summarizeUsageForRooms(ReservationStatus.CONFIRMADA, MONTH_START, MONTH_END,
+                List.of(1L))).thenReturn(rows());
 
-        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null, ids).roomComparison();
+        DashboardResponse.RoomComparison comparison = service
+                .buildDashboard(null, null, List.of(1L, 404L)).roomComparison();
+
+        assertThat(comparison.selectedIds()).containsExactly(1L);
+        assertThat(comparison.summary()).isEqualTo("Exibindo 1 sala selecionada");
+    }
+
+    @Test
+    void comparisonShouldRejectMoreThanFiveSelectedRooms() {
+        usageRows(MONTH_START, MONTH_END, rows(usage(1, 1, 60)));
+        when(roomService.findRoomNames(List.of(1L))).thenReturn(names(1, "A"));
+
+        DashboardResponse.RoomComparison comparison = service
+                .buildDashboard(null, null, List.of(1L, 2L, 3L, 4L, 5L, 6L)).roomComparison();
 
         assertThat(comparison.error()).isEqualTo("Selecione no máximo 5 salas");
-        assertThat(comparison.bars()).hasSize(5);
-        assertThat(comparison.options()).noneMatch(option -> option.selected());
+        assertThat(comparison.selectedIds()).isEmpty();
+        assertThat(comparison.bars()).extracting(RoomBar::roomId).containsExactly(1L);
+        verify(reservationRepository, never()).summarizeUsageForRooms(any(), any(), any(), anyCollection());
     }
 
     @Test
-    void roomComparison_withInvalidIds_shouldIgnoreThemAndFallBackToDefaultWhenNoneIsValid() {
-        Long roomA = createRoom("Sala A").getId();
-        reservation(roomA, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
+    void comparisonWithAllRoomsShouldIncludeRoomsWithoutUsage() {
+        usageRows(MONTH_START, MONTH_END, rows(usage(2, 1, 60)));
+        when(roomService.findRoomNames(List.of(2L))).thenReturn(names(2, "B"));
+        when(roomService.findActiveRoomNames()).thenReturn(names(1, "A", 2, "B"));
 
-        DashboardResponse.RoomComparison onlyInvalid = service.buildDashboard(null, null, List.of(555111L))
-                .roomComparison();
-        DashboardResponse.RoomComparison mixed = service.buildDashboard(null, null, List.of(555111L, roomA))
-                .roomComparison();
+        DashboardResponse.RoomComparison comparison = service
+                .buildDashboard(null, null, List.of(1L), true).roomComparison();
 
-        assertThat(onlyInvalid.bars()).extracting("label").containsExactly("Sala A");
-        assertThat(onlyInvalid.error()).isNull();
-        assertThat(mixed.bars()).extracting("label").containsExactly("Sala A");
+        assertThat(comparison.bars()).extracting(bar -> bar.label() + "=" + bar.minutes())
+                .containsExactly("B=60", "A=0");
+        assertThat(comparison.all()).isTrue();
+        assertThat(comparison.selectedIds()).isEmpty();
+        assertThat(comparison.summary()).isEqualTo("Exibindo todas as 2 salas");
     }
 
     @Test
-    void roomComparison_shouldNameDeletedRoomsWithReservationsAndAllowSelectingThem() {
-        Long roomA = createRoom("Sala A").getId();
-        reservation(roomA, IN_PERIOD, "08:00", "09:00", ReservationStatus.CONFIRMADA);
-        reservation(DELETED_ROOM_ID, IN_PERIOD, "08:00", "11:00", ReservationStatus.CONFIRMADA);
-        String deletedName = "Sala excluída (ID " + DELETED_ROOM_ID + ")";
+    void comparisonWithAllRoomsShouldLimitChartToTenRooms() {
+        Map<Long, String> active = new LinkedHashMap<>();
+        for (long id = 1; id <= 12; id++) {
+            active.put(id, "Sala " + (char) ('A' + id - 1));
+        }
+        when(roomService.findActiveRoomNames()).thenReturn(active);
 
-        DashboardResponse.RoomComparison defaults = service.buildDashboard(null, null).roomComparison();
-        DashboardResponse.RoomComparison selected = service.buildDashboard(null, null, List.of(DELETED_ROOM_ID))
-                .roomComparison();
+        DashboardResponse.RoomComparison comparison = service
+                .buildDashboard(null, null, null, true).roomComparison();
 
-        assertThat(defaults.bars()).extracting("label").containsExactly(deletedName, "Sala A");
-        assertThat(defaults.options()).extracting("name").contains(deletedName);
-        assertThat(selected.bars()).extracting("label").containsExactly(deletedName);
+        assertThat(comparison.bars()).hasSize(DashboardService.MAX_CHART_ROOMS);
+        assertThat(comparison.bars().get(0).label()).isEqualTo("Sala A");
+        assertThat(comparison.options()).hasSize(12);
+        assertThat(comparison.summary()).isEqualTo("Exibindo as 10 salas com mais horas (todas)");
     }
 
-    private Room createRoom(String name) {
-        return roomRepository.save(Room.builder()
-                .roomName(name)
-                .roomType("Laboratório")
-                .localization("Prédio 1")
-                .roomCapacity(20)
-                .description("Sala de teste")
-                .active(true)
-                .build());
+    @Test
+    void comparisonWithAllRoomsShouldUseSingularSummaryForOneRoom() {
+        when(roomService.findActiveRoomNames()).thenReturn(names(1, "A"));
+
+        assertThat(service.buildDashboard(null, null, null, true).roomComparison().summary())
+                .isEqualTo("Exibindo a única sala");
     }
 
-    private Reservation reservation(Long roomId, LocalDate date, String start, String end,
-            ReservationStatus status) {
-        return reservation(roomId, date, start, end, status, null);
+    @Test
+    void comparisonShouldBreakTiesByLabel() {
+        usageRows(MONTH_START, MONTH_END, rows(usage(1, 1, 60), usage(2, 1, 60)));
+        when(roomService.findRoomNames(List.of(1L, 2L))).thenReturn(names(1, "Zeta", 2, "Alfa"));
+
+        DashboardResponse.RoomComparison comparison = service.buildDashboard(null, null).roomComparison();
+
+        assertThat(comparison.bars()).extracting(RoomBar::label).containsExactly("Alfa", "Zeta");
     }
 
-    private Reservation reservation(Long roomId, LocalDate date, String start, String end,
-            ReservationStatus status, Long evaluatedById) {
-        return reservationRepository.save(Reservation.builder()
-                .roomId(roomId)
-                .responsibleId(RESPONSIBLE)
-                .date(date)
-                .startTime(LocalTime.parse(start))
-                .endTime(LocalTime.parse(end))
-                .purpose("Teste")
-                .status(status)
-                .evaluatedById(evaluatedById)
-                .build());
-    }
+    @Test
+    void shouldQueryUsageForTheEffectivePeriodAfterFallback() {
+        service.buildDashboard(LocalDate.of(2026, 5, 1), LocalDate.of(2026, 4, 1));
 
-    private void cancelled(Long roomId, LocalDate date, String start, String end, CancellationReason reason) {
-        Reservation reservation = reservation(roomId, date, start, end, ReservationStatus.CANCELADA);
-        reservation.setCancellationReason(reason);
-        reservationRepository.save(reservation);
+        verify(reservationRepository).summarizeUsageByRoom(eq(ReservationStatus.CONFIRMADA), eq(MONTH_START),
+                eq(MONTH_END));
     }
-
-    private void approved(Long roomId, LocalDate date, String start, String end, Long evaluatorId,
-            long minutesToApprove) {
-        Reservation reservation = reservation(roomId, date, start, end, ReservationStatus.CONFIRMADA, evaluatorId);
-        Instant createdAt = reservation.getCreatedAt();
-        reservation.setEvaluatedAt(createdAt.plusSeconds(minutesToApprove * 60));
-        reservationRepository.save(reservation);
-    }
-
 }
