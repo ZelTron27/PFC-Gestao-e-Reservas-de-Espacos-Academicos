@@ -28,7 +28,7 @@ class UserDetailsServiceImplTest {
 
     @Test
     void loadUserByUsername_withInactiveUser_shouldBeDisabledAndExposeAuditPrincipal() {
-        UserDetails details = load(false, 7L);
+        UserDetails details = load(false, 70L);
 
         assertThat(details.isEnabled()).isFalse();
         assertThat(details).isInstanceOf(AuditPrincipal.class);
