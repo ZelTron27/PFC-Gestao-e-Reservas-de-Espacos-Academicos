@@ -102,6 +102,26 @@ class RoomServiceTest {
     }
 
     @Test
+    void createRoom_shouldRejectDuplicatedRange() {
+        List<TimeRange> hours = List.of(new TimeRange("06:00", "22:00"), new TimeRange("06:00", "22:00"));
+
+        assertThatThrownBy(() -> roomService.createRoom(request(true, hours)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Os intervalos de horário de funcionamento não podem se sobrepor");
+        verify(roomRepository, never()).save(any());
+    }
+
+    @Test
+    void updateRoom_shouldRejectDuplicatedRangeWithoutLoadingOrSaving() {
+        List<TimeRange> hours = List.of(new TimeRange("06:00", "22:00"), new TimeRange("06:00", "22:00"));
+
+        assertThatThrownBy(() -> roomService.updateRoom(5L, request(true, hours)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Os intervalos de horário de funcionamento não podem se sobrepor");
+        verify(roomRepository, never()).save(any());
+    }
+
+    @Test
     void createRoom_shouldRejectStartEqualToEnd() {
         assertThatThrownBy(() -> roomService.createRoom(request(true, List.of(new TimeRange("08:00", "08:00")))))
                 .isInstanceOf(IllegalArgumentException.class)

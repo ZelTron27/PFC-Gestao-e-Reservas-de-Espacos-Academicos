@@ -40,6 +40,13 @@ import br.com.classholder.classholder.user.repository.UserRepository;
 @Transactional
 class RoomControllerIntegrationTest {
 
+    private static final String DUPLICATED_HOURS =
+            "[{\"start\":\"06:00\",\"end\":\"22:00\"},{\"start\":\"06:00\",\"end\":\"22:00\"}]";
+    private static final String OVERLAPPING_HOURS =
+            "[{\"start\":\"06:00\",\"end\":\"12:00\"},{\"start\":\"11:00\",\"end\":\"18:00\"}]";
+    private static final String ADJACENT_HOURS =
+            "[{\"start\":\"08:00\",\"end\":\"12:00\"},{\"start\":\"12:00\",\"end\":\"18:00\"}]";
+
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -136,6 +143,76 @@ class RoomControllerIntegrationTest {
     }
 
     @Test
+    void create_withDuplicatedOperatingHours_shouldRejectWithMessageAndNotSave() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        long before = roomRepository.count();
+
+        MvcResult result = postCreate(coordenacao, DUPLICATED_HOURS);
+
+        assertRejectedWithOverlapMessage(result);
+        assertThat(roomRepository.count()).isEqualTo(before);
+    }
+
+    @Test
+    void create_withOverlappingOperatingHours_shouldRejectWithMessageAndNotSave() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        long before = roomRepository.count();
+
+        MvcResult result = postCreate(coordenacao, OVERLAPPING_HOURS);
+
+        assertRejectedWithOverlapMessage(result);
+        assertThat(roomRepository.count()).isEqualTo(before);
+    }
+
+    @Test
+    void create_withAdjacentOperatingHours_shouldAcceptAndSave() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        long before = roomRepository.count();
+
+        MvcResult result = postCreate(coordenacao, ADJACENT_HOURS);
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.FOUND.value());
+        assertThat(result.getResponse().getHeader(HttpHeaders.LOCATION)).isEqualTo("/salas");
+        assertThat(roomRepository.count()).isEqualTo(before + 1);
+    }
+
+    @Test
+    void update_withDuplicatedOperatingHours_shouldRejectWithMessageAndKeepStoredHours() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        Room room = createRoom();
+
+        MvcResult result = postUpdate(coordenacao, room, DUPLICATED_HOURS);
+
+        assertRejectedWithOverlapMessage(result);
+        assertThat(roomRepository.findById(room.getId()).orElseThrow().getOperatingHours())
+                .containsExactly(new TimeRange("08:00", "18:00"));
+    }
+
+    @Test
+    void update_withOverlappingOperatingHours_shouldRejectWithMessageAndKeepStoredHours() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        Room room = createRoom();
+
+        MvcResult result = postUpdate(coordenacao, room, OVERLAPPING_HOURS);
+
+        assertRejectedWithOverlapMessage(result);
+        assertThat(roomRepository.findById(room.getId()).orElseThrow().getOperatingHours())
+                .containsExactly(new TimeRange("08:00", "18:00"));
+    }
+
+    @Test
+    void update_withAdjacentOperatingHours_shouldAcceptAndPersist() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        Room room = createRoom();
+
+        MvcResult result = postUpdate(coordenacao, room, ADJACENT_HOURS);
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.FOUND.value());
+        assertThat(roomRepository.findById(room.getId()).orElseThrow().getOperatingHours())
+                .containsExactly(new TimeRange("08:00", "12:00"), new TimeRange("12:00", "18:00"));
+    }
+
+    @Test
     void editForm_withNonNumericId_shouldReturn400() throws Exception {
         User admin = createUser(UserRole.ADMIN);
 
@@ -161,6 +238,35 @@ class RoomControllerIntegrationTest {
 
         assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
         assertThat(result.getResponse().getContentAsString()).contains("Sala não encontrada");
+    }
+
+    private MvcResult postCreate(User user, String operatingHoursJson) throws Exception {
+        MultiValueMap<String, String> params = buildRoomParams("Sala Nova " + System.nanoTime(), "Predio Z", 40);
+        params.set("operatingHoursJson", operatingHoursJson);
+        return mockMvc.perform(post("/salas")
+                .with(user(user.getEmail()).roles("COORDENACAO"))
+                .with(csrf())
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true)
+                .params(params))
+                .andReturn();
+    }
+
+    private MvcResult postUpdate(User user, Room room, String operatingHoursJson) throws Exception {
+        MultiValueMap<String, String> params = buildRoomParams("Sala Editada " + System.nanoTime(), "Predio Z", 40);
+        params.set("operatingHoursJson", operatingHoursJson);
+        return mockMvc.perform(post("/salas/{id}", room.getId())
+                .with(user(user.getEmail()).roles("COORDENACAO"))
+                .with(csrf())
+                .sessionAttr(SecuritySessionAttributes.TOTP_VERIFIED, true)
+                .params(params))
+                .andReturn();
+    }
+
+    private void assertRejectedWithOverlapMessage(MvcResult result) {
+        assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.OK.value());
+        assertThat(result.getModelAndView().getViewName()).isEqualTo("salas/formulario");
+        assertThat(result.getModelAndView().getModel().get("erro"))
+                .isEqualTo("Os intervalos de horário de funcionamento não podem se sobrepor");
     }
 
     private MultiValueMap<String, String> buildRoomParams(String name, String localization, int capacity) {
