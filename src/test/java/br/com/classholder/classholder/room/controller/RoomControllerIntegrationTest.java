@@ -165,6 +165,20 @@ class RoomControllerIntegrationTest {
     }
 
     @Test
+    void create_withNullRangeInOperatingHours_shouldRejectWithMessageAndNotSave() throws Exception {
+        User coordenacao = createUser(UserRole.COORDENACAO);
+        long before = roomRepository.count();
+
+        MvcResult result = postCreate(coordenacao, "[null]");
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.OK.value());
+        assertThat(result.getModelAndView().getViewName()).isEqualTo("salas/formulario");
+        assertThat(result.getModelAndView().getModel().get("erro"))
+                .isEqualTo("Preencha o início e o fim de todos os horários de funcionamento");
+        assertThat(roomRepository.count()).isEqualTo(before);
+    }
+
+    @Test
     void create_withAdjacentOperatingHours_shouldAcceptAndSave() throws Exception {
         User coordenacao = createUser(UserRole.COORDENACAO);
         long before = roomRepository.count();
