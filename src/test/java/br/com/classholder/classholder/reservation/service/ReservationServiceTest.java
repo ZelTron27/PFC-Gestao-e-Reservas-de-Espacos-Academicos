@@ -25,9 +25,11 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -205,6 +207,51 @@ class ReservationServiceTest {
         assertThat(starts).isNotEmpty();
         assertThat(starts).doesNotContain(LocalTime.of(15, 30), LocalTime.of(16, 0), LocalTime.of(17, 30));
         assertThat(starts.get(starts.size() - 1)).isEqualTo(LocalTime.of(15, 0));
+    }
+
+    @Test
+    @Timeout(value = 2, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void shouldEndWithLastStartAt2300WhenRoomClosesAt2330AndDurationIs30Minutes() {
+        stubRoomWithHours("08:00", "23:30");
+
+        List<LocalTime> starts = service.listAvailableStartTimes(ROOM_ID, nextMonday, 30);
+
+        assertThat(starts.get(starts.size() - 1)).isEqualTo(LocalTime.of(23, 0));
+        assertThat(starts).hasSize(31);
+    }
+
+    @Test
+    @Timeout(value = 2, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void shouldEndWithLastStartAt2230WhenRoomClosesAt2330AndDurationIsOneHour() {
+        stubRoomWithHours("08:00", "23:30");
+
+        List<LocalTime> starts = service.listAvailableStartTimes(ROOM_ID, nextMonday, 60);
+
+        assertThat(starts.get(starts.size() - 1)).isEqualTo(LocalTime.of(22, 30));
+    }
+
+    @Test
+    @Timeout(value = 2, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void shouldKeepStartTimesOfCommonRangeUnchanged() {
+        stubRoomWithHours("08:00", "12:00");
+
+        List<LocalTime> starts = service.listAvailableStartTimes(ROOM_ID, nextMonday, 30);
+
+        assertThat(starts).containsExactly(LocalTime.of(8, 0), LocalTime.of(8, 30), LocalTime.of(9, 0),
+                LocalTime.of(9, 30), LocalTime.of(10, 0), LocalTime.of(10, 30), LocalTime.of(11, 0),
+                LocalTime.of(11, 30));
+    }
+
+    @Test
+    @Timeout(value = 2, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void shouldRejectReservationEndingAfterMidnightWithoutSaving() {
+        ReservationRequest request = request(LocalTime.of(23, 30), LocalTime.of(23, 30).plusMinutes(60));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.reserveCommonRoom(PROFESSOR_ID, request));
+
+        assertTrue(ex.getMessage().contains("início deve ser anterior"));
+        verify(reservationRepository, never()).save(any());
     }
 
     @Test
@@ -724,6 +771,14 @@ class ReservationServiceTest {
 
     private ReservationRequest request(LocalTime start, LocalTime end) {
         return new ReservationRequest(ROOM_ID, nextMonday, start, end, "Usar a sala para revisar estudos");
+    }
+
+    private void stubRoomWithHours(String start, String end) {
+        when(holidayService.findHolidayDescription(nextMonday)).thenReturn(Optional.empty());
+        when(roomService.findRoomById(ROOM_ID)).thenReturn(new RoomResponse(ROOM_ID, "Sala 12", "SALA", "Predio 1",
+                30, "Uma sala muito legal", true, false, Set.of(), List.of(new TimeRange(start, end))));
+        when(reservationRepository.findAllByRoomIdAndDateAndStatus(ROOM_ID, nextMonday,
+                ReservationStatus.CONFIRMADA)).thenReturn(List.of());
     }
 
     private RoomResponse commonRoom() {
