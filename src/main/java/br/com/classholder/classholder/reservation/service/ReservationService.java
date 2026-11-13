@@ -256,12 +256,12 @@ public class ReservationService {
 
     private List<LocalTime> generateSlotStarts(TimeRange range, int durationMinutes) {
         List<LocalTime> starts = new ArrayList<>();
-        LocalTime cursor = LocalTime.parse(range.start());
-        LocalTime rangeEnd = LocalTime.parse(range.end());
+        int rangeEnd = LocalTime.parse(range.end()).toSecondOfDay() / 60;
 
-        while (!cursor.plusMinutes(durationMinutes).isAfter(rangeEnd)) {
-            starts.add(cursor);
-            cursor = cursor.plusMinutes(SLOT_MINUTES);
+        for (int cursor = LocalTime.parse(range.start()).toSecondOfDay() / 60;
+                cursor + durationMinutes <= rangeEnd;
+                cursor += SLOT_MINUTES) {
+            starts.add(LocalTime.of(cursor / 60, cursor % 60));
         }
 
         return starts;
