@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -99,6 +100,36 @@ class RoomServiceTest {
                 List.of(new TimeRange("08:00", "10:00"), new TimeRange("10:00", "12:00"))));
 
         verify(roomRepository).save(any(Room.class));
+    }
+
+    @Test
+    void createRoom_shouldRejectDuplicatedRange() {
+        List<TimeRange> hours = List.of(new TimeRange("06:00", "22:00"), new TimeRange("06:00", "22:00"));
+
+        assertThatThrownBy(() -> roomService.createRoom(request(true, hours)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Os intervalos de horário de funcionamento não podem se sobrepor");
+        verify(roomRepository, never()).save(any());
+    }
+
+    @Test
+    void updateRoom_shouldRejectDuplicatedRangeWithoutLoadingOrSaving() {
+        List<TimeRange> hours = List.of(new TimeRange("06:00", "22:00"), new TimeRange("06:00", "22:00"));
+
+        assertThatThrownBy(() -> roomService.updateRoom(5L, request(true, hours)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Os intervalos de horário de funcionamento não podem se sobrepor");
+        verify(roomRepository, never()).save(any());
+    }
+
+    @Test
+    void createRoom_shouldRejectNullRange() {
+        List<TimeRange> hours = Collections.singletonList(null);
+
+        assertThatThrownBy(() -> roomService.createRoom(request(true, hours)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Preencha o início e o fim de todos os horários de funcionamento");
+        verify(roomRepository, never()).save(any());
     }
 
     @Test
