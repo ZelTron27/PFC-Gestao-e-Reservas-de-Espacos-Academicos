@@ -216,6 +216,9 @@ public class RoomService {
     private void validateOperatingHours(List<TimeRange> operatingHours) {
         List<LocalTime[]> ranges = new ArrayList<>();
         for (TimeRange range : operatingHours) {
+            if (range == null) {
+                throw new IllegalArgumentException("Preencha o início e o fim de todos os horários de funcionamento");
+            }
             LocalTime start = parseSlotTime(range.start());
             LocalTime end = parseSlotTime(range.end());
             if (!start.isBefore(end)) {

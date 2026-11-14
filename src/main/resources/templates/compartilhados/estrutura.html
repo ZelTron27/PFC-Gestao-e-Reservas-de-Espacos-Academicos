@@ -21,7 +21,7 @@
             <nav class="ch-nav">
                 <a th:href="@{/reservas/espacos}" th:classappend="${paginaAtiva == 'espacos'} ? 'ativo'">Espaços Acadêmicos</a>
                 <a th:href="@{/reservas}" th:classappend="${paginaAtiva == 'reservas'} ? 'ativo'">Minhas Reservas</a>
-                <a th:href="@{/dashboard}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')"
+                <a th:href="@{/dashboard}" sec:authorize="hasRole('ADMIN')"
                    th:classappend="${paginaAtiva == 'dashboard'} ? 'ativo'">Dashboard</a>
                 <a th:href="@{/reservas/todas}" sec:authorize="hasAnyRole('ADMIN','COORDENACAO')"
                    th:classappend="${paginaAtiva == 'todas'} ? 'ativo'">Todas as Reservas</a>

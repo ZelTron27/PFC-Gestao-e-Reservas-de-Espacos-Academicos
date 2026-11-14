@@ -7,7 +7,16 @@ import java.util.Set;
 
 import br.com.classholder.classholder.room.dto.TimeRange;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -46,7 +55,7 @@ public class Room {
     private String localization;
 
     //Número máximo de cabeças dentro de uma sala de aula (contando geralmente apenas os alunos)
-    @NotNull(message = "O número máximo de pessoas é obrigatório") // NotNull no lugar de NotBlank pq o segundo serve mais para string.
+    @NotNull(message = "O número máximo de pessoas é obrigatório")
     @Min(value = 1, message = "A capacidade da sala não pode ser menor que 1")
     @Column(nullable = false)
     private Integer roomCapacity;

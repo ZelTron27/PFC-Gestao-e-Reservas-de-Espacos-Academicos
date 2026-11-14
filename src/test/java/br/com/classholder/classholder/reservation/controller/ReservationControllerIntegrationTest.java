@@ -195,8 +195,10 @@ class ReservationControllerIntegrationTest {
         User professorA = createUser(UserRole.PROFESSOR);
         User professorB = createUser(UserRole.PROFESSOR);
         Room room = createRoom(true);
-        Reservation reservationA = createReservation(room, professorA, "Aula A " + System.nanoTime(), LocalTime.of(9, 0));
-        Reservation reservationB = createReservation(room, professorB, "Aula B " + System.nanoTime(), LocalTime.of(14, 0));
+        Reservation reservationA = createReservation(room, professorA, "Aula A " + System.nanoTime(),
+                LocalTime.of(9, 0));
+        Reservation reservationB = createReservation(room, professorB, "Aula B " + System.nanoTime(),
+                LocalTime.of(14, 0));
 
         MvcResult result = mockMvc.perform(get("/reservas/todas")
                 .with(user(coordenacao.getEmail()).roles("COORDENACAO"))
@@ -213,14 +215,16 @@ class ReservationControllerIntegrationTest {
         assertThat(reservations).extracting(ReservationResponse::responsibleName)
                 .contains(professorA.getName(), professorB.getName());
         assertThat(result.getResponse().getContentAsString())
-                .contains(professorA.getName(), professorB.getName(), reservationA.getPurpose(), reservationB.getPurpose());
+                .contains(professorA.getName(), professorB.getName(), reservationA.getPurpose(),
+                        reservationB.getPurpose());
     }
 
     @Test
     void cancelByManagement_asCoordenacao_shouldRedirectAndMarkCancelledByManagement() throws Exception {
         User coordenacao = createUser(UserRole.COORDENACAO);
         User professor = createUser(UserRole.PROFESSOR);
-        Reservation reservation = createReservation(createRoom(true), professor, "Reserva a cancelar " + System.nanoTime());
+        Reservation reservation = createReservation(createRoom(true), professor,
+                "Reserva a cancelar " + System.nanoTime());
 
         MvcResult result = mockMvc.perform(post("/reservas/todas/{id}/cancelar", reservation.getId())
                 .with(user(coordenacao.getEmail()).roles("COORDENACAO"))
@@ -240,7 +244,8 @@ class ReservationControllerIntegrationTest {
     @Test
     void cancelByManagement_asProfessor_shouldReturn403() throws Exception {
         User professor = createUser(UserRole.PROFESSOR);
-        Reservation reservation = createReservation(createRoom(true), professor, "Reserva protegida " + System.nanoTime());
+        Reservation reservation = createReservation(createRoom(true), professor,
+                "Reserva protegida " + System.nanoTime());
 
         MvcResult result = mockMvc.perform(post("/reservas/todas/{id}/cancelar", reservation.getId())
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
@@ -257,7 +262,8 @@ class ReservationControllerIntegrationTest {
     @Test
     void cancelOwn_asResponsible_shouldRedirectAndMarkCancelledByResponsible() throws Exception {
         User professor = createUser(UserRole.PROFESSOR);
-        Reservation reservation = createReservation(createRoom(true), professor, "Reserva propria " + System.nanoTime());
+        Reservation reservation = createReservation(createRoom(true), professor,
+                "Reserva propria " + System.nanoTime());
 
         MvcResult result = mockMvc.perform(post("/reservas/{id}/cancelar", reservation.getId())
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
@@ -278,8 +284,8 @@ class ReservationControllerIntegrationTest {
     void cancelOwn_whenReservationAlreadyStarted_shouldRedirectWithErrorAndKeepConfirmed() throws Exception {
         User professor = createUser(UserRole.PROFESSOR);
         LocalDateTime start = LocalDateTime.now().minusMinutes(1).truncatedTo(ChronoUnit.MINUTES);
-        Reservation reservation = createReservation(createRoom(true), professor, "Aula em andamento " + System.nanoTime(),
-                start);
+        Reservation reservation = createReservation(createRoom(true), professor,
+                "Aula em andamento " + System.nanoTime(), start);
 
         MvcResult result = mockMvc.perform(post("/reservas/{id}/cancelar", reservation.getId())
                 .with(user(professor.getEmail()).roles("PROFESSOR"))
@@ -300,8 +306,8 @@ class ReservationControllerIntegrationTest {
     void checkIn_asResponsibleWithinWindow_shouldRedirectAndRecordCheckIn() throws Exception {
         User professor = createUser(UserRole.PROFESSOR);
         LocalDateTime start = LocalDateTime.now().minusMinutes(1).truncatedTo(ChronoUnit.MINUTES);
-        Reservation reservation = createReservation(createRoom(true), professor, "Aula em andamento " + System.nanoTime(),
-                start);
+        Reservation reservation = createReservation(createRoom(true), professor,
+                "Aula em andamento " + System.nanoTime(), start);
 
         MvcResult result = mockMvc.perform(post("/reservas/{id}/check-in", reservation.getId())
                 .with(user(professor.getEmail()).roles("PROFESSOR"))

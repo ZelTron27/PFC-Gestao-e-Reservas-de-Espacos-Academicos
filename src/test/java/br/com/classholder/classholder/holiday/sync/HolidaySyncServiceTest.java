@@ -103,7 +103,8 @@ class HolidaySyncServiceTest {
 
         service.synchronize(HolidaySyncTrigger.AGENDADA);
 
-        verify(holidayRepository, never()).deleteAllInPeriod(LocalDate.of(year + 1, 1, 1), LocalDate.of(year + 1, 12, 31));
+        verify(holidayRepository, never())
+                .deleteAllInPeriod(LocalDate.of(year + 1, 1, 1), LocalDate.of(year + 1, 12, 31));
     }
 
     @Test
@@ -112,7 +113,8 @@ class HolidaySyncServiceTest {
         LocalDate christmas = LocalDate.of(year, 12, 25);
         LocalDate newHoliday = LocalDate.of(year, 11, 20);
         when(holidayRepository.findAllByDateBetweenOrderByDateAsc(LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)))
-                .thenReturn(List.of(Holiday.builder().date(christmas).name("Natal").type(HolidayType.NACIONAL).build()));
+                .thenReturn(List.of(
+                        Holiday.builder().date(christmas).name("Natal").type(HolidayType.NACIONAL).build()));
         when(client.fetchHolidays(year)).thenReturn(List.of(
                 new FetchedHoliday(christmas, "Natal", HolidayType.NACIONAL),
                 new FetchedHoliday(newHoliday, "Consciência Negra", HolidayType.NACIONAL)));
@@ -130,7 +132,8 @@ class HolidaySyncServiceTest {
         int year = LocalDate.now().getYear();
         LocalDate christmas = LocalDate.of(year, 12, 25);
         when(holidayRepository.findAllByDateBetweenOrderByDateAsc(LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)))
-                .thenReturn(List.of(Holiday.builder().date(christmas).name("Natal").type(HolidayType.NACIONAL).build()));
+                .thenReturn(List.of(
+                        Holiday.builder().date(christmas).name("Natal").type(HolidayType.NACIONAL).build()));
         when(client.fetchHolidays(year)).thenReturn(christmasOf(year));
         when(client.fetchHolidays(year + 1)).thenReturn(List.of());
 

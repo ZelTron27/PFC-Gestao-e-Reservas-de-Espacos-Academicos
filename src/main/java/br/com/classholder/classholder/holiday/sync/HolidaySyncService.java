@@ -177,7 +177,9 @@ public class HolidaySyncService {
         Map<LocalDate, FetchedHoliday> byDate = new TreeMap<>();
         for (FetchedHoliday holiday : fetched) {
             byDate.merge(holiday.date(), holiday,
-                    (current, candidate) -> candidate.type().ordinal() < current.type().ordinal() ? candidate : current);
+                    (current, candidate) -> candidate.type().ordinal() < current.type().ordinal()
+                            ? candidate
+                            : current);
         }
         return List.copyOf(byDate.values());
     }

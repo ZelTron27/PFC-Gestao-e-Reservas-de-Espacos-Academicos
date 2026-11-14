@@ -59,7 +59,8 @@ class UserServiceTest {
 
     @Test
     void shouldCreateProfessorWhenDataIsValid() {
-        UserRequest request = new UserRequest("Ana Souza", "anaprofessora@classholder.com", SENHA_VALIDA, UserRole.PROFESSOR);
+        UserRequest request = new UserRequest("Ana Souza", "anaprofessora@classholder.com", SENHA_VALIDA,
+                UserRole.PROFESSOR);
         when(userRepository.existsByEmail("anaprofessora@classholder.com")).thenReturn(false);
         when(passwordEncoder.encode(SENHA_VALIDA)).thenReturn("hash-da-senha");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
@@ -81,7 +82,8 @@ class UserServiceTest {
 
     @Test
     void shouldThrowExceptionWhenEmailIsAlreadyRegistered() {
-        UserRequest request = new UserRequest("Ana Souza", "anaprofessora@classholder.com", SENHA_VALIDA, UserRole.PROFESSOR);
+        UserRequest request = new UserRequest("Ana Souza", "anaprofessora@classholder.com", SENHA_VALIDA,
+                UserRole.PROFESSOR);
         when(userRepository.existsByEmail("anaprofessora@classholder.com")).thenReturn(true);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
@@ -112,7 +114,8 @@ class UserServiceTest {
             "SenhaForte12026"
     })
     void shouldRejectPasswordWhenItDoesNotMeetStrongPasswordPolicy(String senhaInvalida) {
-        UserRequest request = new UserRequest("Ana Souza", "anaprofessora@classholder.com", senhaInvalida, UserRole.PROFESSOR);
+        UserRequest request = new UserRequest("Ana Souza", "anaprofessora@classholder.com", senhaInvalida,
+                UserRole.PROFESSOR);
 
         when(userRepository.existsByEmail("anaprofessora@classholder.com")).thenReturn(false);
 

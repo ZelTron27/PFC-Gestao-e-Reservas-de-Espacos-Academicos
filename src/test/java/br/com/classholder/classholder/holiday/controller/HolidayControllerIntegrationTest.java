@@ -105,7 +105,8 @@ class HolidayControllerIntegrationTest {
     @Test
     void manualSyncWithSuccess_shouldRecordOneAuditEntryWithTheAdminIdAndTheSyncId() throws Exception {
         User admin = save(UserRole.ADMIN);
-        when(feriadosApiClient.fetchHolidays(anyInt())).thenAnswer(invocation -> christmasOf(invocation.getArgument(0)));
+        when(feriadosApiClient.fetchHolidays(anyInt()))
+                .thenAnswer(invocation -> christmasOf(invocation.getArgument(0)));
         long lastLogId = lastAuditLogId();
 
         synchronizeAs(admin);
@@ -144,7 +145,8 @@ class HolidayControllerIntegrationTest {
 
     @Test
     void automaticSyncs_shouldNotRecordAuditEntries() {
-        when(feriadosApiClient.fetchHolidays(anyInt())).thenAnswer(invocation -> christmasOf(invocation.getArgument(0)));
+        when(feriadosApiClient.fetchHolidays(anyInt()))
+                .thenAnswer(invocation -> christmasOf(invocation.getArgument(0)));
         long syncsBefore = syncRepository.count();
         long lastLogId = lastAuditLogId();
 

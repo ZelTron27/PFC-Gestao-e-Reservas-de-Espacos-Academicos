@@ -14,12 +14,12 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class ClassholderApplicationIntegrationTest {
 
-	@Autowired
-	private ApplicationContext context;
+    @Autowired
+    private ApplicationContext context;
 
-	@Test
-	void contextLoads() {
-		assertNotNull(context);
-	}
+    @Test
+    void contextLoads() {
+        assertNotNull(context);
+    }
 
 }

@@ -54,7 +54,8 @@ public class ReservationController {
             Model model) {
         model.addAttribute("equipamentos", equipmentService.listAll());
         if (bindingResult.hasErrors()) {
-            model.addAttribute("erro", "Filtros inválidos: informe uma capacidade mínima maior que zero e um tipo com até 250 caracteres");
+            model.addAttribute("erro", "Filtros inválidos: informe uma capacidade mínima maior que zero "
+                    + "e um tipo com até 250 caracteres");
             model.addAttribute("salas", roomService.listActiveRooms());
             return "reservas/espacos";
         }
@@ -116,7 +117,8 @@ public class ReservationController {
         model.addAttribute("salaEscolhida", roomService.findRoomById(form.getRoomId()));
         if (form.getDate() != null) {
             model.addAttribute("horarios",
-                    reservationService.listAvailableStartTimes(form.getRoomId(), form.getDate(), durationMinutes(form)));
+                    reservationService.listAvailableStartTimes(form.getRoomId(), form.getDate(),
+                            durationMinutes(form)));
             model.addAttribute("diaIndisponivel",
                     reservationService.findUnavailableDayReason(form.getDate()).orElse(null));
         }

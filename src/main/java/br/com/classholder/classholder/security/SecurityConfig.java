@@ -27,7 +27,7 @@ public class SecurityConfig {
                         .requestMatchers("/feriados/sincronizar").hasRole("ADMIN")
                         .requestMatchers("/feriados", "/feriados/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/auditoria", "/auditoria/**").hasRole("ADMIN")
-                        .requestMatchers("/dashboard", "/dashboard/**").hasAnyRole("ADMIN", "COORDENACAO")
+                        .requestMatchers("/dashboard", "/dashboard/**").hasRole("ADMIN")
                         .requestMatchers("/solicitacoes", "/solicitacoes/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/reservas/todas","/reservas/todas/**").hasAnyRole("ADMIN", "COORDENACAO")
                         .requestMatchers("/reservas", "/reservas/**").hasAnyRole("ADMIN", "COORDENACAO", "PROFESSOR")
