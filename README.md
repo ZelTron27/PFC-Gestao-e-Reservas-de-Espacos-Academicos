@@ -84,6 +84,7 @@ FERIADOS_CODIGO_IBGE=3550308
 | `TOTP_SECRET_KEY` | Sim | — | Chave AES-256 (Base64) que criptografa os segredos do 2FA no banco |
 | `RESEND_API_KEY` | Sim | — | Chave da API do Resend para envio de e-mails |
 | `MAIL_FROM` | Não | `Class Holder <onboarding@resend.dev>` | Remetente dos e-mails |
+| `MAIL_ENABLED` | Não | `true` | Com `false`, os e-mails não são enviados (útil em testes locais sem o Resend). A `RESEND_API_KEY` ainda precisa ter algum valor |
 | `APP_BASE_URL` | Não | `http://localhost:8080` | Base dos links enviados por e-mail (ex.: redefinição de senha) |
 | `FERIADOS_API_TOKEN` | Não | vazio | Token da FeriadosAPI. Sem ele, a sincronização de feriados é ignorada |
 | `FERIADOS_API_URL` | Não | `https://feriadosapi.com/api/v1` | Endereço base da FeriadosAPI |
@@ -130,9 +131,10 @@ A aplicação sobe normalmente mesmo sem o envio funcionar, apenas a redefiniç�
 
 ### Feriados (`FERIADOS_API_TOKEN` e `FERIADOS_CODIGO_IBGE`)
 
-O sistema bloqueia reservas em domingos, sábados e feriados. Os feriados (nacionais, estaduais, municipais e pontos facultativos) são obtidos da FeriadosAPI e salvos no banco:
+O sistema bloqueia reservas em domingos, feriados e, por padrão, sábados (o bloqueio dos sábados é configurável pela propriedade `app.reservas.bloquear-sabado` em [`application.properties`](src/main/resources/application.properties)). Os feriados (nacionais, estaduais, municipais e pontos facultativos) são obtidos da FeriadosAPI e salvos no banco:
 
 * A sincronização roda **ao iniciar a aplicação** e depois **uma vez por mês** (dia 1, às 03:00, horário de Brasília).
+* A sincronização manual, pela tela de feriados, só está disponível para o ADMIN.
 * Se a API estiver fora do ar ou o token não estiver configurado, a aplicação continua funcionando com a última cópia salva no banco e apenas um aviso aparece no log.
 
 Para configurar:
