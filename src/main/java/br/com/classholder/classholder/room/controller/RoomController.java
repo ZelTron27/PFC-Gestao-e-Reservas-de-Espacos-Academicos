@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import tools.jackson.core.JacksonException;
@@ -20,8 +21,11 @@ import tools.jackson.databind.ObjectMapper;
 
 import br.com.classholder.classholder.equipment.service.EquipmentService;
 import br.com.classholder.classholder.room.dto.RoomRequest;
+import br.com.classholder.classholder.room.dto.RoomResponse;
 import br.com.classholder.classholder.room.dto.TimeRange;
 import br.com.classholder.classholder.room.service.RoomService;
+import br.com.classholder.classholder.shared.ListFilters;
+import br.com.classholder.classholder.shared.ListPage;
 
 @Controller
 @RequestMapping("/salas")
@@ -41,8 +45,17 @@ public class RoomController {
     }
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("salas", roomService.listRooms());
+    public String list(@RequestParam(name = "nome", required = false) String name,
+            @RequestParam(name = "tipo", required = false) String type,
+            @RequestParam(name = "situacao", required = false) String status,
+            @RequestParam(name = "pagina", defaultValue = "1") int page, Model model) {
+        ListPage<RoomResponse> result = roomService.searchRooms(name, type, status, page);
+        model.addAttribute("salas", result.rows());
+        model.addAttribute("pagina", result);
+        model.addAttribute("filtroNome", ListFilters.term(name));
+        model.addAttribute("filtroTipo", ListFilters.term(type));
+        model.addAttribute("filtroSituacao", ListFilters.clean(status));
+        model.addAttribute("tipos", roomService.listRoomTypes());
         return "salas/lista";
     }
 

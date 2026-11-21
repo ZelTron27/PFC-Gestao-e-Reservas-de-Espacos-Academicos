@@ -3,9 +3,12 @@ package br.com.classholder.classholder.user.service;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -20,6 +23,8 @@ import br.com.classholder.classholder.audit.aop.AuditContext;
 import br.com.classholder.classholder.audit.aop.Auditable;
 import br.com.classholder.classholder.audit.domain.AuditLog;
 import br.com.classholder.classholder.audit.repository.AuditLogRepository;
+import br.com.classholder.classholder.shared.ListFilters;
+import br.com.classholder.classholder.shared.ListPage;
 import br.com.classholder.classholder.shared.WhenChangesSaved;
 import br.com.classholder.classholder.shared.RecursoNaoEncontradoException;
 import br.com.classholder.classholder.user.UserAnonymizedEvent;
@@ -46,6 +51,7 @@ public class UserService {
     private static final int MAX_FAILED_LOGIN_ATTEMPTS = 5;
     private static final long LOCK_DURATION_MINUTES = 15;
     private static final String ANONYMIZED_PASSWORD_HASH = "!";
+    private static final Set<String> USER_STATUS_FILTERS = Set.of("ATIVO", "DESATIVADO", "EXCLUIDO");
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -226,6 +232,50 @@ public class UserService {
         return userRepository.findAll().stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    public ListPage<UserResponse> searchUsers(String search, String roleName, String status, int page) {
+        String term = ListFilters.term(search);
+        UserRole role = parseRole(roleName);
+        String cleanedStatus = ListFilters.clean(status);
+        String situation = cleanedStatus != null && USER_STATUS_FILTERS.contains(cleanedStatus) ? cleanedStatus : null;
+        List<UserResponse> matched = listUsers().stream()
+                .filter(user -> ListFilters.contains(user.name(), term)
+                        || ListFilters.contains(user.email(), term))
+                .filter(user -> role == null || user.role() == role)
+                .filter(user -> matchesStatus(user, situation))
+                .sorted(Comparator.comparing(UserResponse::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("busca", term);
+        params.put("perfil", role == null ? null : role.name());
+        params.put("situacao", situation);
+        return ListPage.of(matched, page, params);
+    }
+
+    private UserRole parseRole(String roleName) {
+        String cleaned = ListFilters.clean(roleName);
+        if (cleaned == null) {
+            return null;
+        }
+        try {
+            return UserRole.valueOf(cleaned);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private boolean matchesStatus(UserResponse user, String status) {
+        if (status == null) {
+            return true;
+        }
+        return switch (status) {
+            case "ATIVO" -> user.active();
+            case "EXCLUIDO" -> user.anonymized();
+            case "DESATIVADO" -> !user.active() && !user.anonymized();
+            default -> true;
+        };
     }
 
     public UserResponse getUserByEmail(String email) {
