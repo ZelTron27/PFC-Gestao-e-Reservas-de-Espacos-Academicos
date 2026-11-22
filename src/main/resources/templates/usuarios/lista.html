@@ -15,8 +15,36 @@
     <div class="alert alert-success" role="alert" th:if="${sucesso}" th:text="${sucesso}">Sucesso</div>
     <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
 
+    <form class="ch-cartao p-3 mb-4 d-flex flex-wrap align-items-end gap-3" method="get" th:action="@{/usuarios}" id="filtros-usuarios">
+        <div>
+            <label class="form-label mb-1" for="busca">Nome ou e-mail</label>
+            <input type="text" class="form-control" id="busca" name="busca" maxlength="100" th:value="${filtroBusca}">
+        </div>
+        <div>
+            <label class="form-label mb-1" for="perfil">Perfil</label>
+            <select class="form-select" id="perfil" name="perfil">
+                <option value="">Todos</option>
+                <option th:each="opcao : ${perfis}" th:value="${opcao.name()}" th:text="${opcao.label}"
+                        th:selected="${opcao.name() == filtroPerfil}">Perfil</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label mb-1" for="situacao">Situação</label>
+            <select class="form-select" id="situacao" name="situacao">
+                <option value="">Todas</option>
+                <option value="ATIVO" th:selected="${filtroSituacao == 'ATIVO'}">Ativo</option>
+                <option value="DESATIVADO" th:selected="${filtroSituacao == 'DESATIVADO'}">Desativado</option>
+                <option value="EXCLUIDO" th:selected="${filtroSituacao == 'EXCLUIDO'}">Excluído</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a class="btn btn-outline-secondary" th:href="@{/usuarios}">Limpar</a>
+    </form>
+
     <div class="ch-cartao p-4">
-        <p class="ch-vazio" th:if="${#lists.isEmpty(usuarios)}">Nenhum usuário cadastrado ainda.</p>
+        <p class="mb-3" id="total-registros" th:text="${pagina.total()} + ' registro(s) encontrado(s)'">0 registro(s) encontrado(s)</p>
+        <p class="ch-vazio" th:if="${#lists.isEmpty(usuarios)}"
+           th:text="${pagina.filtered()} ? 'Nenhum registro encontrado para os filtros informados.' : 'Nenhum usuário cadastrado ainda.'">Nenhum usuário cadastrado ainda.</p>
 
         <div class="table-responsive" th:unless="${#lists.isEmpty(usuarios)}">
             <table class="table align-middle ch-tabela mb-0">
@@ -70,6 +98,8 @@
                 </tbody>
             </table>
         </div>
+
+        <nav th:replace="~{compartilhados/paginacao :: paginacao(${pagina}, '/usuarios')}"></nav>
     </div>
 
     <div class="modal fade" id="modal-anonimizar" tabindex="-1" aria-labelledby="titulo-anonimizar" aria-hidden="true">

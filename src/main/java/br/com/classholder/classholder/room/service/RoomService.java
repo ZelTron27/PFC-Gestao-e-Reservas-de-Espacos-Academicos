@@ -8,8 +8,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -26,12 +26,15 @@ import br.com.classholder.classholder.room.dto.RoomRequest;
 import br.com.classholder.classholder.room.dto.RoomResponse;
 import br.com.classholder.classholder.room.dto.TimeRange;
 import br.com.classholder.classholder.room.repository.RoomRepository;
+import br.com.classholder.classholder.shared.ListFilters;
+import br.com.classholder.classholder.shared.ListPage;
 import br.com.classholder.classholder.shared.RecursoNaoEncontradoException;
 
 @Service
 public class RoomService {
 
     private static final int SLOT_MINUTES = 30;
+    private static final Set<String> ROOM_STATUS_FILTERS = Set.of("ATIVA", "INATIVA", "ESPECIAL");
 
     private final RoomRepository roomRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -173,21 +176,54 @@ public class RoomService {
         return listActiveRooms().stream()
                 .filter(room -> room.equipmentIds().containsAll(filter.equipmentIds()))
                 .filter(room -> filter.minCapacity() == null || room.roomCapacity() >= filter.minCapacity())
-                .filter(room -> matchesType(room, filter.roomType()))
+                .filter(room -> ListFilters.contains(room.roomType(), ListFilters.term(filter.roomType())))
+                .filter(room -> ListFilters.contains(room.roomName(), ListFilters.term(filter.roomName())))
                 .toList();
-    }
-
-    private boolean matchesType(RoomResponse room, String roomType) {
-        if (roomType == null || roomType.isBlank()) {
-            return true;
-        }
-        return room.roomType().toLowerCase(Locale.ROOT).contains(roomType.strip().toLowerCase(Locale.ROOT));
     }
 
     public List<RoomResponse> listRooms() {
         return roomRepository.findAllByOrderByRoomNameAsc().stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    public ListPage<RoomResponse> searchRooms(String name, String type, String status, int page) {
+        String term = ListFilters.term(name);
+        String roomType = ListFilters.term(type);
+        String cleanedStatus = ListFilters.clean(status);
+        String situation = cleanedStatus != null && ROOM_STATUS_FILTERS.contains(cleanedStatus) ? cleanedStatus : null;
+        List<RoomResponse> matched = listRooms().stream()
+                .filter(room -> ListFilters.contains(room.roomName(), term))
+                .filter(room -> roomType == null || roomType.equalsIgnoreCase(room.roomType()))
+                .filter(room -> matchesStatus(room, situation))
+                .toList();
+
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("nome", term);
+        params.put("tipo", roomType);
+        params.put("situacao", situation);
+        return ListPage.of(matched, page, params);
+    }
+
+    public List<String> listRoomTypes() {
+        return listRooms().stream()
+                .map(RoomResponse::roomType)
+                .filter(type -> type != null && !type.isBlank())
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+    }
+
+    private boolean matchesStatus(RoomResponse room, String status) {
+        if (status == null) {
+            return true;
+        }
+        return switch (status) {
+            case "ATIVA" -> room.active();
+            case "INATIVA" -> !room.active();
+            case "ESPECIAL" -> room.salaEspecial();
+            default -> true;
+        };
     }
 
     public RoomResponse findRoomById(Long id) {

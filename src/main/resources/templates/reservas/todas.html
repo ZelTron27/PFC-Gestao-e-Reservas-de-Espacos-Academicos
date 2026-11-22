@@ -12,8 +12,49 @@
     <div class="alert alert-success" role="alert" th:if="${sucesso}" th:text="${sucesso}">Sucesso</div>
     <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
 
+    <div class="alert alert-danger" role="alert" th:if="${lista.periodError()}" th:text="${lista.periodError()}">Erro</div>
+
+    <form class="ch-cartao p-3 mb-4 d-flex flex-wrap align-items-end gap-3" method="get" th:action="@{/reservas/todas}" id="filtros-reservas">
+        <div>
+            <label class="form-label mb-1" for="de">De</label>
+            <input type="date" class="form-control" id="de" name="de" th:value="${lista.from()}">
+        </div>
+        <div>
+            <label class="form-label mb-1" for="ate">Até</label>
+            <input type="date" class="form-control" id="ate" name="ate" th:value="${lista.to()}">
+        </div>
+        <div>
+            <label class="form-label mb-1" for="sala">Sala</label>
+            <select class="form-select" id="sala" name="sala">
+                <option value="">Todas</option>
+                <option th:each="opcao : ${lista.rooms()}" th:value="${opcao.value()}" th:text="${opcao.label()}"
+                        th:selected="${opcao.value() == lista.selectedRoom()}">Sala</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label mb-1" for="responsavel">Responsável</label>
+            <select class="form-select" id="responsavel" name="responsavel">
+                <option value="">Todos</option>
+                <option th:each="nome : ${lista.responsibles()}" th:value="${nome}" th:text="${nome}"
+                        th:selected="${nome == lista.selectedResponsible()}">Responsável</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label mb-1" for="status">Status</label>
+            <select class="form-select" id="status" name="status">
+                <option value="">Todos</option>
+                <option th:each="opcao : ${lista.statuses()}" th:value="${opcao.value()}" th:text="${opcao.label()}"
+                        th:selected="${opcao.value() == lista.selectedStatus()}">Status</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a class="btn btn-outline-secondary" th:href="@{/reservas/todas}">Limpar</a>
+    </form>
+
     <div class="ch-cartao p-4">
-        <p class="ch-vazio" th:if="${#lists.isEmpty(reservas)}">Nenhuma reserva cadastrada ainda.</p>
+        <p class="mb-3" id="total-registros" th:text="${pagina.total()} + ' registro(s) encontrado(s)'">0 registro(s) encontrado(s)</p>
+        <p class="ch-vazio" th:if="${#lists.isEmpty(reservas)}"
+           th:text="${pagina.filtered()} ? 'Nenhum registro encontrado para os filtros informados.' : 'Nenhuma reserva cadastrada ainda.'">Nenhuma reserva cadastrada ainda.</p>
 
         <div class="table-responsive" th:unless="${#lists.isEmpty(reservas)}">
             <table class="table align-middle ch-tabela mb-0">
@@ -82,6 +123,8 @@
                 </tbody>
             </table>
         </div>
+
+        <nav th:replace="~{compartilhados/paginacao :: paginacao(${pagina}, '/reservas/todas')}"></nav>
     </div>
 </div>
 </div>

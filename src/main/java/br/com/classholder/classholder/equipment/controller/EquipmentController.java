@@ -10,10 +10,14 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import br.com.classholder.classholder.equipment.dto.EquipmentRequest;
+import br.com.classholder.classholder.equipment.dto.EquipmentResponse;
 import br.com.classholder.classholder.equipment.service.EquipmentService;
+import br.com.classholder.classholder.shared.ListFilters;
+import br.com.classholder.classholder.shared.ListPage;
 
 @Controller
 @RequestMapping("/equipamentos")
@@ -26,8 +30,12 @@ public class EquipmentController {
     }
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("equipamentos", equipmentService.listAll());
+    public String list(@RequestParam(name = "busca", required = false) String search,
+            @RequestParam(name = "pagina", defaultValue = "1") int page, Model model) {
+        ListPage<EquipmentResponse> result = equipmentService.search(search, page);
+        model.addAttribute("equipamentos", result.rows());
+        model.addAttribute("pagina", result);
+        model.addAttribute("filtroBusca", ListFilters.term(search));
         return "equipamentos/lista";
     }
 

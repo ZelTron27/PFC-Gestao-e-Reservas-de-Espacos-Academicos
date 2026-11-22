@@ -19,8 +19,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import br.com.classholder.classholder.equipment.service.EquipmentService;
 import br.com.classholder.classholder.reservation.ReservationStatus;
+import br.com.classholder.classholder.reservation.dto.ReservationListView;
 import br.com.classholder.classholder.reservation.dto.ReservationRequest;
 import br.com.classholder.classholder.reservation.dto.ReservationResponse;
+import br.com.classholder.classholder.reservation.service.ReservationListService;
 import br.com.classholder.classholder.reservation.service.ReservationService;
 import br.com.classholder.classholder.room.dto.RoomFilter;
 import br.com.classholder.classholder.room.service.RoomService;
@@ -34,9 +36,12 @@ public class ReservationController {
     private final RoomService roomService;
     private final UserService userService;
     private final EquipmentService equipmentService;
+    private final ReservationListService reservationListService;
 
     public ReservationController(ReservationService reservationService, RoomService roomService,
-            UserService userService, EquipmentService equipmentService) {
+            UserService userService, EquipmentService equipmentService,
+            ReservationListService reservationListService) {
+        this.reservationListService = reservationListService;
         this.reservationService = reservationService;
         this.roomService = roomService;
         this.userService = userService;
@@ -44,8 +49,18 @@ public class ReservationController {
     }
 
     @GetMapping
-    public String list(Authentication authentication, Model model) {
-        model.addAttribute("reservas", reservationService.listReservationsByResponsible(currentUserId(authentication)));
+    public String list(Authentication authentication,
+            @RequestParam(name = "de", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "ate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "sala", required = false) Long roomId,
+            @RequestParam(name = "status", required = false) String status,
+            @RequestParam(name = "pagina", defaultValue = "1") int page, Model model) {
+        ReservationListView view = reservationListService.buildReservations(
+                reservationService.listReservationsByResponsible(currentUserId(authentication)), from, to, roomId,
+                null, status, page);
+        model.addAttribute("reservas", view.page().rows());
+        model.addAttribute("pagina", view.page());
+        model.addAttribute("lista", view);
         return "reservas/lista";
     }
 
@@ -55,13 +70,13 @@ public class ReservationController {
         model.addAttribute("equipamentos", equipmentService.listAll());
         if (bindingResult.hasErrors()) {
             model.addAttribute("erro", "Filtros inválidos: informe uma capacidade mínima maior que zero "
-                    + "e um tipo com até 250 caracteres");
+                    + "e nome e tipo com até 100 caracteres");
             model.addAttribute("salas", roomService.listActiveRooms());
             return "reservas/espacos";
         }
 
-        model.addAttribute("salas", roomService.searchActiveRooms(
-                new RoomFilter(filtro.getEquipamentos(), filtro.getCapacidadeMinima(), filtro.getTipo())));
+        model.addAttribute("salas", roomService.searchActiveRooms(new RoomFilter(filtro.getEquipamentos(),
+                filtro.getCapacidadeMinima(), filtro.getTipo(), filtro.getNome())));
         return "reservas/espacos";
     }
 
@@ -134,8 +149,18 @@ public class ReservationController {
     }
 
     @GetMapping("/todas")
-    public String listAll(Model model) {
-        model.addAttribute("reservas", reservationService.listAllReservations());
+    public String listAll(
+            @RequestParam(name = "de", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "ate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "sala", required = false) Long roomId,
+            @RequestParam(name = "responsavel", required = false) String responsible,
+            @RequestParam(name = "status", required = false) String status,
+            @RequestParam(name = "pagina", defaultValue = "1") int page, Model model) {
+        ReservationListView view = reservationListService.buildReservations(
+                reservationService.listAllReservations(), from, to, roomId, responsible, status, page);
+        model.addAttribute("reservas", view.page().rows());
+        model.addAttribute("pagina", view.page());
+        model.addAttribute("lista", view);
         return "reservas/todas";
     }
 

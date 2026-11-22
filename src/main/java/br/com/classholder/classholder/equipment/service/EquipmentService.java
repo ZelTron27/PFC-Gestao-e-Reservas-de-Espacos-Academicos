@@ -1,6 +1,9 @@
 package br.com.classholder.classholder.equipment.service;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -13,6 +16,8 @@ import br.com.classholder.classholder.equipment.domain.Equipment;
 import br.com.classholder.classholder.equipment.dto.EquipmentRequest;
 import br.com.classholder.classholder.equipment.dto.EquipmentResponse;
 import br.com.classholder.classholder.equipment.repository.EquipmentRepository;
+import br.com.classholder.classholder.shared.ListFilters;
+import br.com.classholder.classholder.shared.ListPage;
 import br.com.classholder.classholder.shared.RecursoNaoEncontradoException;
 
 @Service
@@ -76,6 +81,18 @@ public class EquipmentService {
     private Equipment findEquipment(Long id) {
         return equipmentRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Equipamento não encontrado"));
+    }
+
+    public ListPage<EquipmentResponse> search(String search, int page) {
+        String term = ListFilters.term(search);
+        List<EquipmentResponse> matched = listAll().stream()
+                .filter(equipment -> ListFilters.contains(equipment.name(), term))
+                .sorted(Comparator.comparing(EquipmentResponse::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("busca", term);
+        return ListPage.of(matched, page, params);
     }
 
     public List<EquipmentResponse> listAll() {
