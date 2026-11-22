@@ -69,6 +69,9 @@ RESEND_API_KEY=
 # URL usada nos links enviados por e-mail
 APP_BASE_URL=http://localhost:8080
 
+# Cookie de sessão: em localhost (HTTP) use false; em produção (HTTPS) deixe true ou remova a linha
+SESSION_COOKIE_SECURE=false
+
 # Feriados (opcional, mas recomendado)
 FERIADOS_API_TOKEN=
 FERIADOS_CODIGO_IBGE=3550308
@@ -90,7 +93,7 @@ FERIADOS_CODIGO_IBGE=3550308
 | `FERIADOS_API_URL` | Não | `https://feriadosapi.com/api/v1` | Endereço base da FeriadosAPI |
 | `FERIADOS_CODIGO_IBGE` | Não | `3550308` (São Paulo/SP) | Código IBGE da cidade usada para buscar feriados municipais |
 | `PORT` | Não | `8080` | Porta HTTP da aplicação |
-| `SESSION_COOKIE_SECURE` | Não | `false` | Em produção, com HTTPS, use `true` para o cookie de sessão só trafegar por conexão segura |
+| `SESSION_COOKIE_SECURE` | Não | `true` | O cookie de sessão só trafega por HTTPS. Ao rodar localmente por HTTP (`http://localhost:8080`), defina `false`, senão o login não mantém a sessão |
 
 > Se alguma variável obrigatória estiver faltando, a aplicação não sobe e o Spring mostra um erro do tipo `Could not resolve placeholder 'NOME_DA_VARIAVEL'`.
 
@@ -206,7 +209,7 @@ O script está em [`scripts/insert-test-user.sql`](scripts/insert-test-user.sql)
 Abra o Query Tool do pgAdmin 4, acesse o banco `classholder` e execute o conteúdo desse script. Ele cria o usuário:
 
 * **E-mail:** `adm@classholder.com`
-* **Senha provisória:** `senha123` (válida apenas para o ambiente local e trocada obrigatoriamente no primeiro acesso)
+* **Senha provisória:** `senha123`. O script serve para criar o primeiro ADMIN em qualquer ambiente, inclusive em produção. Faça o primeiro login logo após executá-lo: a troca da senha é obrigatória.
 
 ### Primeiro acesso
 
