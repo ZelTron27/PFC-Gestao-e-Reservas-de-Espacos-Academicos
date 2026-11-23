@@ -15,8 +15,36 @@
     <div class="alert alert-success" role="alert" th:if="${sucesso}" th:text="${sucesso}">Sucesso</div>
     <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
 
+    <form class="ch-cartao p-3 mb-4 d-flex flex-wrap align-items-end gap-3" method="get" th:action="@{/salas}" id="filtros-salas">
+        <div>
+            <label class="form-label mb-1" for="nome">Nome da sala</label>
+            <input type="text" class="form-control" id="nome" name="nome" maxlength="100" th:value="${filtroNome}">
+        </div>
+        <div>
+            <label class="form-label mb-1" for="tipo">Tipo</label>
+            <select class="form-select" id="tipo" name="tipo">
+                <option value="">Todos</option>
+                <option th:each="opcao : ${tipos}" th:value="${opcao}" th:text="${opcao}"
+                        th:selected="${opcao == filtroTipo}">Tipo</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label mb-1" for="situacao">Situação</label>
+            <select class="form-select" id="situacao" name="situacao">
+                <option value="">Todas</option>
+                <option value="ATIVA" th:selected="${filtroSituacao == 'ATIVA'}">Ativa</option>
+                <option value="INATIVA" th:selected="${filtroSituacao == 'INATIVA'}">Inativa</option>
+                <option value="ESPECIAL" th:selected="${filtroSituacao == 'ESPECIAL'}">Especial</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a class="btn btn-outline-secondary" th:href="@{/salas}">Limpar</a>
+    </form>
+
     <div class="ch-cartao p-4">
-        <p class="ch-vazio" th:if="${#lists.isEmpty(salas)}">Nenhuma sala cadastrada ainda.</p>
+        <p class="mb-3" id="total-registros" th:text="${pagina.total()} + ' registro(s) encontrado(s)'">0 registro(s) encontrado(s)</p>
+        <p class="ch-vazio" th:if="${#lists.isEmpty(salas)}"
+           th:text="${pagina.filtered()} ? 'Nenhum registro encontrado para os filtros informados.' : 'Nenhuma sala cadastrada ainda.'">Nenhuma sala cadastrada ainda.</p>
 
         <div class="table-responsive" th:unless="${#lists.isEmpty(salas)}">
             <table class="table align-middle ch-tabela mb-0">
@@ -68,6 +96,8 @@
                 </tbody>
             </table>
         </div>
+
+        <nav th:replace="~{compartilhados/paginacao :: paginacao(${pagina}, '/salas')}"></nav>
     </div>
 </div>
 </div>

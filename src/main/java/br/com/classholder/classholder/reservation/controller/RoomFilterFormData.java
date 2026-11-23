@@ -19,7 +19,10 @@ public class RoomFilterFormData {
     @Min(value = 1, message = "A capacidade mínima deve ser maior que zero")
     private Integer capacidadeMinima;
 
-    @Size(max = 250, message = "O tipo deve ter no máximo 250 caracteres")
+    @Size(max = 100, message = "O tipo deve ter no máximo 100 caracteres")
     private String tipo;
+
+    @Size(max = 100, message = "O nome deve ter no máximo 100 caracteres")
+    private String nome;
 
 }

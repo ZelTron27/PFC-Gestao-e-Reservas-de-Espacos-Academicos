@@ -69,6 +69,9 @@ RESEND_API_KEY=
 # URL usada nos links enviados por e-mail
 APP_BASE_URL=http://localhost:8080
 
+# Cookie de sessão: em localhost (HTTP) use false; em produção (HTTPS) deixe true ou remova a linha
+SESSION_COOKIE_SECURE=false
+
 # Feriados (opcional, mas recomendado)
 FERIADOS_API_TOKEN=
 FERIADOS_CODIGO_IBGE=3550308
@@ -84,12 +87,13 @@ FERIADOS_CODIGO_IBGE=3550308
 | `TOTP_SECRET_KEY` | Sim | — | Chave AES-256 (Base64) que criptografa os segredos do 2FA no banco |
 | `RESEND_API_KEY` | Sim | — | Chave da API do Resend para envio de e-mails |
 | `MAIL_FROM` | Não | `Class Holder <onboarding@resend.dev>` | Remetente dos e-mails |
+| `MAIL_ENABLED` | Não | `true` | Com `false`, os e-mails não são enviados (útil em testes locais sem o Resend). A `RESEND_API_KEY` ainda precisa ter algum valor |
 | `APP_BASE_URL` | Não | `http://localhost:8080` | Base dos links enviados por e-mail (ex.: redefinição de senha) |
 | `FERIADOS_API_TOKEN` | Não | vazio | Token da FeriadosAPI. Sem ele, a sincronização de feriados é ignorada |
 | `FERIADOS_API_URL` | Não | `https://feriadosapi.com/api/v1` | Endereço base da FeriadosAPI |
 | `FERIADOS_CODIGO_IBGE` | Não | `3550308` (São Paulo/SP) | Código IBGE da cidade usada para buscar feriados municipais |
 | `PORT` | Não | `8080` | Porta HTTP da aplicação |
-| `SESSION_COOKIE_SECURE` | Não | `false` | Em produção, com HTTPS, use `true` para o cookie de sessão só trafegar por conexão segura |
+| `SESSION_COOKIE_SECURE` | Não | `true` | O cookie de sessão só trafega por HTTPS. Ao rodar localmente por HTTP (`http://localhost:8080`), defina `false`, senão o login não mantém a sessão |
 
 > Se alguma variável obrigatória estiver faltando, a aplicação não sobe e o Spring mostra um erro do tipo `Could not resolve placeholder 'NOME_DA_VARIAVEL'`.
 
@@ -130,9 +134,10 @@ A aplicação sobe normalmente mesmo sem o envio funcionar, apenas a redefiniç�
 
 ### Feriados (`FERIADOS_API_TOKEN` e `FERIADOS_CODIGO_IBGE`)
 
-O sistema bloqueia reservas em domingos, sábados e feriados. Os feriados (nacionais, estaduais, municipais e pontos facultativos) são obtidos da FeriadosAPI e salvos no banco:
+O sistema bloqueia reservas em domingos, feriados e, por padrão, sábados (o bloqueio dos sábados é configurável pela propriedade `app.reservas.bloquear-sabado` em [`application.properties`](src/main/resources/application.properties)). Os feriados (nacionais, estaduais, municipais e pontos facultativos) são obtidos da FeriadosAPI e salvos no banco:
 
 * A sincronização roda **ao iniciar a aplicação** e depois **uma vez por mês** (dia 1, às 03:00, horário de Brasília).
+* A sincronização manual, pela tela de feriados, só está disponível para o ADMIN.
 * Se a API estiver fora do ar ou o token não estiver configurado, a aplicação continua funcionando com a última cópia salva no banco e apenas um aviso aparece no log.
 
 Para configurar:
@@ -204,7 +209,7 @@ O script está em [`scripts/insert-test-user.sql`](scripts/insert-test-user.sql)
 Abra o Query Tool do pgAdmin 4, acesse o banco `classholder` e execute o conteúdo desse script. Ele cria o usuário:
 
 * **E-mail:** `adm@classholder.com`
-* **Senha provisória:** `senha123` (válida apenas para o ambiente local e trocada obrigatoriamente no primeiro acesso)
+* **Senha provisória:** `senha123`. O script serve para criar o primeiro ADMIN em qualquer ambiente, inclusive em produção. Faça o primeiro login logo após executá-lo: a troca da senha é obrigatória.
 
 ### Primeiro acesso
 

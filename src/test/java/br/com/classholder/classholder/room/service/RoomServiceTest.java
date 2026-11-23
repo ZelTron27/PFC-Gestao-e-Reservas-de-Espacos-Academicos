@@ -376,7 +376,7 @@ class RoomServiceTest {
                 room(1L, "A", "Laboratório", 30, Set.of(1L, 2L)),
                 room(2L, "B", "Laboratório", 30, Set.of(1L))));
 
-        List<RoomResponse> result = roomService.searchActiveRooms(new RoomFilter(Set.of(1L, 2L), null, null));
+        List<RoomResponse> result = roomService.searchActiveRooms(new RoomFilter(Set.of(1L, 2L), null, null, null));
 
         assertThat(result).extracting(RoomResponse::id).containsExactly(1L);
     }
@@ -387,7 +387,7 @@ class RoomServiceTest {
                 room(1L, "A", "Sala", 40, Set.of()),
                 room(2L, "B", "Sala", 39, Set.of())));
 
-        List<RoomResponse> result = roomService.searchActiveRooms(new RoomFilter(null, 40, null));
+        List<RoomResponse> result = roomService.searchActiveRooms(new RoomFilter(null, 40, null, null));
 
         assertThat(result).extracting(RoomResponse::id).containsExactly(1L);
     }
@@ -398,7 +398,7 @@ class RoomServiceTest {
                 room(1L, "A", "Laboratório de Química", 30, Set.of()),
                 room(2L, "B", "Auditório", 30, Set.of())));
 
-        List<RoomResponse> result = roomService.searchActiveRooms(new RoomFilter(null, null, "  LABORATÓRIO "));
+        List<RoomResponse> result = roomService.searchActiveRooms(new RoomFilter(null, null, "  LABORATÓRIO ", null));
 
         assertThat(result).extracting(RoomResponse::id).containsExactly(1L);
     }
@@ -409,7 +409,7 @@ class RoomServiceTest {
                 room(1L, "A", "Sala", 10, Set.of()),
                 room(2L, "B", "Auditório", 100, Set.of(3L))));
 
-        List<RoomResponse> result = roomService.searchActiveRooms(new RoomFilter(null, null, " "));
+        List<RoomResponse> result = roomService.searchActiveRooms(new RoomFilter(null, null, " ", null));
 
         assertThat(result).hasSize(2);
     }

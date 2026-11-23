@@ -14,8 +14,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import br.com.classholder.classholder.shared.ListFilters;
+import br.com.classholder.classholder.shared.ListPage;
 import br.com.classholder.classholder.user.UserRole;
 import br.com.classholder.classholder.user.dto.UserEditRequest;
 import br.com.classholder.classholder.user.dto.UserRequest;
@@ -33,8 +36,17 @@ public class UserController {
     }
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("usuarios", userService.listUsers());
+    public String list(@RequestParam(name = "busca", required = false) String search,
+            @RequestParam(name = "perfil", required = false) String role,
+            @RequestParam(name = "situacao", required = false) String status,
+            @RequestParam(name = "pagina", defaultValue = "1") int page, Model model) {
+        ListPage<UserResponse> result = userService.searchUsers(search, role, status, page);
+        model.addAttribute("usuarios", result.rows());
+        model.addAttribute("pagina", result);
+        model.addAttribute("filtroBusca", ListFilters.term(search));
+        model.addAttribute("filtroPerfil", ListFilters.clean(role));
+        model.addAttribute("filtroSituacao", ListFilters.clean(status));
+        model.addAttribute("perfis", UserRole.values());
         return "usuarios/lista";
     }
 

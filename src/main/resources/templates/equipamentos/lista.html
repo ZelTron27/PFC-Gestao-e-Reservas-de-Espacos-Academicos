@@ -15,8 +15,19 @@
     <div class="alert alert-success" role="alert" th:if="${sucesso}" th:text="${sucesso}">Sucesso</div>
     <div class="alert alert-danger" role="alert" th:if="${erro}" th:text="${erro}">Erro</div>
 
+    <form class="ch-cartao p-3 mb-4 d-flex flex-wrap align-items-end gap-3" method="get" th:action="@{/equipamentos}" id="filtros-equipamentos">
+        <div>
+            <label class="form-label mb-1" for="busca">Nome</label>
+            <input type="text" class="form-control" id="busca" name="busca" maxlength="100" th:value="${filtroBusca}">
+        </div>
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a class="btn btn-outline-secondary" th:href="@{/equipamentos}">Limpar</a>
+    </form>
+
     <div class="ch-cartao p-4">
-        <p class="ch-vazio" th:if="${#lists.isEmpty(equipamentos)}">Nenhum equipamento cadastrado ainda.</p>
+        <p class="mb-3" id="total-registros" th:text="${pagina.total()} + ' registro(s) encontrado(s)'">0 registro(s) encontrado(s)</p>
+        <p class="ch-vazio" th:if="${#lists.isEmpty(equipamentos)}"
+           th:text="${pagina.filtered()} ? 'Nenhum registro encontrado para os filtros informados.' : 'Nenhum equipamento cadastrado ainda.'">Nenhum equipamento cadastrado ainda.</p>
 
         <div class="table-responsive" th:unless="${#lists.isEmpty(equipamentos)}">
             <table class="table align-middle ch-tabela mb-0">
@@ -43,6 +54,8 @@
                 </tbody>
             </table>
         </div>
+
+        <nav th:replace="~{compartilhados/paginacao :: paginacao(${pagina}, '/equipamentos')}"></nav>
     </div>
 </div>
 </div>

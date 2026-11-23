@@ -26,8 +26,8 @@ class PrivacyPolicyPageIntegrationTest {
     @Test
     void privacyPolicy_shouldShowCurrentVersionHeader() throws Exception {
         assertThat(page())
-                .contains("Versão 1.2, atualizada em novembro de 2026")
-                .doesNotContain("Versão 1.1");
+                .contains("Versão 1.3, atualizada em novembro de 2026")
+                .doesNotContain("Versão 1.2");
     }
 
     @Test
